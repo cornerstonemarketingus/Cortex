@@ -93,7 +93,7 @@ export default function Dashboard() {
 						<h2 className="mt-1 text-lg font-semibold">Construction Solutions</h2>
 						<p className="mt-2 text-sm text-slate-200">Bid estimator, takeoff, and contractor lifecycle automation.</p>
 						<Link href="/construction-solutions" className="mt-3 inline-flex rounded-lg border border-cyan-300/40 bg-cyan-500/20 hover:bg-cyan-500/30 px-3 py-2 text-xs font-semibold">
-							Open Construction Hub
+							Open Estimating Solutions Hub
 						</Link>
 					</article>
 
@@ -108,8 +108,8 @@ export default function Dashboard() {
 
 					<article className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4">
 						<p className="text-xs uppercase tracking-[0.2em] text-blue-200">Division 03</p>
-						<h2 className="mt-1 text-lg font-semibold">Cortex Builder Engine</h2>
-						<p className="mt-2 text-sm text-slate-200">Website, app, and game builder lanes with live preview stage and admin Build Cortex control.</p>
+						<h2 className="mt-1 text-lg font-semibold">SaaS Delivery Engine</h2>
+						<p className="mt-2 text-sm text-slate-200">Website and app builder lanes for lead capture pages, conversion surfaces, and client portal delivery.</p>
 						<div className="mt-3 flex flex-wrap gap-2">
 							<Link href="/website-builder" className="rounded-lg border border-blue-300/40 bg-blue-500/20 hover:bg-blue-500/30 px-3 py-2 text-xs font-semibold">
 								Website Builder
@@ -117,13 +117,8 @@ export default function Dashboard() {
 							<Link href="/app-builder" className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-semibold">
 								App Builder
 							</Link>
-							<Link href="/business-builder" className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-semibold">
-								Business Builder
-							</Link>
-							<Link href="/game-builder" className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-semibold">
-								Game Builder
-							</Link>
 						</div>
+						<p className="mt-3 text-[11px] text-slate-400">Business Builder and Game Builder are preserved in archive for post-SaaS reactivation.</p>
 					</article>
 				</section>
 

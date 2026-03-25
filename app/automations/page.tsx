@@ -79,6 +79,25 @@ const EMPTY_TEMPLATES: TemplateMap = {
   reengagement: '',
 };
 
+const LEAD_ENGINE_STEPS = [
+  {
+    title: '1) Capture',
+    detail: 'Lead form, inbound call, or web chat enters one intake lane instantly.',
+  },
+  {
+    title: '2) Qualify',
+    detail: 'AI collects job details, urgency, and scope before handoff.',
+  },
+  {
+    title: '3) Nurture',
+    detail: 'SMS + email follow-up sequences keep high-intent leads active.',
+  },
+  {
+    title: '4) Convert',
+    detail: 'Estimate, proposal, invoice, and reminder chain drives close rate.',
+  },
+] as const;
+
 export default function AutomationsPage() {
   const [firstName, setFirstName] = useState('Jordan');
   const [email, setEmail] = useState('jordan@example.com');
@@ -195,19 +214,32 @@ export default function AutomationsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#030712] text-slate-100">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#164e63_0%,#0b1f2a_45%,#04070a_100%)] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-white/20 bg-white/5 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Automations</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Automation Control Center</h1>
-          <p className="mt-3 max-w-3xl text-sm text-slate-300">
-            One-click automation execution for lead handling, pipeline movement, revenue flow, unpaid reminders, review requests, and re-engagement.
+        <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Lead-Gen Automation Engine</p>
+          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Turn every inbound lead into a guided path to booked revenue.</h1>
+          <p className="mt-3 max-w-3xl text-sm text-cyan-100/90">
+            This workspace runs capture, qualification, nurture, and conversion workflows as one connected system. Use it as your daily operating surface for growth.
           </p>
         </header>
 
+        <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {LEAD_ENGINE_STEPS.map((step) => (
+            <article key={step.title} className="rounded-2xl border border-white/20 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-cyan-100">{step.title}</p>
+              <p className="mt-2 text-xs text-slate-300">{step.detail}</p>
+            </article>
+          ))}
+        </section>
+
         <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">
+          <div className="mb-4 rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-3 text-xs text-cyan-50">
+            Recommended run order: validate system health, run full lead automation pack, then tune templates from performance outcomes.
+          </div>
+
           <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
             <article className="rounded-xl border border-white/20 bg-black/30 p-3 text-xs">
               <p className="text-slate-400">Automation Health</p>
@@ -297,9 +329,9 @@ export default function AutomationsPage() {
             type="button"
             onClick={() => void runAutomationPack()}
             disabled={loading}
-            className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:opacity-60"
+            className="mt-4 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
           >
-            {loading ? 'Running...' : 'Run Full Automation Pack'}
+            {loading ? 'Running...' : 'Run Full Lead Engine'}
           </button>
 
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}

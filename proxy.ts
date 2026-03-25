@@ -124,13 +124,13 @@ export function proxy(request: NextRequest) {
     if (site) {
       if (pathname === '/') {
         const rewriteUrl = request.nextUrl.clone();
-        rewriteUrl.pathname = '/bidbuilder';
+        rewriteUrl.pathname = '/pricing';
         return NextResponse.rewrite(rewriteUrl);
       }
 
       if (!isAllowedForSite(pathname, site)) {
         const siteUrl = request.nextUrl.clone();
-        siteUrl.pathname = '/bidbuilder';
+        siteUrl.pathname = '/pricing';
         siteUrl.search = '';
         return NextResponse.redirect(siteUrl);
       }
