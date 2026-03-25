@@ -31,23 +31,23 @@ export default function PublicMarketingNav() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/20 bg-[#030712]/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-10">
+    <header className="sticky top-0 z-50 border-b border-cyan-300/25 bg-[#020711]/96 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 md:px-10">
         <Link href="/" className="text-sm font-semibold tracking-[0.18em] text-slate-100 uppercase">
-          <Image src="/cortex-mark.svg" alt="Cortex Bid Build" width={168} height={48} className="h-8 w-auto" />
+          <Image src="/cortex-mark.svg" alt="Cortex Bid Build" width={168} height={48} className="h-7 w-auto" />
         </Link>
 
-        <nav className="hidden items-center gap-2 md:flex">
-          {primaryItems.slice(0, 4).map((item) => {
+        <nav className="hidden items-center gap-1.5 xl:flex">
+          {primaryItems.slice(0, 6).map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition ${
                   active
-                    ? 'bg-white text-slate-950'
-                    : 'text-slate-200/85 hover:bg-white/10 hover:text-white'
+                    ? 'bg-cyan-300 text-slate-950 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]'
+                    : 'text-slate-200/90 hover:bg-cyan-300/15 hover:text-cyan-100'
                 }`}
               >
                 {item.label}
@@ -59,37 +59,37 @@ export default function PublicMarketingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard"
-            className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-slate-200"
+            className="rounded-md bg-cyan-300 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-950 transition hover:bg-cyan-200"
           >
             Open Workspace
           </Link>
           <Link
             href="/pricing"
-            className="rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-white/15"
+            className="hidden rounded-md border border-cyan-200/30 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-100 transition hover:bg-cyan-300/20 md:inline-flex"
           >
             Pricing
           </Link>
           <Link
             href="/admin/login"
-            className="rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-white/15"
+            className="rounded-md border border-cyan-200/30 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-100 transition hover:bg-cyan-300/20"
           >
             Sign In
           </Link>
         </div>
       </div>
 
-      <div className="border-t border-white/10 bg-[#030712]">
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-2 md:px-10">
+      <div className="border-t border-cyan-200/15 bg-[#020711] xl:hidden">
+        <div className="mx-auto flex max-w-7xl gap-1.5 overflow-x-auto px-4 py-1.5 md:px-10">
           {primaryItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition ${
                   active
-                    ? 'bg-white text-slate-950'
-                    : 'text-slate-200/85 hover:bg-white/10 hover:text-white'
+                    ? 'bg-cyan-300 text-slate-950'
+                    : 'text-slate-200/90 hover:bg-cyan-300/15 hover:text-cyan-100'
                 }`}
               >
                 {item.label}

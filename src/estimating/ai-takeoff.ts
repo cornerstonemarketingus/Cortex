@@ -104,6 +104,16 @@ type Geometry = {
   perimeterFt: number;
 };
 
+type AreaBounds = {
+  min: number;
+  max: number;
+};
+
+type CostPerSqFtBounds = {
+  min: number;
+  max: number;
+};
+
 type EstimatorSignals = {
   complexityScore: number;
   riskScore: number;
@@ -151,6 +161,24 @@ const CATEGORY_LABELS: Record<ProjectCategory, string> = {
   'roof-replacement': 'Asphalt Roof Replacement',
   'basement-finish': 'Basement Finish',
   'general-construction': 'General Construction Scope',
+};
+
+const CATEGORY_AREA_BOUNDS: Record<ProjectCategory, AreaBounds> = {
+  deck: { min: 64, max: 2000 },
+  'bathroom-remodel': { min: 30, max: 400 },
+  'kitchen-gut': { min: 80, max: 900 },
+  'roof-replacement': { min: 600, max: 12000 },
+  'basement-finish': { min: 200, max: 4000 },
+  'general-construction': { min: 60, max: 25000 },
+};
+
+const CATEGORY_COST_PER_SQFT_BOUNDS: Record<ProjectCategory, CostPerSqFtBounds> = {
+  deck: { min: 35, max: 150 },
+  'bathroom-remodel': { min: 125, max: 520 },
+  'kitchen-gut': { min: 110, max: 420 },
+  'roof-replacement': { min: 7.5, max: 22 },
+  'basement-finish': { min: 45, max: 220 },
+  'general-construction': { min: 20, max: 260 },
 };
 
 export const EXAMPLE_BID_PROMPTS = [
@@ -402,11 +430,34 @@ function parseAreaFromText(text: string): number | null {
   return value;
 }
 
+function parseRoofingSquares(text: string): number | null {
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(roofing\s*)?squares?\b/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return value;
+}
+
+function normalizeAreaSqFt(category: ProjectCategory, areaSqFt: number): number {
+  const bounds = CATEGORY_AREA_BOUNDS[category];
+  return clamp(areaSqFt, bounds.min, bounds.max);
+}
+
 function inferGeometry(category: ProjectCategory, text: string): Geometry {
   const template = CATEGORY_TEMPLATES[category];
+  const roofingSquares = category === 'roof-replacement' ? parseRoofingSquares(text) : null;
+
+  if (roofingSquares !== null) {
+    const areaSqFt = normalizeAreaSqFt(category, roofingSquares * 100);
+    return {
+      areaSqFt,
+      perimeterFt: 4 * Math.sqrt(areaSqFt),
+    };
+  }
+
   const rect = parseRectangle(text);
   if (rect) {
-    const areaSqFt = rect.width * rect.length;
+    const areaSqFt = normalizeAreaSqFt(category, rect.width * rect.length);
     const perimeterFt = 2 * (rect.width + rect.length);
     return {
       areaSqFt,
@@ -415,10 +466,68 @@ function inferGeometry(category: ProjectCategory, text: string): Geometry {
   }
 
   const areaFromText = parseAreaFromText(text);
-  const areaSqFt = areaFromText ?? template.defaultAreaSqFt;
+  const areaSqFt = normalizeAreaSqFt(category, areaFromText ?? template.defaultAreaSqFt);
   return {
     areaSqFt,
     perimeterFt: 4 * Math.sqrt(areaSqFt),
+  };
+}
+
+function applyCostPerSqFtGuardrail(params: {
+  category: ProjectCategory;
+  geometry: Geometry;
+  totals: {
+    materials: number;
+    labor: number;
+    overhead: number;
+    profit: number;
+    grandTotal: number;
+  };
+  materials: MaterialLine[];
+  labor: LaborLine[];
+  overheadPercent: number;
+  profitPercent: number;
+}): { adjusted: boolean; note: string | null } {
+  const area = Math.max(params.geometry.areaSqFt, 1);
+  const bounds = CATEGORY_COST_PER_SQFT_BOUNDS[params.category];
+  const currentCostPerSqFt = params.totals.grandTotal / area;
+
+  const targetCostPerSqFt = clamp(currentCostPerSqFt, bounds.min, bounds.max);
+  const targetGrandTotal = roundMoney(targetCostPerSqFt * area);
+
+  if (Math.abs(targetGrandTotal - params.totals.grandTotal) < 1) {
+    return { adjusted: false, note: null };
+  }
+
+  const overheadRate = params.overheadPercent / 100;
+  const profitRate = params.profitPercent / 100;
+  const multiplierDenominator = (1 + overheadRate) * (1 + profitRate);
+  const targetSubtotal = roundMoney(targetGrandTotal / multiplierDenominator);
+
+  const currentSubtotal = Math.max(params.totals.materials + params.totals.labor, 1);
+  const lineScale = targetSubtotal / currentSubtotal;
+
+  params.materials.forEach((line) => {
+    line.unitCost = roundMoney(line.unitCost * lineScale);
+    line.totalCost = roundMoney(line.totalCost * lineScale);
+  });
+
+  params.labor.forEach((line) => {
+    line.hourlyRate = roundMoney(line.hourlyRate * lineScale);
+    line.totalCost = roundMoney(line.totalCost * lineScale);
+  });
+
+  params.totals.materials = roundMoney(params.materials.reduce((sum, line) => sum + line.totalCost, 0));
+  params.totals.labor = roundMoney(params.labor.reduce((sum, line) => sum + line.totalCost, 0));
+
+  const subtotal = params.totals.materials + params.totals.labor;
+  params.totals.overhead = roundMoney(subtotal * overheadRate);
+  params.totals.profit = roundMoney((subtotal + params.totals.overhead) * profitRate);
+  params.totals.grandTotal = roundMoney(subtotal + params.totals.overhead + params.totals.profit);
+
+  return {
+    adjusted: true,
+    note: `Estimator guardrail normalized total to realistic ${params.category} band ($${bounds.min.toFixed(2)}-$${bounds.max.toFixed(2)} per sq ft).`,
   };
 }
 
@@ -677,6 +786,25 @@ function finalizeEstimate(
     assumptions: [...template.assumptions],
     proposalMarkdown: '',
   };
+
+  const guardrail = applyCostPerSqFtGuardrail({
+    category,
+    geometry,
+    totals: result.totals,
+    materials: result.materials,
+    labor: result.labor,
+    overheadPercent: template.overheadPercent,
+    profitPercent: template.profitPercent,
+  });
+
+  if (guardrail.adjusted && guardrail.note) {
+    result.assumptions.push(guardrail.note);
+    result.riskAdjustments.push({
+      factor: 'market-sanity-guardrail',
+      impactPercent: 0,
+      reason: guardrail.note,
+    });
+  }
 
   result.calibrationBand = buildCalibrationBand(result.totals.grandTotal, signals);
 

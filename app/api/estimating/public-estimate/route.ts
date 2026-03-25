@@ -8,6 +8,7 @@ import {
   getProjectCategoryOptions,
   type ProjectCategory,
 } from '@/src/estimating/ai-takeoff';
+import { loadEstimationMarketEnvelope } from '@/src/estimating/market-signals';
 
 export const runtime = 'nodejs';
 
@@ -94,6 +95,53 @@ function buildBallparkRange(average: number, confidence: number): BallparkRange 
     high,
     spreadPercent: Number((spreadPercent * 100).toFixed(1)),
   };
+}
+
+function applyEstimateMarketMultiplier(
+  estimate: ReturnType<typeof createBidEstimate>,
+  multiplier: number
+): ReturnType<typeof createBidEstimate> {
+  const next = structuredClone(estimate);
+
+  next.materials = next.materials.map((line) => {
+    const unitCost = Number((line.unitCost * multiplier).toFixed(2));
+    return {
+      ...line,
+      unitCost,
+      totalCost: Number((line.quantity * unitCost).toFixed(2)),
+    };
+  });
+
+  next.labor = next.labor.map((line) => {
+    const hourlyRate = Number((line.hourlyRate * multiplier).toFixed(2));
+    return {
+      ...line,
+      hourlyRate,
+      totalCost: Number((line.hours * hourlyRate).toFixed(2)),
+    };
+  });
+
+  const materials = Number(next.materials.reduce((sum, line) => sum + line.totalCost, 0).toFixed(2));
+  const labor = Number(next.labor.reduce((sum, line) => sum + line.totalCost, 0).toFixed(2));
+  const subtotal = materials + labor;
+  const overhead = Number((subtotal * (next.margin.overheadPercent / 100)).toFixed(2));
+  const profit = Number(((subtotal + overhead) * (next.margin.profitPercent / 100)).toFixed(2));
+  const grandTotal = Number((subtotal + overhead + profit).toFixed(2));
+
+  next.totals = {
+    materials,
+    labor,
+    overhead,
+    profit,
+    grandTotal,
+  };
+
+  next.assumptions = [
+    ...next.assumptions,
+    `Market calibration multiplier applied: ${multiplier.toFixed(3)} based on current regional/CPI signals.`,
+  ];
+
+  return next;
 }
 
 function buildAiInsights(params: {
@@ -191,11 +239,14 @@ export async function POST(request: Request) {
       squareFootage,
     });
 
-    const estimate = createBidEstimate({
+    const baseEstimate = createBidEstimate({
       description: estimateInput,
       projectCategory: projectType,
       zipCode,
     });
+
+    const marketEnvelope = await loadEstimationMarketEnvelope(zipCode || undefined);
+    const estimate = applyEstimateMarketMultiplier(baseEstimate, marketEnvelope.multiplier);
 
     const range = buildBallparkRange(estimate.totals.grandTotal, estimate.confidence);
     const aiInsights = buildAiInsights({
@@ -212,6 +263,7 @@ export async function POST(request: Request) {
         projectType,
         zipCode: zipCode || null,
         instantSummary: `Estimated cost: $${range.low.toLocaleString('en-US')} - $${range.high.toLocaleString('en-US')}`,
+        marketSignals: marketEnvelope,
         cta: {
           label: 'Unlock full estimate',
           requiredFields: ['firstName', 'email or phone'],
@@ -315,6 +367,7 @@ export async function POST(request: Request) {
           assumptions: estimate.assumptions,
         },
         aiInsights,
+        marketSignals: marketEnvelope,
         lead: {
           id: lead.id,
           firstName: lead.firstName,
