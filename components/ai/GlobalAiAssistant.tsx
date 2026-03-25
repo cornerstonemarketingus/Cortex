@@ -16,7 +16,7 @@ type ChatApiResponse = {
   error?: string;
 };
 
-const STORAGE_KEY = 'bidbuilder.carlton.messages';
+const STORAGE_KEY = 'bidbuilder.copilot.messages';
 
 function getStarterPrompt(pathname: string): string {
   if (pathname.startsWith('/website-builder')) {
@@ -46,7 +46,7 @@ export default function GlobalAiAssistant() {
     {
       id: 'welcome',
       role: 'system',
-      text: 'Carlton is online. Ask for direct build, profile, or automation updates.',
+      text: 'Copilot is online. Ask for direct build, profile, or automation updates.',
     },
   ]);
 
@@ -127,7 +127,7 @@ export default function GlobalAiAssistant() {
           provider: 'auto',
           tone: 'support',
           systemPrompt:
-            'You are Carlton, a premium build assistant for Bid Builder. Give direct, practical guidance for app, website, profile, estimator, and automation improvements.',
+            'You are Builder Copilot, a premium build assistant for Bid Builder. Give direct, practical guidance for app, website, profile, estimator, and automation improvements.',
           message: `${text}\n\nCurrent page: ${pathname}`,
           includeCapabilities: false,
         }),
@@ -179,14 +179,14 @@ export default function GlobalAiAssistant() {
         onClick={() => setOpen((value) => !value)}
         className="fixed bottom-4 right-4 z-[60] rounded-full border border-blue-300/70 bg-blue-500/30 px-4 py-2 text-xs font-semibold text-blue-50 shadow-lg shadow-blue-950/40 hover:bg-blue-500/40"
       >
-        {open ? 'Close Carlton' : 'Ask Carlton'}
+        {open ? 'Close Copilot' : 'Ask Copilot'}
       </button>
 
       {open ? (
         <section className="fixed bottom-16 right-4 z-[60] h-[min(44vh,360px)] w-[min(320px,calc(100vw-1rem))] rounded-2xl border border-blue-300/35 bg-[#06153f]/95 p-3 text-white shadow-2xl">
           <header className="mb-2 flex items-start justify-between gap-2">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">Carlton Assistant</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">Builder Copilot</p>
               <h2 className="text-sm font-semibold">Direct build support</h2>
             </div>
             <button

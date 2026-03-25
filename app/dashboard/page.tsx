@@ -56,14 +56,14 @@ export default function Dashboard() {
 	}, []);
 
 	return (
-		<main className="min-h-screen bg-gradient-to-b from-[#04133b] via-[#0a2258] to-[#061534] text-slate-100">
+		<main className="min-h-screen bg-gradient-to-b from-[#0b1220] via-[#111827] to-[#020617] text-slate-100">
 			<CortexTopTabs />
 
 			<div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
-				<header className="rounded-3xl border border-blue-300/30 bg-blue-500/10 p-6 mb-6">
-					<p className="text-xs uppercase tracking-[0.2em] text-blue-200">Cortex Engine</p>
+				<header className="rounded-3xl border border-white/20 bg-black/25 p-6 mb-6">
+					<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Cortex Engine</p>
 					<h1 className="mt-2 text-3xl font-semibold md:text-4xl">Cortex Command Dashboard</h1>
-					<p className="mt-3 max-w-3xl text-sm text-blue-100/90">
+					<p className="mt-3 max-w-3xl text-sm text-slate-200">
 						Main hub for product divisions, SaaS packaging, and autonomous build workflows.
 					</p>
 				</header>
@@ -146,15 +146,6 @@ export default function Dashboard() {
 							<p className="mt-1 text-xs text-slate-400">Landing pages, reputation engine, reactivation campaigns, and expansion ops.</p>
 						</div>
 					</div>
-				</section>
-
-				<section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
-					<Link href="/analytics/estimating" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 text-sm hover:bg-cyan-500/20">
-						Estimator Calibration Analytics
-					</Link>
-					<Link href="/analytics/quality" className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4 text-sm hover:bg-indigo-500/20">
-						Quality Gate Dashboard
-					</Link>
 				</section>
 
 				{error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}

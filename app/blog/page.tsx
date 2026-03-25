@@ -7,7 +7,7 @@ const posts = [
     summary: 'A practical look at estimator-first operations and modern close workflows for service businesses.',
   },
   {
-    title: 'Carlton AI updates: improving automation quality across CRM pipelines',
+    title: 'Copilot AI updates: improving automation quality across CRM pipelines',
     category: 'Software',
     summary: 'Product updates covering workflow automation, lifecycle messaging, and operational visibility enhancements.',
   },

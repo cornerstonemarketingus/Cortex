@@ -14,7 +14,7 @@ export default function SitesFunnelsPage() {
 
         <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           <Link href="/website-builder" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">Website Builder</Link>
-          <Link href="/autoflow" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">Funnels + CRM</Link>
+          <Link href="/builder-copilot" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">Builder Copilot CRM</Link>
           <Link href="/app-builder" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">App Builder</Link>
         </section>
       </div>

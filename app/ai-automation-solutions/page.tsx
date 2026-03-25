@@ -167,7 +167,7 @@ export default function AiAutomationSolutionsPage() {
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
-          Need full CRM pipeline and automation delivery? Continue to <Link href="/autoflow" className="text-amber-200 underline">AIBoost</Link>.
+          Need full CRM pipeline and automation delivery? Continue to <Link href="/builder-copilot" className="text-amber-200 underline">Builder Copilot</Link>.
           Need sites and apps to plug this into? Open <Link href="/website-builder" className="text-emerald-200 underline">Cortex Builder</Link>.
         </section>
       </div>

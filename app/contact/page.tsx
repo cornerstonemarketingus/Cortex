@@ -10,7 +10,7 @@ export default function ContactPage() {
           <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Contact</p>
           <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Talk With Our Team</h1>
           <p className="mt-3 max-w-2xl text-sm text-blue-100/90">
-            Share your project goals and we will map the right product path: Bid Build, AIBoost, Cortex, or hybrid deployment.
+            Share your project goals and we will map the right product path: Bid Build, Builder Copilot, Cortex, or hybrid deployment.
           </p>
         </header>
 

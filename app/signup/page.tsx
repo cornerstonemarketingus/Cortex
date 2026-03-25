@@ -12,9 +12,9 @@ const tiers = [
 ] as const;
 
 function sanitizeNextPath(value: string | null) {
-  if (!value) return '/bidbuilder';
-  if (!value.startsWith('/')) return '/bidbuilder';
-  if (value.startsWith('//')) return '/bidbuilder';
+  if (!value) return '/pricing';
+  if (!value.startsWith('/')) return '/pricing';
+  if (value.startsWith('//')) return '/pricing';
   return value;
 }
 
@@ -32,7 +32,11 @@ type StatusResponse = {
 
 export default function SignupPage() {
   const router = useRouter();
-  const [nextPath, setNextPath] = useState('/bidbuilder');
+  const [nextPath, setNextPath] = useState('/pricing');
+  const [trialPass, setTrialPass] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
 
   const [email, setEmail] = useState('');
   const [tier, setTier] = useState<(typeof tiers)[number]['value']>('unified');
@@ -46,9 +50,29 @@ export default function SignupPage() {
     const next = sanitizeNextPath(params.get('next'));
     const success = params.get('success') === '1';
     const fromUrlEmail = params.get('email') || '';
+    const pass = params.get('pass') || '';
+    const website = params.get('website') || '';
+    const phone = params.get('phone') || '';
+    const business = params.get('business') || '';
 
     if (fromUrlEmail) {
       setEmail(fromUrlEmail);
+    }
+
+    if (pass) {
+      setTrialPass(pass);
+    }
+
+    if (website) {
+      setWebsiteUrl(website);
+    }
+
+    if (phone) {
+      setBusinessPhone(phone);
+    }
+
+    if (business) {
+      setBusinessName(business);
     }
 
     setCheckoutSuccess(success);
@@ -87,6 +111,20 @@ export default function SignupPage() {
     setError(null);
 
     try {
+      if (businessName.trim() || websiteUrl.trim() || businessPhone.trim()) {
+        await fetch('/api/builder-copilot/intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessName,
+            websiteUrl,
+            phoneNumber: businessPhone,
+            email,
+            context: 'signup',
+          }),
+        }).catch(() => null);
+      }
+
       const response = await fetch('/api/subscription/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,6 +191,42 @@ export default function SignupPage() {
                 ))}
               </select>
             </label>
+
+            <label className="block text-xs text-cyan-100">
+              Trial pass (if provided)
+              <input
+                value={trialPass}
+                onChange={(event) => setTrialPass(event.target.value)}
+                placeholder="CORTEX-TRIAL-14D"
+                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+              />
+            </label>
+
+            <div className="rounded-lg border border-white/15 bg-black/20 p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Business Booster Setup</p>
+              <p className="mt-1 text-xs text-slate-300">Optional: add these now so Builder Copilot can prepare voice AI receptionist and website chatbot setup.</p>
+
+              <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                <input
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  placeholder="Business name"
+                  className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                />
+                <input
+                  value={businessPhone}
+                  onChange={(event) => setBusinessPhone(event.target.value)}
+                  placeholder="Phone for voice AI"
+                  className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                />
+                <input
+                  value={websiteUrl}
+                  onChange={(event) => setWebsiteUrl(event.target.value)}
+                  placeholder="Website for chatbot"
+                  className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
 
             <button
               type="button"

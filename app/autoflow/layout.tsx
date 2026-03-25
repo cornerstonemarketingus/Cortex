@@ -7,15 +7,15 @@ export default function AutoFlowLayout({ children }: { children: React.ReactNode
         <div className="mx-auto max-w-7xl px-6 py-4 md:px-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-200">AIBoost</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Builder Copilot</p>
               <p className="text-xs text-slate-300">CRM and AI Automator</p>
             </div>
 
             <nav className="flex flex-wrap items-center gap-2 text-xs">
-              <Link href="/autoflow" className="rounded-full border border-amber-300/40 bg-amber-500/15 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-500/25">
+              <Link href="/builder-copilot" className="rounded-full border border-amber-300/40 bg-amber-500/15 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-500/25">
                 Overview
               </Link>
-              <Link href="/autoflow/dashboard" className="rounded-full border border-amber-300/30 bg-amber-500/10 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-500/20">
+              <Link href="/builder-copilot/dashboard" className="rounded-full border border-amber-300/30 bg-amber-500/10 px-3 py-1.5 font-semibold text-amber-100 hover:bg-amber-500/20">
                 Dashboard
               </Link>
               <Link href="/ai-automation-solutions" className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5 font-semibold text-slate-200 hover:bg-white/10">

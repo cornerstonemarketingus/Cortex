@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import CortexTopTabs from "@/components/navigation/CortexTopTabs";
+import BuilderCopilotPanel from "@/components/copilot/BuilderCopilotPanel";
 
 type MarketPricingResponse = {
   compiledEstimate?: {
@@ -31,11 +32,6 @@ type BidEstimateResponse = {
   error?: string;
 };
 
-type ChatResponse = {
-  responses?: string[];
-  error?: string;
-};
-
 function money(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -51,12 +47,9 @@ export default function ConstructionSolutionsPage() {
   const [scope, setScope] = useState("Replace 2200 sq ft roof with architectural shingles and basic flashing updates.");
 
   const [loading, setLoading] = useState(false);
-  const [automationLoading, setAutomationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [automationError, setAutomationError] = useState<string | null>(null);
   const [market, setMarket] = useState<MarketPricingResponse | null>(null);
   const [bid, setBid] = useState<BidEstimateResponse["estimate"] | null>(null);
-  const [automationDraft, setAutomationDraft] = useState<string | null>(null);
 
   const runBallpark = async () => {
     if (loading) return;
@@ -97,36 +90,6 @@ export default function ConstructionSolutionsPage() {
   };
 
   const sourceCount = useMemo(() => market?.sourceInsights?.length ?? 0, [market]);
-
-  const runAutomationDraft = async () => {
-    if (automationLoading) return;
-
-    setAutomationLoading(true);
-    setAutomationError(null);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'assistant',
-          tone: 'sales',
-          message: `Create a post-estimate automation follow-up sequence for ${projectCategory} in ZIP ${zipCode}. Audience: ${audience}. Scope: ${scope}. Include SMS, voicemail receptionist response, and email sequence.`
-        }),
-      });
-
-      const parsed = (await response.json().catch(() => ({}))) as ChatResponse;
-      if (!response.ok || !parsed.responses?.[0]) {
-        throw new Error(parsed.error || `Automation draft failed (${response.status})`);
-      }
-
-      setAutomationDraft(parsed.responses[0]);
-    } catch (runError) {
-      setAutomationError(runError instanceof Error ? runError.message : 'Unable to generate automation draft.');
-    } finally {
-      setAutomationLoading(false);
-    }
-  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0e2021] via-[#1b2a2b] to-[#141a21] text-slate-100">
@@ -234,37 +197,24 @@ export default function ConstructionSolutionsPage() {
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
-          Need contractor CRM and close automation too? Continue to <Link href="/autoflow" className="text-cyan-200 underline">AIBoost</Link> or
+          Need contractor CRM and close automation too? Continue to <Link href="/builder-copilot" className="text-cyan-200 underline">Builder Copilot</Link> or
           launch capture pages from <Link href="/website-builder" className="text-emerald-200 underline">Cortex Builder</Link>.
         </section>
 
         <section className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-2xl border border-amber-300/35 bg-amber-500/12 p-5">
-            <h2 className="text-xl font-semibold text-amber-100">Automation Follow-Up Draft</h2>
-            <p className="mt-2 text-sm text-slate-200">
-              Estimator first, automations next. Generate a ready-to-send follow-up sequence from your estimate context.
-            </p>
-            <button
-              type="button"
-              onClick={() => void runAutomationDraft()}
-              disabled={automationLoading}
-              className="mt-4 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200 disabled:opacity-60"
-            >
-              {automationLoading ? 'Generating...' : 'Generate AI Automation Draft'}
-            </button>
-            {automationError ? <p className="mt-3 text-sm text-red-300">{automationError}</p> : null}
-            {automationDraft ? (
-              <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-white/15 bg-black/25 p-3 text-xs text-slate-200">
-                {automationDraft}
-              </pre>
-            ) : null}
-          </article>
+          <BuilderCopilotPanel
+            title="Estimator Builder Copilot"
+            subtitle="Generate exact follow-up copy, pricing assumptions, and implementation-ready CRM actions from this estimate context."
+            defaultPrompt="Build a precise post-estimate sequence with SMS, voicemail receptionist fallback, and email follow-up tailored to this project scope."
+            contextLabel="construction-solutions"
+            showProvisioning
+          />
 
           <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
             <h2 className="text-xl font-semibold text-cyan-100">Next step links</h2>
             <div className="mt-3 flex flex-col gap-2 text-sm">
-              <Link href="/aiboost" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">
-                Open AIBoost CRM + automations
+              <Link href="/builder-copilot" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">
+                Open Builder Copilot CRM + automations
               </Link>
               <Link href="/ai-automation-solutions" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">
                 Open AI receptionist workspace

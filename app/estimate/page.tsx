@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 type PublicEstimateResponse = {
   mode?: 'preview' | 'full';
@@ -94,13 +95,13 @@ export default function EstimatePage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-gradient-to-b from-[#031238] via-[#0c2e73] to-[#07173d] text-slate-100">
+        <main className="min-h-screen bg-[#0b0d12] text-slate-100">
           <PublicMarketingNav />
           <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
-            <header className="rounded-3xl border border-cyan-300/30 bg-cyan-500/10 p-6 mb-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Public Cost Calculator</p>
+            <header className="rounded-2xl border border-white/10 bg-[#11151d] p-6 mb-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Public Cost Calculator</p>
               <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Get A Ballpark Estimate In Under 60 Seconds</h1>
-              <p className="mt-3 max-w-3xl text-sm text-cyan-50/90">Loading estimator...</p>
+              <p className="mt-3 max-w-3xl text-sm text-slate-300">Loading estimator...</p>
             </header>
           </div>
         </main>
@@ -290,29 +291,40 @@ function EstimatePageContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#031238] via-[#0c2e73] to-[#07173d] text-slate-100">
+    <main className="min-h-screen bg-[#0b0d12] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
-        <header className="rounded-3xl border border-cyan-300/30 bg-cyan-500/10 p-6 mb-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Public Cost Calculator</p>
+        <header className="rounded-2xl border border-white/10 bg-[#11151d] p-6 mb-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Public Cost Calculator</p>
           <h1 className="mt-2 text-3xl font-semibold md:text-4xl">{heroHeadline}</h1>
-          <p className="mt-3 max-w-3xl text-sm text-cyan-50/90">
+          <p className="mt-3 max-w-3xl text-sm text-slate-300">
             Enter your project info for a low/average/high cost range. Unlock full labor + material detail by sharing contact info.
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr]">
-          <article className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-5">
-            <h2 className="text-lg font-semibold text-indigo-100 mb-3">Project Intake</h2>
+        <section className="mb-6">
+          <BuilderCopilotPanel
+            title="Estimator Builder Copilot"
+            subtitle="Get precise quote guidance, scope refinement, and implementation steps for estimate logic and conversion flow."
+            defaultPrompt="Help me tighten this estimate scope and produce a more precise quote with exact assumptions and line-item checks."
+            contextLabel="estimator"
+            showProvisioning={false}
+          />
+        </section>
+
+        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <article className="h-fit rounded-2xl border border-white/10 bg-[#11151d] p-5 xl:sticky xl:top-24">
+            <h2 className="text-lg font-semibold text-slate-100 mb-1">Estimator Tools</h2>
+            <p className="mb-3 text-xs text-slate-400">Configure scope and pricing inputs.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <label className="text-xs text-indigo-100 block">
+              <label className="text-xs text-slate-300 block">
                 Project type
                 <select
                   value={projectType}
                   onChange={(event) => setProjectType(event.target.value as (typeof projectTypes)[number])}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
                 >
                   {projectTypes.map((option) => (
                     <option key={option} value={option}>
@@ -322,62 +334,62 @@ function EstimatePageContent() {
                 </select>
               </label>
 
-              <label className="text-xs text-indigo-100 block">
+              <label className="text-xs text-slate-300 block">
                 ZIP code
                 <input
                   value={zipCode}
                   onChange={(event) => setZipCode(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
                 />
               </label>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-              <label className="text-xs text-indigo-100 block">
+              <label className="text-xs text-slate-300 block">
                 Square footage (optional)
                 <input
                   value={squareFootage}
                   onChange={(event) => setSquareFootage(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
                 />
               </label>
 
-              <label className="text-xs text-indigo-100 block">
+              <label className="text-xs text-slate-300 block">
                 Budget target
                 <input
                   value={budget}
                   onChange={(event) => setBudget(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
                 />
               </label>
             </div>
 
-            <label className="text-xs text-indigo-100 block mt-2">
+            <label className="text-xs text-slate-300 block mt-2">
               Timeline target
               <input
                 value={timeline}
                 onChange={(event) => setTimeline(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
               />
             </label>
 
-            <label className="text-xs text-indigo-100 block mt-2">
+            <label className="text-xs text-slate-300 block mt-2">
               Project description
               <textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                className="mt-1 min-h-24 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="mt-1 min-h-24 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
               />
             </label>
 
-            <label className="text-xs text-indigo-100 block mt-2">
+            <label className="text-xs text-slate-300 block mt-2">
               Upload plans (optional)
               <input
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.webp"
                 multiple
                 onChange={(event) => setPlanFiles(Array.from(event.target.files || []))}
-                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
               />
             </label>
 
@@ -398,8 +410,7 @@ function EstimatePageContent() {
               type="button"
               onClick={() => void runPreview()}
               disabled={loadingPreview}
-              style={{ backgroundColor: accentColor, color: '#041223' }}
-              className="mt-3 rounded-lg px-4 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
+              className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:opacity-60"
             >
               {loadingPreview ? 'Calculating...' : 'Get Instant Ballpark'}
             </button>
@@ -446,19 +457,25 @@ function EstimatePageContent() {
             {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
           </article>
 
-          <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-            <h2 className="text-lg font-semibold text-cyan-100 mb-3">Estimate Output</h2>
+          <article className="rounded-2xl border border-white/15 bg-[#11151d] p-5">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Estimate Output</h2>
             {!result?.estimateRange ? (
               <p className="text-sm text-slate-300">Run the calculator to see your low/average/high project range.</p>
             ) : (
               <div className="space-y-3 text-sm text-slate-200">
                 <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                   <p className="text-xs text-slate-400">Estimated range</p>
-                  <p className="mt-1 text-lg font-semibold text-cyan-100">
+                  <p className="mt-1 text-lg font-semibold text-emerald-200">
                     ${result.estimateRange.low.toLocaleString('en-US')} - ${result.estimateRange.high.toLocaleString('en-US')}
                   </p>
                   <p className="mt-1 text-xs text-slate-300">Average: ${result.estimateRange.average.toLocaleString('en-US')}</p>
                 </div>
+
+                {result.mode === 'preview' ? (
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
+                    Assistant notes: this preview is optimized for quick qualification. Unlock to view full labor/material detail.
+                  </div>
+                ) : null}
 
                 {result.aiInsights ? (
                   <div className="rounded-lg border border-white/10 bg-white/5 p-3">
@@ -505,9 +522,9 @@ function EstimatePageContent() {
                 ) : null}
 
                 {result.delivery ? (
-                  <div className="rounded-lg border border-cyan-300/30 bg-cyan-500/10 p-3 text-xs text-cyan-100">
+                  <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 p-3 text-xs text-emerald-100">
                     Delivery: {result.delivery.channel} via {result.delivery.provider} ({result.delivery.status})
-                    <p className="mt-1 text-cyan-50/90">{result.delivery.detail}</p>
+                    <p className="mt-1 text-emerald-50/90">{result.delivery.detail}</p>
                     {result.delivery.error ? <p className="mt-1 text-red-300">{result.delivery.error}</p> : null}
                   </div>
                 ) : null}

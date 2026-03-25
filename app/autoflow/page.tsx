@@ -23,9 +23,9 @@ export default function AutoFlowPage() {
     <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
       <header className="glass rise-in rounded-3xl p-7">
         <p className="text-xs uppercase tracking-[0.22em] text-amber-200">Product Destination</p>
-        <h1 className="mt-2 text-4xl font-semibold md:text-5xl">AIBoost</h1>
+        <h1 className="mt-2 text-4xl font-semibold md:text-5xl">Builder Copilot</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
-          AIBoost is your CRM and AI automator layer. Think gohighlevel-style operations with a cleaner, faster UI.
+          Builder Copilot is your CRM and AI automator layer. Think gohighlevel-style operations with a cleaner, faster UI.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
@@ -35,7 +35,7 @@ export default function AutoFlowPage() {
             Open Automation Workspace
           </Link>
           <Link
-            href="/signup"
+            href="/signup?next=/builder-copilot"
             className="rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/15"
           >
             Create Account

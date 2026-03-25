@@ -11,10 +11,10 @@ const options = [
   },
   {
     title: 'Automate My Business',
-    subtitle: 'AIBoost',
+    subtitle: 'Builder Copilot',
     summary: 'CRM, workflows, messaging, funnels, and AI agents for lead-to-close automation.',
-    href: '/aiboost',
-    cta: 'Go To AIBoost',
+    href: '/builder-copilot',
+    cta: 'Go To Builder Copilot',
   },
   {
     title: 'Build Apps / Websites / Games',

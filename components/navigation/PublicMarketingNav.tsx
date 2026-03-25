@@ -10,14 +10,11 @@ type MarketingNavItem = {
 };
 
 const primaryItems: MarketingNavItem[] = [
+  { href: '/pricing', label: 'Home' },
+  { href: '/chat', label: 'Ask Copilot' },
+  { href: '/website-builder', label: 'Website Builder' },
+  { href: '/builder-copilot', label: 'Builder Copilot' },
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/leads', label: 'Leads' },
-  { href: '/pipelines', label: 'Pipelines' },
-  { href: '/automations', label: 'Automations' },
-  { href: '/sites-funnels', label: 'Sites & Funnels' },
-  { href: '/estimates', label: 'Estimates' },
-  { href: '/payments', label: 'Payments' },
-  { href: '/settings', label: 'Settings' },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -38,7 +35,7 @@ export default function PublicMarketingNav() {
         </Link>
 
         <nav className="hidden items-center gap-1.5 xl:flex">
-          {primaryItems.slice(0, 6).map((item) => {
+          {primaryItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <Link
@@ -59,21 +56,9 @@ export default function PublicMarketingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/login"
-            className="rounded-md bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-950 transition hover:bg-slate-200"
+            className="rounded-md bg-white px-3.5 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-slate-950 transition hover:bg-slate-200"
           >
             Client Login
-          </Link>
-          <Link
-            href="/pricing"
-            className="hidden rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-100 transition hover:bg-white/15 md:inline-flex"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="/admin/login"
-            className="rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-100 transition hover:bg-white/15"
-          >
-            Sign In
           </Link>
         </div>
       </div>

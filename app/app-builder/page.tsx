@@ -34,6 +34,12 @@ type LaunchResponse = {
   error?: string;
 };
 
+type ChatResponse = {
+  responses?: string[];
+  teamDecision?: string;
+  error?: string;
+};
+
 const domainProviders = ["manual-dns", "godaddy", "namecheap"] as const;
 const automationBundles = [
   "AI voice receptionist handoff to app inbox",
@@ -63,6 +69,9 @@ export default function AppBuilderPage() {
   const [actions, setActions] = useState<string[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [launch, setLaunch] = useState<LaunchResponse["launch"] | null>(null);
+  const [copilotPrompt, setCopilotPrompt] = useState('Refactor onboarding flow and tighten CTA hierarchy for higher conversion.');
+  const [copilotOutput, setCopilotOutput] = useState<string | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState(false);
 
   const toggleAutomationBundle = (bundle: string) => {
     setSelectedAutomationBundles((current) =>
@@ -152,24 +161,80 @@ export default function AppBuilderPage() {
     }
   };
 
+  const runCopilot = async () => {
+    if (!copilotPrompt.trim() || copilotLoading) return;
+
+    setCopilotLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'bots',
+          botIds: [1, 2, 4, 6],
+          includeTeamDecision: true,
+          tone: 'support',
+          message: `Builder Copilot request for App Builder. Return executable implementation guidance and code edit steps. Request: ${copilotPrompt}`,
+        }),
+      });
+
+      const parsed = (await response.json().catch(() => ({}))) as ChatResponse;
+      if (!response.ok || (!parsed.teamDecision && !parsed.responses?.[0])) {
+        throw new Error(parsed.error || `Copilot request failed (${response.status})`);
+      }
+
+      setCopilotOutput(parsed.teamDecision || parsed.responses?.[0] || null);
+    } catch (runError) {
+      setError(runError instanceof Error ? runError.message : 'Unable to run Builder Copilot right now.');
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#231814] via-[#2f231c] to-[#171211] text-slate-100">
+    <main className="min-h-screen bg-gradient-to-b from-[#0b1220] via-[#111827] to-[#020617] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
         <header className="glass rounded-3xl p-7">
-          <p className="text-xs uppercase tracking-[0.2em] text-orange-200">App Builder</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">App Builder</p>
           <h1 className="mt-2 text-4xl font-semibold md:text-5xl">Build and launch your business app</h1>
           <p className="mt-3 max-w-3xl text-sm text-slate-300 md:text-base">
             App-store-ready workflow: define scope, render preview, and publish production.
           </p>
         </header>
 
-        <section className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr]">
-          <article className="rounded-2xl border border-orange-300/35 bg-orange-500/10 p-5">
-            <h2 className="text-xl font-semibold text-orange-100">App setup</h2>
+        <section className="mt-6 rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
+          <h2 className="text-lg font-semibold text-cyan-100">Built-in Builder Copilot</h2>
+          <p className="mt-1 text-xs text-cyan-50/90">Ask for code-level changes, implementation tasks, and edit-ready guidance directly in the builder.</p>
+          <textarea
+            value={copilotPrompt}
+            onChange={(event) => setCopilotPrompt(event.target.value)}
+            className="mt-3 min-h-20 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void runCopilot()}
+              disabled={copilotLoading}
+              className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
+            >
+              {copilotLoading ? 'Running...' : 'Run Builder Copilot'}
+            </button>
+            <Link href="/chat" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">
+              Open Full Copilot Chat
+            </Link>
+          </div>
+          {copilotOutput ? <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-white/15 bg-black/25 p-3 text-xs text-slate-200">{copilotOutput}</pre> : null}
+        </section>
 
-            <label className="mt-3 block text-xs text-orange-50">
+        <section className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr]">
+          <article className="rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
+            <h2 className="text-xl font-semibold text-cyan-100">App setup</h2>
+
+            <label className="mt-3 block text-xs text-cyan-50">
               App name
               <input
                 value={appName}
@@ -178,7 +243,7 @@ export default function AppBuilderPage() {
               />
             </label>
 
-            <label className="mt-3 block text-xs text-orange-50">
+            <label className="mt-3 block text-xs text-cyan-50">
               Prompt
               <textarea
                 value={prompt}
@@ -188,7 +253,7 @@ export default function AppBuilderPage() {
             </label>
 
             <div className="mt-3">
-              <p className="text-xs text-orange-50">Automation bundles</p>
+              <p className="text-xs text-cyan-50">Automation bundles</p>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                 {automationBundles.map((bundle) => {
                   const selected = selectedAutomationBundles.includes(bundle);
@@ -199,7 +264,7 @@ export default function AppBuilderPage() {
                       onClick={() => toggleAutomationBundle(bundle)}
                       className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
                         selected
-                          ? "border-orange-200/70 bg-orange-200/20 text-orange-50"
+                          ? "border-cyan-200/70 bg-cyan-200/20 text-cyan-50"
                           : "border-white/20 bg-black/20 text-slate-200 hover:bg-black/30"
                       }`}
                     >
@@ -215,7 +280,7 @@ export default function AppBuilderPage() {
                 type="button"
                 onClick={() => void runPlan()}
                 disabled={loadingPlan}
-                className="rounded-xl bg-orange-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-200 disabled:opacity-60"
+                className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
               >
                 {loadingPlan ? "Generating..." : "Generate App Plan"}
               </button>
@@ -223,6 +288,8 @@ export default function AppBuilderPage() {
                 Sign Up To Launch
               </Link>
             </div>
+
+            {error ? <p className="mt-3 text-sm text-amber-200">{error}</p> : null}
           </article>
 
           <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
@@ -298,7 +365,7 @@ export default function AppBuilderPage() {
         ) : null}
 
         <section className="mt-6 rounded-2xl border border-white/15 bg-black/20 p-5">
-          <h2 className="text-lg font-semibold text-amber-100">Live App Preview</h2>
+          <h2 className="text-lg font-semibold text-cyan-100">Live App Preview</h2>
           {!previewHtml ? <p className="mt-2 text-sm text-slate-300">Run Generate App Plan to render a visual app preview.</p> : null}
           {previewHtml ? (
             <div className="mt-3 overflow-hidden rounded-xl border border-white/15 bg-white">
@@ -307,15 +374,6 @@ export default function AppBuilderPage() {
           ) : null}
         </section>
 
-        <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-200">
-          <h2 className="text-lg font-semibold text-orange-100">Integrated automation outcome</h2>
-          <p className="mt-2 text-slate-300">
-            This app workflow now carries your selected AI automations through planning and launch so your app is operational from day one.
-          </p>
-          <div className="mt-3 text-xs text-slate-300">Configured bundles: {selectedAutomationBundles.length > 0 ? selectedAutomationBundles.join(', ') : 'none selected'}</div>
-        </section>
-
-        {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
       </div>
     </main>
   );

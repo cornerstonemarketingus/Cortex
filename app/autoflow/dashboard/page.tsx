@@ -11,7 +11,7 @@ export default function AutoFlowDashboardPage() {
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
       <header className="rounded-3xl border border-cyan-300/30 bg-cyan-500/10 p-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">AIBoost Dashboard</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Builder Copilot Dashboard</p>
         <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Automate Cleaner</h1>
         <p className="mt-3 max-w-3xl text-sm text-cyan-50/90">
           GHL-style CRM and workflow operations with a cleaner, hierarchy-first dashboard.

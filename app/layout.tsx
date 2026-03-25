@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ContentProtectionShield from "@/components/security/ContentProtectionShield";
 import GlobalAiAssistant from '@/components/ai/GlobalAiAssistant';
+import SiteFooter from '@/components/navigation/SiteFooter';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({
       >
         <ContentProtectionShield />
         {children}
+        <SiteFooter />
         <GlobalAiAssistant />
       </body>
     </html>

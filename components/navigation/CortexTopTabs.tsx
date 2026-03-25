@@ -10,13 +10,11 @@ type NavTab = {
 
 const navTabs: NavTab[] = [
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/leads', label: 'Leads' },
-  { href: '/pipelines', label: 'Pipelines' },
-  { href: '/automations', label: 'Automations' },
-  { href: '/sites-funnels', label: 'Sites & Funnels' },
+  { href: '/chat', label: 'Ask Copilot' },
+  { href: '/website-builder', label: 'Website Builder' },
+  { href: '/builder-copilot', label: 'Builder Copilot' },
   { href: '/estimates', label: 'Estimates' },
-  { href: '/payments', label: 'Payments' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/subscription', label: 'Usage' },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -53,22 +51,10 @@ export default function CortexTopTabs() {
 
           <div className="flex items-center gap-2 text-xs">
             <Link
-              href="/subscription"
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-200 hover:bg-white/10"
+              href="/admin/login"
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-100 hover:bg-white/10"
             >
-              Usage
-            </Link>
-            <Link
-              href="/chat"
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-200 hover:bg-white/10"
-            >
-              AI Chat
-            </Link>
-            <Link
-              href="/resources/blog"
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-200 hover:bg-white/10"
-            >
-              Learn
+              Client Login
             </Link>
           </div>
         </div>

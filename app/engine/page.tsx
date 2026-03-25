@@ -41,7 +41,7 @@ export default function EnginePage() {
       verb: 'Run jobs',
     },
     {
-      product: 'AIBoost',
+      product: 'Builder Copilot',
       host: getPreferredProductHost('autoflow'),
       route: '/autoflow',
       verb: 'Automate',

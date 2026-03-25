@@ -30,7 +30,7 @@ export default function ChatPage() {
     {
       id: 'system-welcome',
       role: 'system',
-      text: 'Carlton is ready. Describe your profile, app, or website change request and I will produce direct implementation steps and executable updates.',
+      text: 'Copilot is ready. Describe your profile, app, or website change request and I will produce direct implementation steps and executable updates.',
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ export default function ChatPage() {
           provider: 'auto',
           tone: 'support',
           systemPrompt:
-            'You are Carlton, a senior software and product engineering assistant for Bid Builder. Help users make direct profile updates and app/website build changes with practical implementation steps, safe assumptions, and execution-ready guidance.',
+            'You are Builder Copilot, a senior software and product engineering assistant for Bid Builder. Help users make direct profile updates and app/website build changes with practical implementation steps, safe assumptions, and execution-ready guidance.',
           message: text,
         }),
       });
@@ -142,7 +142,7 @@ export default function ChatPage() {
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 md:px-8 md:py-10">
         <header className="rounded-3xl border border-blue-300/35 bg-blue-500/15 p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Bid Builder Chat</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Carlton Build Assistant</h1>
+          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Ask Copilot</h1>
           <p className="mt-3 max-w-3xl text-sm text-blue-100/90 md:text-base">
             Ask for direct profile updates, code changes, and app or website build improvements. This chat is dedicated to implementation support.
           </p>

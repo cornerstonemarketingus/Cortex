@@ -281,7 +281,7 @@ export default function CreatorOsPage() {
       <section className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-5">
         <h2 className="text-lg font-semibold text-amber-100">Estimator Synergy</h2>
         <p className="mt-2 text-sm text-amber-50/90">
-          Cortex can generate and embed estimator widgets into sites, while Bid Build owns estimate execution and AIBoost owns follow-up automation.
+          Cortex can generate and embed estimator widgets into sites, while Bid Build owns estimate execution and Builder Copilot owns follow-up automation.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href="/estimate" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
@@ -290,8 +290,8 @@ export default function CreatorOsPage() {
           <Link href="/tradesos" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
             Open Bid Build
           </Link>
-          <Link href="/autoflow" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
-            Open AIBoost
+          <Link href="/builder-copilot" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
+            Open Builder Copilot
           </Link>
         </div>
       </section>
