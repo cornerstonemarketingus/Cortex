@@ -25,10 +25,8 @@
     "audit:platform": "tsx scripts/audit_platform_systems.ts"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
-    "better-sqlite3": "^12.8.0",
     "bullmq": "^5.71.0",
     "ioredis": "^5.10.0",
     "jose": "^6.2.1",
