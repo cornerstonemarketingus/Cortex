@@ -245,7 +245,7 @@ async function loadLearningSignals(limit = 8): Promise<string[]> {
     });
 
     return entries
-      .map((entry) => `${entry.agent}: ${sanitizePrompt(entry.message).slice(0, 180)}`)
+      .map((entry: { agent: string; message: string }) => `${entry.agent}: ${sanitizePrompt(entry.message).slice(0, 180)}`)
       .filter((entry) => entry.length > 0);
   } catch {
     return [];
