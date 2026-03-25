@@ -8,9 +8,10 @@
   },
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "start:prod": "next start -H 0.0.0.0 -p 3000",
+    "postinstall": "prisma generate",
     "docker:build": "docker build -t bidbuild-web:latest .",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
