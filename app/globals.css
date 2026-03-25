@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-geist-sans), "Avenir Next", "Segoe UI", sans-serif;
+  color: #f6f4ef;
+  background:
+    radial-gradient(1200px 700px at 10% -10%, rgba(35, 105, 89, 0.35), transparent 55%),
+    radial-gradient(1000px 650px at 90% 0%, rgba(170, 96, 41, 0.28), transparent 60%),
+    linear-gradient(160deg, #0a1a1c 0%, #101f2a 42%, #13181f 100%);
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(255, 189, 113, 0.35);
+  color: #0f1216;
+}
+
+.cortex-shell {
+  position: relative;
+}
+
+.cortex-shell::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 90%);
+}
+
+.glass {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04));
+  backdrop-filter: blur(10px);
+}
+
+.rise-in {
+  animation: riseIn 0.7s ease-out both;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vault-entrance {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 520px at 50% 56%, rgba(149, 232, 179, 0.2), transparent 60%),
+    linear-gradient(180deg, #0c1614 0%, #0f2522 45%, #091013 100%);
+  animation: vaultFadeOut 0.45s ease forwards;
+  animation-delay: 1.75s;
+}
+
+.vault-door {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(140, 214, 168, 0.24), transparent 35%),
+    radial-gradient(circle at 80% 70%, rgba(68, 118, 88, 0.35), transparent 40%),
+    linear-gradient(170deg, rgba(13, 43, 34, 0.95), rgba(10, 24, 24, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(163, 240, 195, 0.15);
+}
+
+.vault-door::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(181, 255, 197, 0.17) 1px, transparent 1px);
+  background-size: 7px 7px;
+  opacity: 0.22;
+}
+
+.vault-door-left {
+  left: 0;
+  border-right: 1px solid rgba(210, 255, 223, 0.26);
+  animation: vaultLeftOpen 1.25s cubic-bezier(0.23, 0.72, 0.18, 1) forwards;
+  animation-delay: 0.42s;
+}
+
+.vault-door-right {
+  right: 0;
+  border-left: 1px solid rgba(210, 255, 223, 0.26);
+  animation: vaultRightOpen 1.25s cubic-bezier(0.23, 0.72, 0.18, 1) forwards;
+  animation-delay: 0.42s;
+}
+
+.vault-nature-glow {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 520px;
+  height: 520px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(163, 253, 206, 0.55) 0%, rgba(104, 214, 171, 0.2) 45%, transparent 75%);
+  filter: blur(26px);
+  animation: vaultPulse 1.35s ease-in-out infinite;
+}
+
+.vault-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #f4f8f1;
+  letter-spacing: 0.06em;
+}
+
+.vault-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: rgba(206, 255, 225, 0.85);
+}
+
+.vault-title {
+  margin: 0.9rem 0 0;
+  font-size: clamp(1.5rem, 3.8vw, 2.7rem);
+  font-weight: 600;
+}
+
+@keyframes vaultLeftOpen {
+  to {
+    transform: translateX(-102%);
+  }
+}
+
+@keyframes vaultRightOpen {
+  to {
+    transform: translateX(102%);
+  }
+}
+
+@keyframes vaultPulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes vaultFadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

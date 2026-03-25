@@ -1,0 +1,16 @@
+{
+  "agents": [
+    {"id":"repair","class":"RepairAgent","description":"Repairs build and environment issues","capabilities":["git","cmake"]},
+    {"id":"code","class":"CodeAgent","description":"Code analysis and patching","capabilities":["read","write"]},
+    {"id":"planning","class":"PlanningAgent","description":"Implementation planning","capabilities":["plan"]},
+    {"id":"doc","class":"DocAgent","description":"Docs and README updates","capabilities":["doc"]},
+    {"id":"test","class":"TestAgent","description":"Testing","capabilities":["test"]},
+    {"id":"infra","class":"InfraAgent","description":"Infrastructure checks","capabilities":["infra"]},
+    {"id":"data","class":"DataAgent","description":"Data/asset management","capabilities":["data"]},
+    {"id":"deploy","class":"DeployAgent","description":"Deployment orchestration","capabilities":["deploy"]},
+    {"id":"monitor","class":"MonitorAgent","description":"Monitoring and alerts","capabilities":["monitor"]},
+    {"id":"nlp","class":"NLPAgent","description":"NLP tasks","capabilities":["nlp"]},
+    {"id":"rl","class":"RLAgent","description":"Reinforcement tuning","capabilities":["tune"]},
+    {"id":"ops","class":"OpsAgent","description":"Runbook automation","capabilities":["ops"]}
+  ]
+}

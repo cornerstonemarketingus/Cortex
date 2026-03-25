@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CORTEX Task Message",
+  "type": "object",
+  "required": ["id","type","role","payload","timestamp"],
+  "properties": {
+    "id": {"type":"string"},
+    "type": {"type":"string","enum":["TASK","PROPOSAL","REVIEW","RESULT","REQUEST_APPROVAL","APPROVAL","REJECT","CANCEL"]},
+    "role": {"type":"string"},
+    "priority": {"type":"integer","minimum":0,"maximum":10},
+    "payload": {"type":"object"},
+    "constraints": {"type":"object"},
+    "history": {"type":"array","items":{"type":"string"}},
+    "human_approval_required": {"type":"boolean"},
+    "timestamp": {"type":"string","format":"date-time"},
+    "signature": {"type":"string"}
+  }
+}

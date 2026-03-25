@@ -1,0 +1,12 @@
+{
+  "name": "cortexengine",
+  "version": "0.1.0",
+  "dependencies": [
+    "bullet3",
+    "glfw3",
+    "glm",
+    "vulkan-headers",
+    "vulkan-loader",
+    "pybind11"
+  ]
+}

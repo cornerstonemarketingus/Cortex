@@ -1,0 +1,68 @@
+name: CORTEX CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Bootstrap vcpkg (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: |
+          .\bootstrap-vcpkg.bat
+      - name: Configure and build
+        run: |
+          pwsh -Command "./build_engine.ps1 -BuildDir build -Config Debug"
+      - name: Build and run approval API Docker (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker --version
+          cd src/ai
+          docker build -t approval_api:latest .
+          docker run -d -p 5001:5001 --name approval_api approval_api:latest
+      - name: Start approval API (background)
+        if: matrix.os != 'ubuntu-latest'
+        run: |
+          python -m pip install flask || true
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then 
+            pwsh -Command "Start-Process -NoNewWindow -FilePath python -ArgumentList 'src/ai/approval_api_v2.py'"
+          else
+            nohup python src/ai/approval_api_v2.py > approval.log 2>&1 & disown || true
+          fi
+      - name: Wait for approval API
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then 
+            pwsh -Command "$tries=0; while ($tries -lt 30) { try { $r = Invoke-WebRequest -UseBasicParsing -Uri http://localhost:5001/health -Method GET; if ($r.StatusCode -eq 200) { Write-Host 'Approval API ready'; exit 0 } } catch {}; Start-Sleep -Seconds 1; $tries++ }; Write-Error 'Approval API did not start'; exit 1"
+          else
+            for i in {1..30}; do if curl -sSf http://localhost:5001/health >/dev/null 2>&1; then echo 'Approval API ready' && break; fi; sleep 1; done
+          fi
+      - name: Seed bootstrap proposal
+        run: |
+          echo 'Seeding bootstrap proposal for self-improvement'
+          curl -X POST http://localhost:5001/bootstrap_proposal || true
+      - name: Install Python requirements
+        run: |
+          python -m pip install -r requirements.txt || true
+      - name: Run approval integration tests
+        run: |
+          pytest -q tests/test_approval_integration.py || true
+      - name: Run bridge tests
+        run: |
+          python tests/test_bridge.py || true
+      - name: Teardown approval API Docker (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker ps -a
+          docker stop approval_api || true
+          docker rm approval_api || true
+      - name: Canary deploy (stub)
+        if: github.event.pull_request.merged == true
+        run: echo "Canary deploy would run here (manual approval required)"

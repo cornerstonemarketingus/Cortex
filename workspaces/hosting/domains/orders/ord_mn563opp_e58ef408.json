@@ -1,0 +1,14 @@
+{
+  "orderId": "ord_mn563opp_e58ef408",
+  "domain": "teambuildercopilot.com",
+  "provider": "manual-dns",
+  "status": "manual-dns-required",
+  "priceUsd": 18,
+  "nameservers": [
+    "ns1.cortexhost.net",
+    "ns2.cortexhost.net"
+  ],
+  "projectId": "proj_mmzwuvkw_3afb0e2f",
+  "contactEmail": "cornerstonemarketingus@gmail.com",
+  "createdAt": "2026-03-24T22:09:44.416Z"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "proj_mmzwuvkw_3afb0e2f",
+  "userId": "public-user",
+  "projectType": "app",
+  "name": "Home Services Revenue OS",
+  "slug": "home-services-revenue-os-fb0e2f",
+  "prompt": "Generate a contractor business operating system with lead capture, smart routing, estimate workflows, and retention automation.",
+  "sections": [],
+  "modules": [
+    "Lead Intake",
+    "Smart Routing",
+    "Estimate Builder",
+    "Invoice + Stripe",
+    "Review Recovery"
+  ],
+  "services": [
+    "Lead Intake",
+    "Smart Routing",
+    "Estimate Builder",
+    "Invoice + Stripe",
+    "Review Recovery"
+  ],
+  "status": "deployed",
+  "workspacePath": "C:\\Users\\jmhl3\\cortex\\workspaces\\hosting\\runtime\\home-services-revenue-os-fb0e2f",
+  "connectedDomains": [
+    "teambuildercopilot.com"
+  ],
+  "createdAt": "2026-03-21T05:52:06.012Z",
+  "updatedAt": "2026-03-24T22:09:44.425Z",
+  "deployment": {
+    "deploymentId": "dep_mmzwuvq7_3c60cd96",
+    "status": "deployed",
+    "previewUrl": "http://localhost:3000/api/hosting/projects?projectId=proj_mmzwuvkw_3afb0e2f",
+    "productionUrl": "https://home-services-revenue-os-fb0e2f.apps.cortexengine.app",
+    "artifactPath": "C:\\Users\\jmhl3\\cortex\\workspaces\\hosting\\deployments\\proj_mmzwuvkw_3afb0e2f\\dep_mmzwuvq7_3c60cd96",
+    "deployedAt": "2026-03-21T05:52:06.261Z"
+  }
+}

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\jmhl3\cortex\src\ai\approval_api_v2.py", line 4, in <module>
+    from flask import Flask, request, jsonify
+ModuleNotFoundError: No module named 'flask'

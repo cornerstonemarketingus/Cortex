@@ -1,0 +1,201 @@
+[
+  {
+    "id": "1773801953893",
+    "type": "feature",
+    "description": "Implement website builder capabilities: reusable sections, routing templates, lead forms, and analytics instrumentation.",
+    "status": "pending",
+    "created_at": "2026-03-18T02:46:04.079Z"
+  },
+  {
+    "id": "1773801958150",
+    "type": "feature",
+    "description": "Implement new feature",
+    "status": "pending",
+    "created_at": "2026-03-18T02:46:05.589Z"
+  },
+  {
+    "id": "1773801963006",
+    "type": "feature",
+    "description": "Implement new feature",
+    "status": "pending",
+    "created_at": "2026-03-18T02:46:14.259Z"
+  },
+  {
+    "id": "1773802431854",
+    "type": "feature",
+    "description": "Implement website builder capabilities: reusable sections, routing templates, lead forms, and analytics instrumentation.",
+    "status": "pending",
+    "created_at": "2026-03-18T02:53:57.191Z"
+  },
+  {
+    "id": "1773802434860",
+    "type": "feature",
+    "description": "Implement website builder capabilities: reusable sections, routing templates, lead forms, and analytics instrumentation.",
+    "status": "pending",
+    "created_at": "2026-03-18T02:53:58.387Z"
+  },
+  {
+    "id": "1773801974023",
+    "type": "refactor",
+    "description": "Code refactoring",
+    "status": "pending",
+    "created_at": "2026-03-18T02:46:36.754Z"
+  },
+  {
+    "id": "build-cortex-1773809557647-xxtexk",
+    "type": "feature",
+    "description": "[Build Cortex] Run daily bug + regression scan and queue fixes automatically.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.647Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-hga5nx",
+    "type": "feature",
+    "description": "[Build Cortex] Generate and publish weekly SEO/GEO blog content tied to lead magnets.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-tiih6e",
+    "type": "feature",
+    "description": "[Build Cortex] Trigger follow-up campaigns based on pipeline stage and inactivity windows.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-yxvhjd",
+    "type": "feature",
+    "description": "[Build Cortex] Rotate hero + CTA experiments and promote top-performing variants.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-oxovas",
+    "type": "feature",
+    "description": "[Build Cortex] Implement Build Cortex dashboard tab and preview panes.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-8vi3x3",
+    "type": "feature",
+    "description": "[Build Cortex] Wire conversion tracking for hero variants and CTA events.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "build-cortex-1773809557648-upgfqq",
+    "type": "feature",
+    "description": "[Build Cortex] Publish weekly autonomous blog and lead-gen content experiments.",
+    "status": "pending",
+    "created_at": "2026-03-18T04:52:37.648Z",
+    "metadata": {
+      "pipeline": "build-cortex-spec-generator",
+      "action": "preview"
+    }
+  },
+  {
+    "id": "blog-1773810074319-bt4bcv",
+    "type": "feature",
+    "description": "[Blog Engine] Finalize search intent brief: ai automations, ai helping business, ai news strategy for eagan: How AI builders can dominate local SEO and GEO in compe | Cortex",
+    "status": "pending",
+    "created_at": "2026-03-18T05:01:14.319Z",
+    "metadata": {
+      "pipeline": "blog-engine",
+      "blogPostId": "174d522b-a981-4987-8f37-4077f765b396",
+      "blogSlug": "how-ai-builders-can-dominate-local-seo-and-geo-in-competitive-markets-eagan-4252",
+      "ownerRole": "strategist",
+      "taskId": "brief",
+      "region": "north-america",
+      "style": "coffeehouse-feature"
+    }
+  },
+  {
+    "id": "blog-1773810074319-dv8gsp",
+    "type": "feature",
+    "description": "[Blog Engine] Produce long-form draft: ai automations, ai helping business, ai news strategy for eagan: How AI builders can dominate local SEO and GEO in compe | Cortex",
+    "status": "pending",
+    "created_at": "2026-03-18T05:01:14.319Z",
+    "metadata": {
+      "pipeline": "blog-engine",
+      "blogPostId": "174d522b-a981-4987-8f37-4077f765b396",
+      "blogSlug": "how-ai-builders-can-dominate-local-seo-and-geo-in-competitive-markets-eagan-4252",
+      "ownerRole": "writer",
+      "taskId": "draft",
+      "region": "north-america",
+      "style": "coffeehouse-feature"
+    }
+  },
+  {
+    "id": "blog-1773810074319-3tn7mr",
+    "type": "feature",
+    "description": "[Blog Engine] Editorial review and fact check: ai automations, ai helping business, ai news strategy for eagan: How AI builders can dominate local SEO and GEO in compe | Cortex",
+    "status": "pending",
+    "created_at": "2026-03-18T05:01:14.319Z",
+    "metadata": {
+      "pipeline": "blog-engine",
+      "blogPostId": "174d522b-a981-4987-8f37-4077f765b396",
+      "blogSlug": "how-ai-builders-can-dominate-local-seo-and-geo-in-competitive-markets-eagan-4252",
+      "ownerRole": "editor",
+      "taskId": "editorial-qa",
+      "region": "north-america",
+      "style": "coffeehouse-feature"
+    }
+  },
+  {
+    "id": "blog-1773810074319-xjx0yr",
+    "type": "feature",
+    "description": "[Blog Engine] Deploy metadata and GEO schema pack: ai automations, ai helping business, ai news strategy for eagan: How AI builders can dominate local SEO and GEO in compe | Cortex",
+    "status": "pending",
+    "created_at": "2026-03-18T05:01:14.319Z",
+    "metadata": {
+      "pipeline": "blog-engine",
+      "blogPostId": "174d522b-a981-4987-8f37-4077f765b396",
+      "blogSlug": "how-ai-builders-can-dominate-local-seo-and-geo-in-competitive-markets-eagan-4252",
+      "ownerRole": "qa",
+      "taskId": "schema-pack",
+      "region": "north-america",
+      "style": "coffeehouse-feature"
+    }
+  },
+  {
+    "id": "blog-1773810074319-1illt5",
+    "type": "feature",
+    "description": "[Blog Engine] Distribute and repurpose: ai automations, ai helping business, ai news strategy for eagan: How AI builders can dominate local SEO and GEO in compe | Cortex",
+    "status": "pending",
+    "created_at": "2026-03-18T05:01:14.319Z",
+    "metadata": {
+      "pipeline": "blog-engine",
+      "blogPostId": "174d522b-a981-4987-8f37-4077f765b396",
+      "blogSlug": "how-ai-builders-can-dominate-local-seo-and-geo-in-competitive-markets-eagan-4252",
+      "ownerRole": "strategist",
+      "taskId": "distribution",
+      "region": "north-america",
+      "style": "coffeehouse-feature"
+    }
+  }
+]

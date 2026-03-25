@@ -1,0 +1,557 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/crm-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LeadSourceType {
+  FORM
+  SURVEY
+  QUIZ
+  LANDING_PAGE
+  CHAT_WIDGET
+  CALL
+  SMS
+  SOCIAL_DM
+  QR
+  BUSINESS_CARD
+  IMPORT
+  MANUAL
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ChannelType {
+  SMS
+  EMAIL
+  CHAT
+  SOCIAL
+  CALL
+  WEBHOOK
+  SYSTEM
+}
+
+enum ConversationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum PipelineStageType {
+  NEW
+  CONTACTED
+  QUALIFIED
+  APPOINTMENT_SET
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum WorkflowExecutionStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  DRAFT
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum ReviewStatus {
+  REQUESTED
+  RECEIVED
+  REPLIED
+}
+
+enum LoyaltyEventType {
+  EARN
+  REDEEM
+  EXPIRE
+  BONUS
+}
+
+enum SocialPostStatus {
+  QUEUED
+  PUBLISHED
+  FAILED
+}
+
+model CrmUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LeadSource {
+  id          String         @id @default(uuid())
+  type        LeadSourceType
+  name        String
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  leads       Lead[]
+  campaigns   Campaign[]
+
+  @@index([type])
+}
+
+model Campaign {
+  id          String         @id @default(uuid())
+  name        String
+  status      CampaignStatus @default(DRAFT)
+  budgetCents Int?
+  sourceId    String?
+  source      LeadSource?    @relation(fields: [sourceId], references: [id])
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  leads       Lead[]
+
+  @@index([status])
+}
+
+model Lead {
+  id              String          @id @default(uuid())
+  firstName       String
+  lastName        String?
+  email           String?         @unique
+  phone           String?         @unique
+  company          String?
+  jobTitle        String?
+  timezone        String?
+  score           Int             @default(0)
+  sourceId        String?
+  source          LeadSource?     @relation(fields: [sourceId], references: [id])
+  campaignId      String?
+  campaign        Campaign?       @relation(fields: [campaignId], references: [id])
+  tags            String[]        @default([])
+  metadata        Json?
+  stage           PipelineStageType @default(NEW)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  conversations   Conversation[]
+  calls           InboundCall[]
+  interactions    Interaction[]
+  workflowExecutions WorkflowExecution[]
+  reminders       Reminder[]
+  appointments    Appointment[]
+  pipelineCards   PipelineCard[]
+  proposals       Proposal[]
+  invoices        Invoice[]
+  orders          Order[]
+  reviewRequests  ReviewRequest[]
+  reviews         Review[]
+  referralLinks   ReferralLink[]
+  loyaltyAccount  LoyaltyAccount?
+  communityPosts  CommunityPost[]
+
+  @@index([createdAt])
+  @@index([stage])
+}
+
+model Conversation {
+  id               String               @id @default(uuid())
+  leadId           String
+  lead             Lead                 @relation(fields: [leadId], references: [id])
+  channel          ChannelType
+  source           String
+  externalThreadId String?
+  metadata         Json?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  messages         ConversationMessage[]
+
+  @@index([leadId, updatedAt])
+  @@index([externalThreadId])
+}
+
+model ConversationMessage {
+  id              String                @id @default(uuid())
+  conversationId  String
+  conversation    Conversation          @relation(fields: [conversationId], references: [id])
+  direction       ConversationDirection
+  channel         ChannelType
+  content         String
+  aiGenerated     Boolean               @default(false)
+  metadata        Json?
+  createdAt       DateTime              @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model CaptureForm {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  schemaJson   Json
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LandingPage {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  configJson   Json
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InboundCall {
+  id           String   @id @default(uuid())
+  leadId       String?
+  lead         Lead?    @relation(fields: [leadId], references: [id])
+  fromNumber   String
+  toNumber     String?
+  durationSec  Int      @default(0)
+  wasMissed    Boolean  @default(false)
+  recordingUrl String?
+  campaignId   String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([fromNumber])
+  @@index([createdAt])
+}
+
+model Interaction {
+  id          String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  type         String
+  channel      ChannelType?
+  payload      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([leadId, createdAt])
+  @@index([type])
+}
+
+model Workflow {
+  id            String   @id @default(uuid())
+  name          String
+  triggerType   String
+  definitionJson Json
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  executions    WorkflowExecution[]
+
+  @@index([triggerType, isActive])
+}
+
+model WorkflowExecution {
+  id             String                  @id @default(uuid())
+  workflowId     String
+  workflow       Workflow                @relation(fields: [workflowId], references: [id])
+  leadId         String?
+  lead           Lead?                   @relation(fields: [leadId], references: [id])
+  triggerType    String
+  contextJson    Json
+  status         WorkflowExecutionStatus @default(QUEUED)
+  logsJson       Json?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@index([workflowId, createdAt])
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  leadId      String
+  lead        Lead              @relation(fields: [leadId], references: [id])
+  startsAt    DateTime
+  endsAt      DateTime
+  status      AppointmentStatus @default(SCHEDULED)
+  location    String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([leadId, startsAt])
+}
+
+model PipelineStage {
+  id         String            @id @default(uuid())
+  name       String
+  stageType  PipelineStageType
+  order      Int
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  cards      PipelineCard[]
+
+  @@unique([stageType])
+  @@index([order])
+}
+
+model PipelineCard {
+  id          String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  stageId      String
+  stage        PipelineStage @relation(fields: [stageId], references: [id])
+  position     Int      @default(0)
+  ownerUserId  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([stageId, position])
+  @@index([leadId])
+}
+
+model Reminder {
+  id          String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  channel      ChannelType
+  sendAt       DateTime
+  payload      Json
+  sentAt       DateTime?
+  failedAt     DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([sendAt])
+  @@index([leadId, sendAt])
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  priceCents   Int
+  currency     String   @default("USD")
+  active       Boolean  @default(true)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orderItems   OrderItem[]
+
+  @@index([active])
+}
+
+model Proposal {
+  id           String      @id @default(uuid())
+  leadId       String
+  lead         Lead        @relation(fields: [leadId], references: [id])
+  title        String
+  contentJson  Json
+  totalCents   Int
+  status       PaymentStatus @default(DRAFT)
+  pdfUrl       String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  invoices     Invoice[]
+
+  @@index([leadId, createdAt])
+}
+
+model Invoice {
+  id                    String        @id @default(uuid())
+  number                String        @unique
+  leadId                String
+  lead                  Lead          @relation(fields: [leadId], references: [id])
+  proposalId            String?
+  proposal              Proposal?     @relation(fields: [proposalId], references: [id])
+  totalCents            Int
+  currency              String        @default("USD")
+  status                PaymentStatus @default(PENDING)
+  dueAt                 DateTime?
+  paidAt                DateTime?
+  stripeInvoiceId       String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  paymentIntentRecords  PaymentIntentRecord[]
+
+  @@index([leadId, createdAt])
+  @@index([status])
+}
+
+model PaymentIntentRecord {
+  id                    String        @id @default(uuid())
+  invoiceId             String?
+  invoice               Invoice?      @relation(fields: [invoiceId], references: [id])
+  stripePaymentIntentId String        @unique
+  amountCents           Int
+  currency              String        @default("USD")
+  status                PaymentStatus @default(PENDING)
+  metadata              Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model Order {
+  id                     String        @id @default(uuid())
+  leadId                 String
+  lead                   Lead          @relation(fields: [leadId], references: [id])
+  totalCents             Int
+  currency               String        @default("USD")
+  status                 PaymentStatus @default(PENDING)
+  stripeCheckoutSessionId String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  items                  OrderItem[]
+
+  @@index([leadId, createdAt])
+}
+
+model OrderItem {
+  id             String   @id @default(uuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id])
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int      @default(1)
+  unitPriceCents Int
+  isUpsell       Boolean  @default(false)
+  isDownsell     Boolean  @default(false)
+
+  @@index([orderId])
+}
+
+model ReviewRequest {
+  id           String      @id @default(uuid())
+  leadId       String
+  lead         Lead        @relation(fields: [leadId], references: [id])
+  channel      ChannelType
+  status       ReviewStatus @default(REQUESTED)
+  requestedAt  DateTime    @default(now())
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+
+  @@index([leadId, requestedAt])
+}
+
+model Review {
+  id             String       @id @default(uuid())
+  leadId         String
+  lead           Lead         @relation(fields: [leadId], references: [id])
+  source         String
+  rating         Int
+  comment        String?
+  sentimentScore Float        @default(0)
+  status         ReviewStatus @default(RECEIVED)
+  aiReply        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  socialPosts    SocialPost[]
+
+  @@index([leadId, createdAt])
+}
+
+model ReferralProgram {
+  id            String        @id @default(uuid())
+  name          String
+  rewardCents   Int
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  referralLinks ReferralLink[]
+}
+
+model ReferralLink {
+  id           String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  programId    String
+  program      ReferralProgram @relation(fields: [programId], references: [id])
+  code         String   @unique
+  clicks       Int      @default(0)
+  conversions  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  events       ReferralEvent[]
+
+  @@index([leadId])
+}
+
+model ReferralEvent {
+  id             String   @id @default(uuid())
+  referralLinkId String
+  referralLink   ReferralLink @relation(fields: [referralLinkId], references: [id])
+  eventType      String
+  valueCents     Int?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([referralLinkId, createdAt])
+}
+
+model LoyaltyAccount {
+  id          String   @id @default(uuid())
+  leadId      String   @unique
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  points      Int      @default(0)
+  tier        String   @default("bronze")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      LoyaltyEvent[]
+}
+
+model LoyaltyEvent {
+  id           String           @id @default(uuid())
+  accountId    String
+  account      LoyaltyAccount   @relation(fields: [accountId], references: [id])
+  type         LoyaltyEventType
+  points       Int
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+
+  @@index([accountId, createdAt])
+}
+
+model CommunityPost {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([leadId, createdAt])
+}
+
+model SocialPost {
+  id           String           @id @default(uuid())
+  reviewId     String?
+  review       Review?          @relation(fields: [reviewId], references: [id])
+  content      String
+  channel      String
+  status       SocialPostStatus @default(QUEUED)
+  scheduledAt  DateTime?
+  publishedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status, scheduledAt])
+}

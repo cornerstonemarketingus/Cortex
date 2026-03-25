@@ -1,0 +1,38 @@
+[
+  {
+    "description": "16x20 composite deck with railing and stair run",
+    "projectCategory": "deck",
+    "zipCode": "55123",
+    "actualTotal": 33200
+  },
+  {
+    "description": "Master bathroom remodel with tile shower, vanity, and lighting",
+    "projectCategory": "bathroom-remodel",
+    "zipCode": "55402",
+    "actualTotal": 29850
+  },
+  {
+    "description": "Kitchen gut remodel with new cabinets, counters, backsplash and appliance package",
+    "projectCategory": "kitchen-gut",
+    "zipCode": "60611",
+    "actualTotal": 68400
+  },
+  {
+    "description": "Asphalt roof replacement 2400 square feet with tear-off",
+    "projectCategory": "roof-replacement",
+    "zipCode": "80210",
+    "actualTotal": 21890
+  },
+  {
+    "description": "Basement finish 820 sq ft with drywall, flooring, trim and recessed lighting",
+    "projectCategory": "basement-finish",
+    "zipCode": "98109",
+    "actualTotal": 53400
+  },
+  {
+    "description": "General construction interior rehab 400 sq ft with framing and finish",
+    "projectCategory": "general-construction",
+    "zipCode": "30309",
+    "actualTotal": 26250
+  }
+]

@@ -1,0 +1,20 @@
+[
+  { "id": 1, "type": "self-improvement", "description": "Optimize AI patch application speed" },
+  { "id": 2, "type": "feature", "description": "Add contractor quote generator module" },
+  { "id": 3, "type": "self-improvement", "description": "Refactor agent prompt parsing for faster task execution" },
+  { "id": 4, "type": "feature", "description": "Add SMS notification module for leads" },
+  { "id": 5, "type": "feature", "description": "Update UI dashboard with Tailwind responsive styling" },
+  { "id": 6, "type": "bugfix", "description": "Fix broken chat box with proper scrolling and message rendering" },
+  { "id": 7, "type": "feature", "description": "Implement 12 AI agents mimicking Codex, Gronk, Claude, ChatGPT, etc." },
+  { "id": 8, "type": "feature", "description": "Scaffold Roblox Lua procedural terrain generation module" },
+  { "id": 9, "type": "feature", "description": "Build autonomous AI NPC system for Roblox" },
+  { "id": 10, "type": "feature", "description": "Generate Roblox combat system with server-authoritative mechanics" },
+  { "id": 11, "type": "self-improvement", "description": "Scan agent and auto-optimize self-build loop" },
+  { "id": 12, "type": "feature", "description": "Scaffold AI-driven analytics dashboard module" },
+  { "id": 13, "type": "feature", "description": "Add dynamic project cost estimator" },
+  {
+    "id": 101,
+    "type": "self-improvement",
+    "description": "Analyze AI agent and optimize self-build workflow; auto-generate new features and update templates."
+  }
+]
