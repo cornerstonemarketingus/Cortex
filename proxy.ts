@@ -67,7 +67,6 @@ function isAuthorized(request: NextRequest) {
 
 function isProtectedPath(pathname: string): boolean {
   return (
-    pathname.startsWith('/builder') ||
     pathname.startsWith('/devboard') ||
     pathname.startsWith('/admin/portal') ||
     pathname.startsWith('/api/agents') ||

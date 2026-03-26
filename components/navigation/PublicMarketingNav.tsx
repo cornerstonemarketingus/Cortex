@@ -44,7 +44,7 @@ export default function PublicMarketingNav() {
                 href={item.href}
                 className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition ${
                   active
-                    ? 'bg-white text-slate-950 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]'
+                    ? 'border border-cyan-300/45 bg-cyan-500/20 text-cyan-50'
                     : 'text-slate-200 hover:bg-white/10 hover:text-white'
                 }`}
               >
@@ -56,10 +56,10 @@ export default function PublicMarketingNav() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/login"
+            href="/signup?next=/dashboard"
             className="rounded-md border border-cyan-300/40 bg-cyan-500/20 px-3.5 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-cyan-50 transition hover:bg-cyan-500/30"
           >
-            Client Login
+            Login
           </Link>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function PublicMarketingNav() {
                 href={item.href}
                 className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition ${
                   active
-                    ? 'bg-white text-slate-950'
+                    ? 'border border-cyan-300/45 bg-cyan-500/20 text-cyan-50'
                     : 'text-slate-200 hover:bg-white/10 hover:text-white'
                 }`}
               >

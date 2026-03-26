@@ -60,7 +60,7 @@ export default function CortexTopTabs() {
                   href={tab.href}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold tracking-wide transition ${
                     active
-                      ? 'border-white bg-white text-slate-950 shadow-[0_0_0_1px_rgba(255,255,255,0.2)]'
+                        ? 'border-cyan-300/45 bg-cyan-500/20 text-cyan-50'
                       : 'border-white/25 bg-white/5 text-slate-100 hover:bg-white/15'
                   }`}
                 >
@@ -72,10 +72,10 @@ export default function CortexTopTabs() {
 
           <div className="flex items-center gap-2 text-xs">
             <Link
-              href="/admin/login"
+              href="/signup?next=/dashboard"
               className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-100 hover:bg-white/10"
             >
-              Client Login
+              Login
             </Link>
           </div>
         </div>

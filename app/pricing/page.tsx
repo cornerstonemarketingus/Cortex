@@ -1,4 +1,5 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 const trialPass = 'CORTEX-TRIAL-14D';
 
@@ -126,12 +127,27 @@ export default function PricingPage() {
           <p className="mt-3 max-w-4xl text-sm text-cyan-100/90 md:text-base">
             Cortex combines landing pages, estimator workflows, AI receptionist, CRM follow-up, and close loops into one revenue engine. Pick a package, launch fast, and manage it from your client portal.
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <a href="#packages" className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Choose Your Package</a>
-            <a href="/estimate" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-4 py-2 text-xs font-semibold hover:bg-cyan-500/30">Open Estimator</a>
-            <a href="/builder" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Open Site Builder</a>
-          </div>
         </header>
+
+        <section className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
+          <article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">
+            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Base44 Style Quick Start</p>
+            <h2 className="mt-2 text-xl font-semibold">Estimator + Page Builder in one flow</h2>
+            <p className="mt-2 text-sm text-slate-200">Launch an estimate workflow, then use copilot to generate conversion pages and automation logic without switching tools.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href="/estimate" className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Open Estimator</a>
+              <a href="/builder" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20">Open Page Builder</a>
+            </div>
+          </article>
+
+          <BuilderCopilotPanel
+            title="Builder Copilot Assistant"
+            subtitle="Ask copilot to generate estimate upgrades and page-builder code suggestions side-by-side."
+            defaultPrompt="Improve my estimate flow and generate the page-builder sections needed to increase close rate."
+            contextLabel="pricing-base44"
+            showProvisioning={false}
+          />
+        </section>
 
         <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           {roiProof.map((item) => (
