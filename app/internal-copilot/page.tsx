@@ -36,10 +36,15 @@ export default function InternalCopilotPage() {
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
         <header className="rounded-3xl border border-cyan-300/30 bg-cyan-500/10 p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Internal Copilot</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Build, optimize, and ship from one internal control room.</h1>
+          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Embedded in Builder, Automations, and Workspace hubs.</h1>
           <p className="mt-3 max-w-4xl text-sm text-cyan-50/90 md:text-base">
-            This surface ties together software improvement, blog generation, and direct app/website updates so your team can run weekly growth sprints without tool switching.
+            Internal copilot is now integrated across page builder and automations workflows. Use this page as a jump panel, then operate inside each core hub.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <Link href="/website-builder" className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 font-semibold hover:bg-cyan-500/25">Open Page Builder Hub</Link>
+            <Link href="/automations" className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 font-semibold hover:bg-cyan-500/25">Open Automations Hub</Link>
+            <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Open Workspace Hub</Link>
+          </div>
         </header>
 
         <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -251,12 +251,12 @@ export default function WorkspacePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#090f18] text-slate-100">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#7c2d12_0%,#3f160a_44%,#110603_100%)] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 md:px-8">
-        <header className="rounded-2xl border border-white/15 bg-black/30 p-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Internal Copilot Workspace</p>
+        <header className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Internal Copilot Workspace</p>
           <h1 className="mt-2 text-3xl font-semibold">Chat-driven estimates and automation operations</h1>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {['Get more leads', 'Estimate jobs', 'Manage crews', 'Build a website'].map((item) => (
@@ -270,7 +270,11 @@ export default function WorkspacePage() {
               </button>
             ))}
           </div>
-          <p className="mt-3 text-sm text-slate-300">Current goal: {goal}. Instant setup generates website, CRM, estimate defaults, pipeline stages, and automations.</p>
+          <p className="mt-3 text-sm text-amber-100/90">Current goal: {goal}. Instant setup generates website, CRM, estimate defaults, pipeline stages, and automations.</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link href="/dashboard" className="rounded-lg border border-amber-300/45 bg-amber-400/20 px-3 py-2 font-semibold hover:bg-amber-400/30">Open Unified Dashboard View</Link>
+            <Link href="/automations" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Open Automations Hub</Link>
+          </div>
         </header>
 
         <section className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
-import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
+import EstimatorChatbotPanel from '@/components/estimator/EstimatorChatbotPanel';
 
 type PublicEstimateResponse = {
   mode?: 'preview' | 'full';
@@ -128,7 +128,6 @@ function EstimatePageContent() {
   const [phone, setPhone] = useState('');
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [heroHeadline, setHeroHeadline] = useState('Get A Ballpark Estimate In Under 60 Seconds');
-  const [accentColor, setAccentColor] = useState('#22d3ee');
 
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [loadingUnlock, setLoadingUnlock] = useState(false);
@@ -148,10 +147,6 @@ function EstimatePageContent() {
       setHeroHeadline(headlineParam.trim().slice(0, 90));
     }
 
-    const accentParam = searchParams.get('accent');
-    if (accentParam && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(accentParam)) {
-      setAccentColor(accentParam);
-    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -304,12 +299,12 @@ function EstimatePageContent() {
         </header>
 
         <section className="mb-6">
-          <BuilderCopilotPanel
-            title="Estimator Builder Copilot"
-            subtitle="Get precise quote guidance, scope refinement, and implementation steps for estimate logic and conversion flow."
-            defaultPrompt="Help me tighten this estimate scope and produce a more precise quote with exact assumptions and line-item checks."
-            contextLabel="estimator"
-            showProvisioning={false}
+          <EstimatorChatbotPanel
+            projectType={projectType}
+            zipCode={zipCode}
+            description={description}
+            onZipCodeChange={setZipCode}
+            onDescriptionChange={setDescription}
           />
         </section>
 

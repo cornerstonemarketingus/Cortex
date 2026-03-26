@@ -57,14 +57,14 @@ export default function Dashboard() {
 	}, []);
 
 	return (
-		<main className="min-h-screen bg-gradient-to-b from-[#0b1220] via-[#111827] to-[#020617] text-slate-100">
+		<main className="min-h-screen bg-gradient-to-b from-[#2a1004] via-[#4a1d0a] to-[#150804] text-slate-100">
 			<CortexTopTabs />
 
 			<div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
-				<header className="rounded-3xl border border-white/20 bg-black/25 p-6 mb-6">
-					<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">ContractorPro Revenue OS</p>
+				<header className="rounded-3xl border border-amber-300/30 bg-amber-500/10 p-6 mb-6">
+					<p className="text-xs uppercase tracking-[0.2em] text-amber-200">ContractorPro Revenue OS</p>
 					<h1 className="mt-2 text-3xl font-semibold md:text-4xl">Estimates + Automations Dashboard</h1>
-					<p className="mt-3 max-w-3xl text-sm text-slate-200">
+					<p className="mt-3 max-w-3xl text-sm text-amber-100/90">
 						Run your full bid pipeline, lead capture, takeoff workflow, and internal copilot execution from one command surface.
 					</p>
 					<div className="mt-4 flex flex-wrap gap-2">
@@ -72,6 +72,7 @@ export default function Dashboard() {
 						<Link href="/automations" className="rounded-lg border border-indigo-300/40 bg-indigo-500/20 px-3 py-2 text-xs font-semibold hover:bg-indigo-500/30">Open Automations</Link>
 						<Link href="/website-builder" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Open Website Builder</Link>
 						<Link href="/internal-copilot" className="rounded-lg border border-amber-300/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold hover:bg-amber-500/25">Internal Copilot</Link>
+						<Link href="/workspace" className="rounded-lg border border-amber-300/45 bg-amber-400/25 px-3 py-2 text-xs font-semibold text-amber-50 hover:bg-amber-400/35">Open Unified Workspace</Link>
 					</div>
 				</header>
 

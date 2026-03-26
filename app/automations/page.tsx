@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 type AutomationResponse = {
   ok?: boolean;
@@ -214,14 +215,14 @@ export default function AutomationsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#164e63_0%,#0b1f2a_45%,#04070a_100%)] text-slate-100">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#78350f_0%,#431407_42%,#140704_100%)] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Lead-Gen Automation Engine</p>
+        <header className="rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Lead-Gen Automation Engine</p>
           <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Turn every inbound lead into a guided path to booked revenue.</h1>
-          <p className="mt-3 max-w-3xl text-sm text-cyan-100/90">
+          <p className="mt-3 max-w-3xl text-sm text-amber-100/90">
             This workspace runs capture, qualification, nurture, and conversion workflows as one connected system. Use it as your daily operating surface for growth.
           </p>
         </header>
@@ -335,6 +336,16 @@ export default function AutomationsPage() {
           </button>
 
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
+        </section>
+
+        <section className="mt-6">
+          <BuilderCopilotPanel
+            title="Automations Copilot (Embedded)"
+            subtitle="Internal copilot is built into your automation hub to generate workflow actions, message improvements, and failure recovery steps in-context."
+            defaultPrompt="Improve my automation handoff after estimate delivery and generate follow-up logic with fallback steps."
+            contextLabel="automations-hub"
+            showProvisioning={false}
+          />
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">

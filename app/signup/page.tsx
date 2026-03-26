@@ -15,6 +15,8 @@ function sanitizeNextPath(value: string | null) {
   if (!value) return '/pricing';
   if (!value.startsWith('/')) return '/pricing';
   if (value.startsWith('//')) return '/pricing';
+  if (value === '/signup') return '/dashboard';
+  if (value.startsWith('/signup?')) return '/dashboard';
   return value;
 }
 
@@ -111,7 +113,7 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      if (businessName.trim() || websiteUrl.trim() || businessPhone.trim()) {
+      if ((businessName.trim() || websiteUrl.trim() || businessPhone.trim()) && email.trim()) {
         await fetch('/api/builder-copilot/intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -119,7 +121,7 @@ export default function SignupPage() {
             businessName,
             websiteUrl,
             phoneNumber: businessPhone,
-            email,
+            email: email.trim().toLowerCase(),
             context: 'signup',
           }),
         }).catch(() => null);
@@ -129,7 +131,7 @@ export default function SignupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
+          email: email.trim().toLowerCase(),
           tier,
           successUrl: `${window.location.origin}/signup?success=1&email=${encodeURIComponent(email)}&next=${encodeURIComponent(nextPath)}`,
           cancelUrl: `${window.location.origin}/signup?canceled=1&next=${encodeURIComponent(nextPath)}`,
@@ -231,7 +233,7 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => void submit()}
-              disabled={loading}
+              disabled={loading || !email.trim()}
               className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
             >
               {loading ? 'Redirecting...' : 'Continue To Secure Checkout'}
