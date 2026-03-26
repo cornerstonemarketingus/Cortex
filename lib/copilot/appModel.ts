@@ -54,8 +54,16 @@ export type AppModel = {
     pipeline: PipelineStage[];
     schema: Array<{ key: string; label: string; type: 'text' | 'number' | 'date' | 'select' }>;
   };
+  estimates: Array<{
+    id: string;
+    projectType: string;
+    budget: number;
+    timeline: string;
+    confidence: 'low' | 'medium' | 'high';
+    status: 'draft' | 'approved' | 'sent';
+  }>;
   jobs: Array<{ id: string; title: string; stage: string; estimate: number }>;
-  automations: Array<{ id: string; name: string; trigger: string; action: string }>;
+  automations: Array<{ id: string; name: string; trigger: string; action: string; enabled?: boolean; autopilot?: boolean }>;
   estimateSettings: {
     defaultMargin: number;
     laborRate: number;
@@ -84,7 +92,12 @@ export type AppAction =
   | { type: 'create_automation'; name: string; trigger: string; action: string }
   | { type: 'update_estimate_settings'; defaultMargin?: number; laborRate?: number; taxRate?: number }
   | { type: 'set_business_profile'; name?: string; location?: string; services?: string[]; phone?: string; website?: string }
-  | { type: 'create_demo_project'; title: string; estimate: number; margin: number };
+  | { type: 'create_demo_project'; title: string; estimate: number; margin: number }
+  | { type: 'create_estimate'; projectType: string; budget: number; timeline: string }
+  | { type: 'update_lead_status'; leadId: string; status: LeadRow['status'] }
+  | { type: 'create_automation_sequence'; name: string; trigger: string; steps: string[] }
+  | { type: 'generate_full_website'; pageId: string }
+  | { type: 'enable_autopilot_bundle' };
 
 function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
@@ -231,6 +244,16 @@ export function createTemplateModel(templateId: TemplateId): AppModel {
         { key: 'projectValue', label: 'Project Value', type: 'number' },
       ],
     },
+    estimates: [
+      {
+        id: id('est'),
+        projectType: template.services[0],
+        budget: 14500,
+        timeline: 'Within 30 days',
+        confidence: 'high',
+        status: 'draft',
+      },
+    ],
     jobs: [
       { id: id('job'), title: 'Demo Deck Build 12x16', stage: 'estimating', estimate: 7800 },
     ],
@@ -346,6 +369,76 @@ export function applyAction(model: AppModel, action: AppAction): AppModel {
       margin: action.margin,
     };
     next.jobs.unshift({ id: id('job'), title: action.title, stage: 'estimating', estimate: action.estimate });
+    return next;
+  }
+
+  if (action.type === 'create_estimate') {
+    if (!Array.isArray(next.estimates)) {
+      next.estimates = [];
+    }
+    next.estimates.unshift({
+      id: id('est'),
+      projectType: action.projectType,
+      budget: action.budget,
+      timeline: action.timeline,
+      confidence: action.budget > 12000 ? 'high' : 'medium',
+      status: 'draft',
+    });
+    return next;
+  }
+
+  if (action.type === 'update_lead_status') {
+    const lead = next.crm.leads.find((item) => item.id === action.leadId);
+    if (lead) lead.status = action.status;
+    return next;
+  }
+
+  if (action.type === 'create_automation_sequence') {
+    next.automations.unshift({
+      id: id('auto'),
+      name: action.name,
+      trigger: action.trigger,
+      action: action.steps.join(' -> '),
+      enabled: true,
+    });
+    return next;
+  }
+
+  if (action.type === 'generate_full_website') {
+    const page = next.pages.find((item) => item.id === action.pageId);
+    if (!page) return next;
+    page.sections = [
+      { id: id('section'), type: 'hero', title: 'Get More Construction Jobs Without Chasing Leads', content: 'Outcome-focused hero with estimator and lead capture call-to-action.' },
+      { id: id('section'), type: 'services', title: 'Core Services', content: next.business_profile.services.join(', ') },
+      { id: id('section'), type: 'testimonials', title: 'Proof', content: 'Structured testimonial cards with contractor outcomes and local trust anchors.' },
+      { id: id('section'), type: 'cta', title: 'Launch Your Project', content: 'Primary CTA: Launch My Business. Secondary CTA: Try Demo.' },
+    ];
+    return next;
+  }
+
+  if (action.type === 'enable_autopilot_bundle') {
+    const autopilotPresets = [
+      { name: 'Lead Qualification AI', trigger: 'new_lead', action: 'score_and_route_lead' },
+      { name: 'Instant Estimate Generator', trigger: 'lead_submitted', action: 'draft_estimate_and_notify' },
+      { name: 'Missed Call Text Back', trigger: 'missed_call', action: 'send_project_prompt_sms' },
+      { name: 'Estimate Follow-up Sequence', trigger: 'estimate_sent', action: 'day1_day3_day7_sequence' },
+      { name: 'Review Generation System', trigger: 'job_completed', action: 'request_review_and_suggest_reply' },
+      { name: 'Lead Reactivation', trigger: 'lead_stale_30_days', action: 'send_reactivation_message' },
+    ];
+
+    for (const preset of autopilotPresets) {
+      const exists = next.automations.some((item) => item.name === preset.name);
+      if (!exists) {
+        next.automations.unshift({
+          id: id('auto'),
+          name: preset.name,
+          trigger: preset.trigger,
+          action: preset.action,
+          enabled: true,
+          autopilot: true,
+        });
+      }
+    }
     return next;
   }
 

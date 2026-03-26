@@ -12,6 +12,16 @@ type CopilotMessage = {
   text: string;
 };
 
+type CopilotCommandResponse = {
+  intent: string;
+  actions: AppAction[];
+  ui_feedback: {
+    message: string;
+    highlight?: string;
+  };
+  suggestions: string[];
+};
+
 type Revision = {
   id: number;
   label: string;
@@ -109,6 +119,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copilotSuggestions, setCopilotSuggestions] = useState<string[]>(['Build my website', 'Create estimate for a deck', 'Turn on autopilot']);
 
   const activePage = useMemo(() => model?.pages.find((page) => page.id === activePageId) || model?.pages[0] || null, [model, activePageId]);
 
@@ -162,27 +173,30 @@ export default function WorkspacePage() {
     setLoading(true);
 
     try {
-      const command = await postJson<{ action: AppAction | null; guidance?: string }>('/api/copilot/command', {
+      const command = await postJson<CopilotCommandResponse>('/api/copilot/command', {
         message: prompt,
-        pageId: activePageId,
+        context: {
+          currentPage: activePageId,
+        },
       });
 
-      if (!command.action) {
-        const guidance = command.guidance || 'I could not map that command yet.';
-        setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: guidance }]);
+      const typedCommand = command;
+
+      if (!typedCommand.actions?.length) {
+        setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: typedCommand.ui_feedback?.message || 'No action returned.' }]);
+        setCopilotSuggestions(typedCommand.suggestions || []);
         return;
       }
 
-      const action = command.action;
-
       const executed = await postJson<{ model: AppModel }>('/api/copilot/action', {
         model,
-        action,
+        actions: typedCommand.actions,
       });
 
       setModel(executed.model);
-      await saveWorkspaceState(executed.model, `action-${action.type}`);
-      setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: `Done. Executed action: ${action.type}` }]);
+      await saveWorkspaceState(executed.model, `intent-${typedCommand.intent.toLowerCase()}`);
+      setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: typedCommand.ui_feedback.message }]);
+      setCopilotSuggestions(typedCommand.suggestions || []);
     } catch (runError) {
       setError(runError instanceof Error ? runError.message : 'Unable to run command.');
     } finally {
@@ -381,6 +395,26 @@ export default function WorkspacePage() {
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Estimator Intelligence</p>
+                    <div className="mt-2 space-y-1 text-xs text-slate-300">
+                      {(model.estimates || []).slice(0, 3).map((estimate) => (
+                        <p key={estimate.id}>{estimate.projectType}: ${estimate.budget.toLocaleString()} ({estimate.confidence} confidence)</p>
+                      ))}
+                      {(model.estimates || []).length === 0 ? <p>No estimate drafts yet.</p> : null}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Autopilot Status</p>
+                    <p className="mt-2 text-xs text-slate-300">
+                      {model.automations.some((item) => item.autopilot)
+                        ? 'Enabled: lead qualification, estimate draft, missed-call response, and follow-up sequences are active.'
+                        : 'Disabled: ask copilot to "Turn on autopilot" to activate bundled automations.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-white/15 bg-white/5 p-3">
                     <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">CRM Schema</p>
                     <div className="mt-2 space-y-1 text-xs text-slate-300">
                       {model.crm.schema.map((field) => (
@@ -433,6 +467,22 @@ export default function WorkspacePage() {
             >
               {loading ? 'Running...' : 'Run Command'}
             </button>
+
+            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Suggested actions</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {copilotSuggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setChatInput(item)}
+                    className="rounded border border-cyan-300/35 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-50 hover:bg-cyan-500/20"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {error ? <p className="mt-2 text-xs text-red-300">{error}</p> : null}
             {loadingState ? <p className="mt-2 text-xs text-slate-400">Syncing workspace state...</p> : null}

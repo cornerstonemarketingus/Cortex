@@ -99,6 +99,38 @@ const LEAD_ENGINE_STEPS = [
   },
 ] as const;
 
+const AUTOMATION_PACKAGES = [
+  {
+    name: 'Starter',
+    bullets: ['Website lead capture', 'Basic CRM pipeline', 'Estimate builder'],
+  },
+  {
+    name: 'Growth',
+    bullets: ['Lead qualification AI', 'Follow-up automations', 'Missed call text-back'],
+  },
+  {
+    name: 'Pro',
+    bullets: ['AI estimator + approvals', 'Autopilot mode', 'Advanced automation intelligence'],
+  },
+] as const;
+
+const AUTOMATION_LIBRARY = [
+  'Lead Qualification AI (project type, budget, timeline, score + routing)',
+  'Instant Estimate Generator (draft + contractor approval)',
+  'Follow-Up Automation (new lead, no response, estimate not accepted)',
+  'Missed Call Text Back',
+  'Estimate Follow-Up Sequence (Day 1, Day 3, Day 7)',
+  'Review Generation + AI Reply Suggestions',
+  'Lead Reactivation (30-90 days)',
+  'Job Creation from Lead',
+  'AI Daily Logs (voice to structured log)',
+  'Change Order Generator',
+  'SEO Page Generator',
+  'Content Engine (weekly blogs + showcases)',
+  'Directory Sync System',
+  'Ad Assistant (creative + budget suggestions)',
+] as const;
+
 export default function AutomationsPage() {
   const [firstName, setFirstName] = useState('Jordan');
   const [email, setEmail] = useState('jordan@example.com');
@@ -234,6 +266,42 @@ export default function AutomationsPage() {
               <p className="mt-2 text-xs text-slate-300">{step.detail}</p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-amber-200">Product Packaging</p>
+          <h2 className="mt-1 text-xl font-semibold">Offer outcomes, not feature clutter</h2>
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {AUTOMATION_PACKAGES.map((pack) => (
+              <article key={pack.name} className="rounded-xl border border-white/20 bg-black/25 p-3 text-xs">
+                <p className="text-sm font-semibold text-amber-100">{pack.name}</p>
+                <div className="mt-2 space-y-1 text-slate-200">
+                  {pack.bullets.map((bullet) => (
+                    <p key={bullet}>- {bullet}</p>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Autopilot Mode</p>
+          <h2 className="mt-1 text-xl font-semibold">Turn on Autopilot to run lead-to-close workflow automatically</h2>
+          <p className="mt-2 text-sm text-slate-200">Bundle lead capture, qualification, estimate drafting, follow-up, and nurture in one mode.</p>
+          <button
+            type="button"
+            onClick={() => void runAutomationPack()}
+            disabled={loading}
+            className="mt-3 rounded-xl border border-cyan-300/40 bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/30 disabled:opacity-60"
+          >
+            {loading ? 'Enabling...' : 'Turn On Autopilot'}
+          </button>
+          <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 text-xs text-slate-200">
+            {AUTOMATION_LIBRARY.map((item) => (
+              <div key={item} className="rounded-lg border border-white/15 bg-black/25 p-2">{item}</div>
+            ))}
+          </div>
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">
