@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       websiteUrl,
       phoneNumber,
       email,
-      provider: body.provider,
+      provider: body.provider || 'cortex-voice-core',
     });
 
     const businessBoosterPlan = [
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     ];
 
     return NextResponse.json({
-      summary: `${provisioning.summary}${email ? ` Contact: ${email}.` : ''} Source: ${context}.`,
+      summary: `${provisioning.summary}${email ? ` Contact: ${email}.` : ''} Powered by Builder Copilot communications technology. Source: ${context}.`,
       chatbotSnippet: provisioning.chatbotSnippet,
       voiceReceptionistPlan: provisioning.voiceReceptionistPlan,
       hostingOffer: provisioning.hostingOffer,

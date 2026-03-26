@@ -67,7 +67,7 @@ export default function BuilderCopilotPanel({
   const [email, setEmail] = useState("");
   const [provisioning, setProvisioning] = useState<IntakeResponse | null>(null);
   const [provisioningLoading, setProvisioningLoading] = useState(false);
-  const [provider, setProvider] = useState<"twilio" | "cortex-voice-core">("twilio");
+  const [provider, setProvider] = useState<"twilio" | "cortex-voice-core">("cortex-voice-core");
   const [showBoosterIntake, setShowBoosterIntake] = useState(buildMode !== "website");
 
   const [buildLoading, setBuildLoading] = useState(false);
@@ -278,8 +278,8 @@ export default function BuilderCopilotPanel({
               onChange={(event) => setProvider(event.target.value as "twilio" | "cortex-voice-core")}
               className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-xs"
             >
-              <option value="twilio">Twilio provider</option>
-              <option value="cortex-voice-core">Cortex Voice Core (owned stack)</option>
+              <option value="cortex-voice-core">Builder Copilot Voice Cloud</option>
+              <option value="twilio">Builder Copilot Voice Bridge</option>
             </select>
           </div>
           ) : null}

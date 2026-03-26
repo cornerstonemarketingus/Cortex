@@ -1,8 +1,6 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
-const trialPass = 'CORTEX-TRIAL-14D';
-
 const roiProof = [
   { label: 'Lead Response Time', value: '< 60 sec', note: 'With AI receptionist + instant SMS handoff' },
   { label: 'Follow-up Coverage', value: '24/7', note: 'No lead dropped outside office hours' },
@@ -21,69 +19,63 @@ type PackageCard = {
 
 const packageCards: PackageCard[] = [
   {
-    name: 'Free',
-    price: '$0',
+    name: 'Starter',
+    price: '$79',
     unit: '/mo',
-    valueLine: 'Try before you commit',
+    valueLine: 'Launch your first revenue loop',
     points: [
-      '3 estimates/month',
-      'Basic estimate calculator',
-      'PDF proposal export',
+      '150 monthly tokens',
+      'AI estimate builder',
+      'Lead capture website',
+      'CRM starter pipeline',
       '1 user',
     ],
-    cta: 'Start Free',
+    cta: 'Launch Starter',
   },
   {
-    name: 'Starter',
-    price: '$29',
+    name: 'Growth',
+    price: '$149',
     unit: '/mo',
-    valueLine: '$7.25/job at 4 jobs/mo',
+    valueLine: 'Built for teams closing weekly',
     points: [
-      '10 estimates/month',
-      'Instant estimate calculator',
-      'PDF proposal export',
-      'Lead capture page',
-      'Email bid delivery',
-      'Client portal (accept/decline)',
-      '1 user',
+      '400 monthly tokens',
+      'Advanced estimator + takeoff',
+      'Automation workflows',
+      'Proposal + payment links',
+      '3 users',
     ],
-    cta: 'Get Starter',
+    cta: 'Launch Growth',
     featured: true,
   },
   {
     name: 'Pro',
-    price: '$79',
+    price: '$299',
     unit: '/mo',
-    valueLine: '$9.87/job at 8 jobs/mo',
+    valueLine: 'High-volume estimating + ops',
     points: [
-      'Unlimited estimates',
-      'AI Proposal Generator',
-      'E-Signature (client + contractor)',
-      'Job Profit Calculator',
-      'Change order generator',
-      'Invoice management',
-      'CRM + client tracking',
-      'Daily job logs',
-      'AI Takeoff (plan upload)',
-      'White-label lead capture page',
-      'Live leads feed',
+      '1200 monthly tokens',
+      'Live copilot command center',
+      'Estimator confidence scoring',
+      'Inline website builder editing',
+      'Automations hub orchestration',
+      '10 users',
     ],
-    cta: 'Get Pro',
+    cta: 'Launch Pro',
   },
   {
-    name: 'Business',
-    price: '$149',
+    name: 'Enterprise',
+    price: '$799',
     unit: '/mo',
-    valueLine: '$9.93/job at 15 jobs/mo',
+    valueLine: 'Tokenized operating system at scale',
     points: [
-      'Everything in Pro',
-      '3-5 team accounts',
-      'Branded proposals + logo',
-      'Analytics dashboard',
-      'Priority AI processing',
-      'Priority support',
+      '4000 monthly tokens',
+      'Advanced governance and controls',
+      'Dedicated launch + migration',
+      'Custom workflows and integrations',
+      'Priority infrastructure lane',
+      'Unlimited users',
     ],
-    cta: 'Get Business',
+    cta: 'Launch Enterprise',
   },
 ] as const;
 
@@ -125,7 +117,7 @@ export default function PricingPage() {
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Construction SaaS Revenue System</p>
           <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Built like a modern copilot. Tuned for contractor close-rate.</h1>
           <p className="mt-3 max-w-4xl text-sm text-cyan-100/90 md:text-base">
-            Cortex combines landing pages, estimator workflows, AI receptionist, CRM follow-up, and close loops into one revenue engine. Pick a package, launch fast, and manage it from your client portal.
+            Builder Copilot combines landing pages, estimator workflows, AI receptionist, CRM follow-up, and close loops into one revenue engine. Choose your lane, launch fast, and run it from one chat-controlled workspace.
           </p>
         </header>
 
@@ -161,7 +153,7 @@ export default function PricingPage() {
 
         <section id="packages" className="mt-6 rounded-3xl border border-cyan-300/30 bg-white/5 p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Packages</p>
-          <h2 className="mt-2 text-3xl font-semibold text-cyan-100">Built for contractors. Win one extra job a year and this pays for itself.</h2>
+          <h2 className="mt-2 text-3xl font-semibold text-cyan-100">All paid plans start at $79 and scale to enterprise operating systems.</h2>
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
             {packageCards.map((pkg) => (
               <article
@@ -176,8 +168,30 @@ export default function PricingPage() {
                     <p key={point} className="text-xs text-stone-200">- {point}</p>
                   ))}
                 </div>
-                <a href="/signup?next=/subscription" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
+                <a href="/signup?next=/workspace" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
                   {pkg.cta}
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Token Packs</p>
+          <h2 className="mt-2 text-2xl font-semibold text-amber-100">Pay for everything with tokens when you need extra capacity</h2>
+          <p className="mt-2 text-sm text-amber-50/90">Tokens are consumed by estimator runs, copilot operations, automation executions, and preview generation.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[
+              { id: 'boost-500', name: 'Boost 500', price: '$49', tokens: '500 tokens' },
+              { id: 'pro-1500', name: 'Pro 1500', price: '$129', tokens: '1,500 tokens' },
+              { id: 'scale-5000', name: 'Scale 5000', price: '$349', tokens: '5,000 tokens' },
+            ].map((pack) => (
+              <article key={pack.id} className="rounded-xl border border-white/20 bg-black/25 p-4">
+                <p className="text-sm font-semibold text-amber-100">{pack.name}</p>
+                <p className="mt-1 text-xl font-semibold text-white">{pack.price}</p>
+                <p className="text-xs text-slate-300">{pack.tokens}</p>
+                <a href={`/subscription?buyTokens=${encodeURIComponent(pack.id)}`} className="mt-3 inline-flex rounded-lg border border-amber-300/35 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30">
+                  Buy Token Pack
                 </a>
               </article>
             ))}
@@ -248,14 +262,12 @@ export default function PricingPage() {
         </section>
 
         <section className="mt-6 rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Free Trial Pass</p>
-          <h2 className="mt-2 text-3xl font-semibold text-amber-100">Need trial access? Use this pass code.</h2>
-          <p className="mt-2 text-sm text-amber-50/90">
-            Trial pass: <span className="rounded-md border border-amber-200/40 bg-black/30 px-2 py-1 font-bold tracking-[0.12em]">{trialPass}</span>
-          </p>
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Demo + Trial</p>
+          <h2 className="mt-2 text-3xl font-semibold text-amber-100">Try instantly, then launch your real business.</h2>
+          <p className="mt-2 text-sm text-amber-50/90">Demo mode loads a pre-built business with sample leads and estimate data. Trial mode saves your system with your business data.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <a href={`/signup?next=/subscription&pass=${encodeURIComponent(trialPass)}`} className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-200">Start Free Trial</a>
-            <a href="/admin/login" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Client Portal Login</a>
+            <a href="/signup" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Try Demo</a>
+            <a href="/signup?next=/workspace" className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-200">Launch My Business</a>
           </div>
         </section>
       </div>

@@ -48,14 +48,28 @@ function parseTier(value: string | null | undefined): SubscriptionTier {
 function getTierConfig(tier: SubscriptionTier) {
   switch (tier) {
     case 'starter':
-      return { monthlyPriceCents: 9900, includedCredits: 120 };
+      return { monthlyPriceCents: 7900, includedCredits: 150 };
     case 'growth':
-      return { monthlyPriceCents: 19700, includedCredits: 300 };
+      return { monthlyPriceCents: 14900, includedCredits: 400 };
     case 'pro':
-      return { monthlyPriceCents: 39700, includedCredits: 900 };
+      return { monthlyPriceCents: 29900, includedCredits: 1200 };
     case 'unified':
     default:
-      return { monthlyPriceCents: 29700, includedCredits: 600 };
+      return { monthlyPriceCents: 79900, includedCredits: 4000 };
+  }
+}
+
+function getTokenPackConfig(packId: string) {
+  const normalized = packId.trim().toLowerCase();
+  switch (normalized) {
+    case 'boost-500':
+      return { id: 'boost-500', credits: 500, priceCents: 4900, label: 'Boost 500' };
+    case 'pro-1500':
+      return { id: 'pro-1500', credits: 1500, priceCents: 12900, label: 'Pro 1500' };
+    case 'scale-5000':
+      return { id: 'scale-5000', credits: 5000, priceCents: 34900, label: 'Scale 5000' };
+    default:
+      return { id: 'boost-500', credits: 500, priceCents: 4900, label: 'Boost 500' };
   }
 }
 
@@ -247,6 +261,54 @@ export async function createSubscriptionCheckoutSession(params: {
   return {
     sessionId: session.id,
     checkoutUrl: session.url,
+  };
+}
+
+export async function createTokenPackCheckoutSession(params: {
+  email: string;
+  packId: string;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  const email = normalizeEmail(params.email);
+  if (!isValidEmail(email)) {
+    throw new ApiError(400, 'A valid email address is required.', 'INVALID_EMAIL');
+  }
+
+  const pack = getTokenPackConfig(params.packId);
+  const stripe = getStripeClient();
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    success_url: params.successUrl,
+    cancel_url: params.cancelUrl,
+    customer_email: email,
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `Builder Copilot Token Pack - ${pack.label}`,
+            description: `${pack.credits} usage tokens for estimator, automations, and copilot operations.`,
+          },
+          unit_amount: pack.priceCents,
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      purpose: 'token_pack_purchase',
+      email,
+      tokenPackId: pack.id,
+      tokenCredits: String(pack.credits),
+    },
+    allow_promotion_codes: true,
+  });
+
+  return {
+    sessionId: session.id,
+    checkoutUrl: session.url,
+    pack,
   };
 }
 
