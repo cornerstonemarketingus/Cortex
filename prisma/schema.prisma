@@ -24,3 +24,23 @@ model Memory {
   botId     Int?
   bot       Bot?     @relation(fields: [botId], references: [id])
 }
+
+model WorkspaceState {
+  id                Int                 @id @default(autoincrement())
+  ownerKey          String              @unique
+  modelJson         Json
+  updatedAt         DateTime            @updatedAt
+  currentRevisionId Int?
+  revisions         WorkspaceRevision[]
+}
+
+model WorkspaceRevision {
+  id          Int            @id @default(autoincrement())
+  workspaceId Int
+  label       String
+  modelJson   Json
+  createdAt   DateTime       @default(now())
+  workspace   WorkspaceState @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}

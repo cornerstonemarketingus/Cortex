@@ -105,9 +105,38 @@ function isAllowedForSite(pathname: string, site: 'contractor' | 'automation'): 
   return allowed.some((prefix) => matchesPrefix(pathname, prefix));
 }
 
+function hasMalformedRewrite(pathname: string): boolean {
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(pathname);
+    } catch {
+      return pathname;
+    }
+  })();
+
+  return decoded.includes('${1}') || decoded.includes('$%7B1%7D') || decoded.includes('%24%7B1%7D');
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+
+  if (hasMalformedRewrite(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/pricing';
+    redirectUrl.search = '';
+    return NextResponse.redirect(redirectUrl, 308);
+  }
+
+  if (host.toLowerCase() === 'teambuildercopilot.com') {
+    const canonicalUrl = request.nextUrl.clone();
+    canonicalUrl.hostname = 'www.teambuildercopilot.com';
+    if (canonicalUrl.pathname === '/') {
+      canonicalUrl.pathname = '/pricing';
+      canonicalUrl.search = '';
+    }
+    return NextResponse.redirect(canonicalUrl, 308);
+  }
 
   if (isProtectedPath(pathname) && !isAuthorized(request)) {
     if (pathname.startsWith('/api/')) {

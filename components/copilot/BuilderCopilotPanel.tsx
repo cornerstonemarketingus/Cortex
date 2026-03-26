@@ -68,6 +68,7 @@ export default function BuilderCopilotPanel({
   const [provisioning, setProvisioning] = useState<IntakeResponse | null>(null);
   const [provisioningLoading, setProvisioningLoading] = useState(false);
   const [provider, setProvider] = useState<"twilio" | "cortex-voice-core">("twilio");
+  const [showBoosterIntake, setShowBoosterIntake] = useState(buildMode !== "website");
 
   const [buildLoading, setBuildLoading] = useState(false);
   const [buildSummary, setBuildSummary] = useState<string | null>(null);
@@ -225,11 +226,28 @@ export default function BuilderCopilotPanel({
         </pre>
       ) : null}
 
+      {buildPreviewHtml && !provisioning?.chatbotSnippet ? (
+        <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-white">
+          <iframe title="Builder Copilot preview" srcDoc={buildPreviewHtml} className="h-[460px] w-full border-0" />
+        </div>
+      ) : null}
+
       {showProvisioning ? (
         <div className="mt-5 rounded-xl border border-white/15 bg-black/25 p-4">
           <p className="text-xs uppercase tracking-[0.14em] text-cyan-100">Business Booster Intake</p>
           <p className="mt-1 text-xs text-slate-300">Enter business details to generate voice receptionist + chatbot setup instructions and embed code.</p>
 
+          {buildMode === "website" ? (
+            <button
+              type="button"
+              onClick={() => setShowBoosterIntake((current) => !current)}
+              className="mt-3 rounded-lg border border-cyan-300/45 bg-cyan-500/20 px-3 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/30"
+            >
+              {showBoosterIntake ? "Hide Intake Fields" : "Open Business Booster Intake"}
+            </button>
+          ) : null}
+
+          {showBoosterIntake ? (
           <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
             <input
               value={businessName}
@@ -264,6 +282,7 @@ export default function BuilderCopilotPanel({
               <option value="cortex-voice-core">Cortex Voice Core (owned stack)</option>
             </select>
           </div>
+          ) : null}
 
           <button
             type="button"
@@ -321,7 +340,7 @@ export default function BuilderCopilotPanel({
 
               {provisioning.chatbotSnippet ? (
                 <div>
-                  <p className="text-cyan-100">Website chatbot snippet</p>
+                  <p className="text-cyan-100">Copilot-generated embed code</p>
                   <pre className="mt-1 whitespace-pre-wrap rounded-lg border border-white/15 bg-black/40 p-2 text-[11px] text-slate-200">{provisioning.chatbotSnippet}</pre>
                 </div>
               ) : null}
@@ -345,9 +364,15 @@ export default function BuilderCopilotPanel({
         </div>
       ) : null}
 
-      {buildPreviewHtml ? (
-        <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-white">
-          <iframe title="Builder Copilot preview" srcDoc={buildPreviewHtml} className="h-[460px] w-full border-0" />
+      {buildPreviewHtml && provisioning?.chatbotSnippet ? (
+        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="overflow-hidden rounded-xl border border-white/15 bg-white">
+            <iframe title="Builder Copilot live sandbox" srcDoc={buildPreviewHtml} className="h-[460px] w-full border-0" />
+          </div>
+          <div className="rounded-xl border border-white/15 bg-black/25 p-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-cyan-100">Copilot Typed Code</p>
+            <pre className="mt-2 h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border border-white/15 bg-black/40 p-2 text-[11px] text-slate-200">{provisioning.chatbotSnippet}</pre>
+          </div>
         </div>
       ) : null}
     </section>

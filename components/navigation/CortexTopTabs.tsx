@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 type NavTab = {
@@ -10,8 +11,8 @@ type NavTab = {
 
 const navTabs: NavTab[] = [
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/chat', label: 'Ask Copilot' },
-  { href: '/website-builder', label: 'Website Builder' },
+  { href: '/chat', label: 'Internal Copilot' },
+  { href: '/builder', label: 'Page Builder' },
   { href: '/builder-copilot', label: 'Builder Copilot' },
   { href: '/estimates', label: 'Estimates' },
   { href: '/subscription', label: 'Usage' },
@@ -25,13 +26,33 @@ function isActive(pathname: string, href: string): boolean {
 
 export default function CortexTopTabs() {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await fetch('/api/admin/session', { cache: 'no-store' });
+        const parsed = (await response.json().catch(() => ({}))) as { authenticated?: boolean };
+        setIsAdmin(Boolean(response.ok && parsed.authenticated));
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    void loadSession();
+  }, []);
+
+  const visibleTabs = useMemo(
+    () => navTabs.filter((tab) => (tab.href === '/builder-copilot' ? isAdmin : true)),
+    [isAdmin]
+  );
 
   return (
     <nav className="sticky top-0 z-40 border-b border-white/20 bg-[#030712]/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            {navTabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = isActive(pathname, tab.href);
               return (
                 <Link

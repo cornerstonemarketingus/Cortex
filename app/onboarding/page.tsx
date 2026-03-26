@@ -2,7 +2,28 @@ import Link from 'next/link';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 
 const intents = ['Get more leads', 'Estimate jobs', 'Manage crews', 'Build a website'] as const;
-const templates = ['Framing contractor template', 'Window/door installer template', 'Builder/investor template'] as const;
+const templates = [
+  'Framing',
+  'Windows & Doors',
+  'Roofing',
+  'Electrical',
+  'Plumbing',
+  'HVAC',
+  'Painting',
+  'Flooring',
+  'Concrete',
+  'Landscaping',
+  'Kitchen Remodel',
+  'Bath Remodel',
+  'Siding',
+  'Drywall',
+  'Masonry',
+  'Fencing',
+  'Solar',
+  'Excavation',
+  'Garage Door',
+  'Builder / Investor',
+] as const;
 const activation = ['Upload your first plan', 'Add your first job', 'Send your first bid'] as const;
 
 export default function OnboardingPage() {
@@ -32,14 +53,14 @@ export default function OnboardingPage() {
 
         <section className="rounded-2xl border border-white/15 bg-black/25 p-5">
           <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Step 2: AI builds everything</p>
-          <p className="mt-2 text-sm text-slate-300">Immediately generate website, CRM, pipeline, sample leads, and demo project from one template.</p>
-          <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+          <p className="mt-2 text-sm text-slate-300">Immediately generate website, CRM, estimate defaults, pipeline, sample leads, and automations from one trade template.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-5">
             {templates.map((template) => (
               <div key={template} className="rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-slate-200">{template}</div>
             ))}
           </div>
           <Link href="/workspace" className="mt-3 inline-flex rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">
-            Open Instant Builder Workspace
+            Open Instant Internal Copilot Workspace
           </Link>
         </section>
 
@@ -54,11 +75,14 @@ export default function OnboardingPage() {
 
         <section className="rounded-2xl border border-white/15 bg-black/25 p-5">
           <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Step 4: Pre-built templates</p>
-          <p className="mt-2 text-sm text-slate-300">Use industry templates first, then let chat regenerate individual blocks and workflows.</p>
+          <p className="mt-2 text-sm text-slate-300">Use trade templates first, then let copilot regenerate blocks, estimate defaults, and automations.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Framing</Link>
             <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Windows & Doors</Link>
             <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Builder / Investor</Link>
+            <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Roofing</Link>
+            <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Electrical</Link>
+            <Link href="/workspace" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15">Plumbing</Link>
           </div>
         </section>
       </div>

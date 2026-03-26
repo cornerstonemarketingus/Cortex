@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import CortexTopTabs from '@/components/navigation/CortexTopTabs';
+import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 type ConversionSummary = {
 	totals?: {
@@ -61,94 +62,140 @@ export default function Dashboard() {
 
 			<div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
 				<header className="rounded-3xl border border-white/20 bg-black/25 p-6 mb-6">
-					<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Cortex Engine</p>
-					<h1 className="mt-2 text-3xl font-semibold md:text-4xl">Cortex Command Dashboard</h1>
+					<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">ContractorPro Revenue OS</p>
+					<h1 className="mt-2 text-3xl font-semibold md:text-4xl">Estimates + Automations Dashboard</h1>
 					<p className="mt-3 max-w-3xl text-sm text-slate-200">
-						Main hub for product divisions, SaaS packaging, and autonomous build workflows.
+						Run your full bid pipeline, lead capture, takeoff workflow, and internal copilot execution from one command surface.
 					</p>
+					<div className="mt-4 flex flex-wrap gap-2">
+						<Link href="/estimate" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-xs font-semibold hover:bg-cyan-500/30">Run AI Estimate</Link>
+						<Link href="/automations" className="rounded-lg border border-indigo-300/40 bg-indigo-500/20 px-3 py-2 text-xs font-semibold hover:bg-indigo-500/30">Open Automations</Link>
+						<Link href="/website-builder" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Open Website Builder</Link>
+						<Link href="/internal-copilot" className="rounded-lg border border-amber-300/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold hover:bg-amber-500/25">Internal Copilot</Link>
+					</div>
 				</header>
 
 				<section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
 					<article className="rounded-2xl border border-white/15 bg-black/25 p-4">
-						<p className="text-xs text-slate-400">Tracked events</p>
-						<p className="mt-1 text-2xl font-semibold">{conversionSummary?.totals?.events ?? 0}</p>
+						<p className="text-xs text-slate-400">Revenue Pipeline</p>
+						<p className="mt-1 text-2xl font-semibold">$0</p>
+						<p className="text-xs text-slate-500">0 active bids</p>
 					</article>
 					<article className="rounded-2xl border border-white/15 bg-black/25 p-4">
-						<p className="text-xs text-slate-400">CTA clicks</p>
-						<p className="mt-1 text-2xl font-semibold">{conversionSummary?.totals?.ctaClicks ?? 0}</p>
+						<p className="text-xs text-slate-400">Won Revenue</p>
+						<p className="mt-1 text-2xl font-semibold">$0</p>
+						<p className="text-xs text-slate-500">0 accepted</p>
 					</article>
 					<article className="rounded-2xl border border-white/15 bg-black/25 p-4">
-						<p className="text-xs text-slate-400">Demo completions</p>
-						<p className="mt-1 text-2xl font-semibold">{conversionSummary?.totals?.demoCompletions ?? 0}</p>
+						<p className="text-xs text-slate-400">Bids Viewed</p>
+						<p className="mt-1 text-2xl font-semibold">0</p>
+						<p className="text-xs text-slate-500">clients engaged</p>
 					</article>
 					<article className="rounded-2xl border border-white/15 bg-black/25 p-4">
-						<p className="text-xs text-slate-400">Blog assets</p>
-						<p className="mt-1 text-2xl font-semibold">{blogSummary?.summary?.total ?? 0}</p>
+						<p className="text-xs text-slate-400">Win Rate</p>
+						<p className="mt-1 text-2xl font-semibold">0%</p>
+						<p className="text-xs text-slate-500">0 of 0 sent</p>
 					</article>
 				</section>
 
-				<section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+				<section className="rounded-2xl border border-white/15 bg-black/25 p-5 mb-6">
+					<h2 className="text-lg font-semibold">Pipeline Stages</h2>
+					<div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+						{[
+							{ label: 'Estimate', value: '0' },
+							{ label: 'Proposal Sent', value: '0' },
+							{ label: 'Client Viewed', value: '0' },
+							{ label: 'Client Accepted', value: '0' },
+							{ label: 'Project Won', value: '$0' },
+						].map((stage) => (
+							<div key={stage.label} className="rounded-xl border border-white/10 bg-white/5 p-3">
+								<p className="text-xs text-slate-400">{stage.label}</p>
+								<p className="mt-1 text-xl font-semibold">{stage.value}</p>
+							</div>
+						))}
+					</div>
+				</section>
+
+				<section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 					<article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4">
-						<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Division 01</p>
-						<h2 className="mt-1 text-lg font-semibold">Construction Solutions</h2>
-						<p className="mt-2 text-sm text-slate-200">Bid estimator, takeoff, and contractor lifecycle automation.</p>
-						<Link href="/construction-solutions" className="mt-3 inline-flex rounded-lg border border-cyan-300/40 bg-cyan-500/20 hover:bg-cyan-500/30 px-3 py-2 text-xs font-semibold">
-							Open Estimating Solutions Hub
-						</Link>
+						<p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Lead Capture</p>
+						<h2 className="mt-1 text-lg font-semibold">Your Lead Capture Page</h2>
+						<p className="mt-2 text-sm text-slate-200">Share this link on Google, Facebook, or Nextdoor to collect leads automatically.</p>
+						<div className="mt-3 flex flex-wrap gap-2">
+							<button type="button" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-xs font-semibold">Copy Link</button>
+							<Link href="/website-builder" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Share Lead Form</Link>
+						</div>
+						<div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+							<div className="rounded-lg border border-white/15 bg-black/25 p-2">Email List: 0</div>
+							<div className="rounded-lg border border-white/15 bg-black/25 p-2">New Leads: 0</div>
+							<div className="rounded-lg border border-white/15 bg-black/25 p-2">Jobs Won: 0</div>
+						</div>
 					</article>
 
 					<article className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4">
-						<p className="text-xs uppercase tracking-[0.2em] text-indigo-200">Division 02</p>
-						<h2 className="mt-1 text-lg font-semibold">AI Automation Solutions</h2>
-						<p className="mt-2 text-sm text-slate-200">Funnels, CRM, booking, follow-up, subscriptions, and reporting loops.</p>
-						<Link href="/ai-automation-solutions" className="mt-3 inline-flex rounded-lg border border-indigo-300/40 bg-indigo-500/20 hover:bg-indigo-500/30 px-3 py-2 text-xs font-semibold">
-							Open Automation Hub
-						</Link>
-					</article>
-
-					<article className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4">
-						<p className="text-xs uppercase tracking-[0.2em] text-blue-200">Division 03</p>
-						<h2 className="mt-1 text-lg font-semibold">SaaS Delivery Engine</h2>
-						<p className="mt-2 text-sm text-slate-200">Website and app builder lanes for lead capture pages, conversion surfaces, and client portal delivery.</p>
-						<div className="mt-3 flex flex-wrap gap-2">
-							<Link href="/website-builder" className="rounded-lg border border-blue-300/40 bg-blue-500/20 hover:bg-blue-500/30 px-3 py-2 text-xs font-semibold">
-								Website Builder
-							</Link>
-							<Link href="/app-builder" className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-semibold">
-								App Builder
-							</Link>
+						<p className="text-xs uppercase tracking-[0.2em] text-indigo-200">Bid Performance</p>
+						<h2 className="mt-1 text-lg font-semibold">Client Engagement</h2>
+						<div className="mt-3 grid grid-cols-5 gap-2 text-xs">
+							{['Sent', 'Viewed', 'Accepted', 'Declined', 'Close Rate'].map((item) => (
+								<div key={item} className="rounded-lg border border-white/15 bg-black/25 p-2">
+									<p className="text-slate-400">{item}</p>
+									<p className="mt-1 font-semibold">0{item.includes('Rate') ? '%' : ''}</p>
+								</div>
+							))}
 						</div>
-						<p className="mt-3 text-[11px] text-slate-400">Business Builder and Game Builder are preserved in archive for post-SaaS reactivation.</p>
+						<p className="mt-4 text-xs text-slate-300">No sent bids yet. Create your first bid.</p>
 					</article>
 				</section>
 
-				<section className="rounded-2xl border border-white/15 bg-black/25 p-5">
-					<h2 className="text-lg font-semibold">SaaS + Service Deal Packaging</h2>
-					<p className="mt-2 text-sm text-slate-300">Premium product families with setup + recurring SaaS subscriptions.</p>
+				<section className="rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-5 mb-6">
+					<p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Estimator With Copilot</p>
+					<h2 className="mt-1 text-xl font-semibold">Create estimates faster with attached Builder Copilot guidance</h2>
+					<p className="mt-2 text-sm text-slate-200">Run estimate workflows and let copilot generate pricing logic, copy upgrades, and conversion steps in one place.</p>
+					<div className="mt-3 flex flex-wrap gap-2">
+						<Link href="/estimate" className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Open Estimator</Link>
+						<Link href="/builder" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Open Page Builder</Link>
+					</div>
+				</section>
 
-					<div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-						<div className="rounded-xl border border-white/10 bg-white/5 p-3">
-							<p className="font-semibold text-slate-100">Core System</p>
-							<p className="mt-1 text-slate-300">Setup: $1,000-$2,500</p>
-							<p className="text-slate-300">Monthly: $197-$497</p>
-							<p className="mt-1 text-xs text-slate-400">CRM, automations, booking, and follow-ups.</p>
-						</div>
-						<div className="rounded-xl border border-white/10 bg-white/5 p-3">
-							<p className="font-semibold text-slate-100">AI Upgrade</p>
-							<p className="mt-1 text-slate-300">Setup: $500-$1,000</p>
-							<p className="text-slate-300">Monthly: $297-$697</p>
-							<p className="mt-1 text-xs text-slate-400">AI SMS responder, lead qualification, and estimate assistant.</p>
-						</div>
-						<div className="rounded-xl border border-white/10 bg-white/5 p-3">
-							<p className="font-semibold text-slate-100">Growth Add-on</p>
-							<p className="mt-1 text-slate-300">Setup: $2,000+</p>
-							<p className="text-slate-300">Monthly: $497+ (optional rev share)</p>
-							<p className="mt-1 text-xs text-slate-400">Landing pages, reputation engine, reactivation campaigns, and expansion ops.</p>
-						</div>
+				<section className="rounded-2xl border border-white/15 bg-black/25 p-5 mb-6">
+					<p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Plan Takeoff</p>
+					<h2 className="mt-1 text-xl font-semibold">Upload plans and get instant itemized estimates</h2>
+					<p className="mt-2 text-sm text-slate-300">Floor plans, blueprints, sketches, site plans, and hand drawings are supported.</p>
+					<div className="mt-3 flex flex-wrap gap-2 text-xs">
+						{['PNG', 'JPG', 'WEBP', 'PDF'].map((fileType) => (
+							<span key={fileType} className="rounded-full border border-white/20 bg-white/10 px-3 py-1">{fileType}</span>
+						))}
+					</div>
+					<div className="mt-4 flex flex-wrap gap-2">
+						<Link href="/estimate" className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Upload Your Plans</Link>
+						<Link href="/estimate" className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20">Run AI Takeoff</Link>
+					</div>
+				</section>
+
+				<section className="mt-6">
+					<BuilderCopilotPanel
+						title="Estimator Builder Copilot"
+						subtitle="Ask for precise estimate logic, conversion copy, and workflow improvements while you build your quote flow."
+						defaultPrompt="Optimize my estimate flow for higher close rate and faster proposal turnaround."
+						contextLabel="dashboard-estimator"
+						showProvisioning={false}
+					/>
+				</section>
+
+				<section className="mt-6 rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-5">
+					<p className="text-xs uppercase tracking-[0.16em] text-emerald-200">GBP + Directory Execution</p>
+					<h2 className="mt-1 text-xl font-semibold">Local ranking checklist</h2>
+					<div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5 text-xs text-emerald-50/90">
+						<div className="rounded-lg border border-emerald-100/25 bg-black/25 p-3">1. Publish consistent NAP across top directories.</div>
+						<div className="rounded-lg border border-emerald-100/25 bg-black/25 p-3">2. Optimize GBP categories, services, and service areas.</div>
+						<div className="rounded-lg border border-emerald-100/25 bg-black/25 p-3">3. Post weekly photos + one project update.</div>
+						<div className="rounded-lg border border-emerald-100/25 bg-black/25 p-3">4. Trigger review requests after estimate and job completion.</div>
+						<div className="rounded-lg border border-emerald-100/25 bg-black/25 p-3">5. Publish one geo-targeted blog post each week.</div>
 					</div>
 				</section>
 
 				{error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
+				<p className="mt-4 text-xs text-slate-400">Live analytics loaded: {conversionSummary?.totals?.events ?? 0} tracked events, {blogSummary?.summary?.total ?? 0} blog assets.</p>
 			</div>
 		</main>
 	);

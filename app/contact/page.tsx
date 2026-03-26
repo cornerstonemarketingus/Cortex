@@ -15,8 +15,9 @@ export default function ContactPage() {
         </header>
 
         <section className="mt-6 rounded-2xl border border-white/15 bg-black/25 p-5 text-sm">
-          <p className="text-slate-200">Email: hello@cortexengine.app</p>
-          <p className="mt-2 text-slate-200">Sales line: +1 (651) 555-0198</p>
+          <p className="text-slate-200">Support: support@teambuildercopilot.com</p>
+          <p className="mt-1 text-slate-200">Legal: legal@teambuildercopilot.com</p>
+          <p className="mt-2 text-slate-200">Sales line: 612-556-5408</p>
           <p className="mt-3 text-slate-300">
             For fastest response, include your business type, monthly lead volume, and whether you need contractor estimating, CRM automation, or both.
           </p>

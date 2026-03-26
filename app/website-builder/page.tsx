@@ -10,8 +10,8 @@ export default function WebsiteBuilderPage() {
 
       <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
         <header className="glass rounded-3xl p-7">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Website Builder</p>
-          <h1 className="mt-2 text-4xl font-semibold md:text-5xl">Chat-driven website building</h1>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Page Builder</p>
+          <h1 className="mt-2 text-4xl font-semibold md:text-5xl">Chat-driven page and app building</h1>
           <p className="mt-3 max-w-3xl text-sm text-slate-300 md:text-base">
             One surface. One copilot. Describe your business and get an 80% complete high-converting website with hosting, chatbot, CRM, and automation setup.
           </p>

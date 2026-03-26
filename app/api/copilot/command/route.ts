@@ -35,6 +35,40 @@ function parseCommand(message: string, pageId: string): AppAction | null {
     };
   }
 
+  if (msg.includes('add crm field')) {
+    return {
+      type: 'add_crm_field',
+      key: 'projectStatus',
+      label: 'Project Status',
+      fieldType: 'select',
+    };
+  }
+
+  if (msg.includes('remove crm field')) {
+    return {
+      type: 'remove_crm_field',
+      key: 'projectStatus',
+    };
+  }
+
+  if (msg.includes('create automation') || msg.includes('add automation')) {
+    return {
+      type: 'create_automation',
+      name: 'Weekly Estimate Follow-up',
+      trigger: 'weekly_scheduler',
+      action: 'send_estimate_nurture_sequence',
+    };
+  }
+
+  if (msg.includes('estimate settings') || msg.includes('update margin')) {
+    return {
+      type: 'update_estimate_settings',
+      defaultMargin: 0.35,
+      laborRate: 60,
+      taxRate: 0.08,
+    };
+  }
+
   if (msg.includes('demo project') || msg.includes('create demo')) {
     return {
       type: 'create_demo_project',
@@ -62,7 +96,7 @@ export async function POST(request: Request) {
     if (!action) {
       return NextResponse.json({
         action: null,
-        guidance: 'Command not auto-mapped yet. Try: "Add testimonials section" or "Add lead".',
+        guidance: 'Command not auto-mapped yet. Try: "Add testimonials section", "Add CRM field", "Create automation", or "Update estimate settings".',
       });
     }
 

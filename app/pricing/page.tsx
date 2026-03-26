@@ -1,5 +1,4 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
-import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 const trialPass = 'CORTEX-TRIAL-14D';
 
@@ -11,50 +10,80 @@ const roiProof = [
 
 type PackageCard = {
   name: string;
-  setup: string;
-  monthly: string;
+  price: string;
+  unit: string;
+  valueLine: string;
   points: string[];
+  cta: string;
   featured?: boolean;
 };
 
 const packageCards: PackageCard[] = [
   {
-    name: 'Launch Pack',
-    setup: '$1,000 setup',
-    monthly: '$197/mo',
+    name: 'Free',
+    price: '$0',
+    unit: '/mo',
+    valueLine: 'Try before you commit',
     points: [
-      'Lead capture page + booking funnel',
-      'AI receptionist with missed-call recovery',
-      'Pipeline stages with follow-up reminders',
+      '3 estimates/month',
+      'Basic estimate calculator',
+      'PDF proposal export',
+      '1 user',
     ],
+    cta: 'Start Free',
   },
   {
-    name: 'Growth Pack',
-    setup: '$1,800 setup',
-    monthly: '$397/mo',
+    name: 'Starter',
+    price: '$29',
+    unit: '/mo',
+    valueLine: '$7.25/job at 4 jobs/mo',
     points: [
-      'Everything in Launch Pack',
-      'Estimator-to-proposal conversion flows',
-      'Review generation and reactivation sequences',
+      '10 estimates/month',
+      'Instant estimate calculator',
+      'PDF proposal export',
+      'Lead capture page',
+      'Email bid delivery',
+      'Client portal (accept/decline)',
+      '1 user',
     ],
+    cta: 'Get Starter',
     featured: true,
   },
   {
-    name: 'Scale Pack',
-    setup: '$2,500+ setup',
-    monthly: '$697/mo',
+    name: 'Pro',
+    price: '$79',
+    unit: '/mo',
+    valueLine: '$9.87/job at 8 jobs/mo',
     points: [
-      'Everything in Growth Pack',
-      'Multi-service funnel deployments',
-      'Weekly AI strategy + KPI action board',
+      'Unlimited estimates',
+      'AI Proposal Generator',
+      'E-Signature (client + contractor)',
+      'Job Profit Calculator',
+      'Change order generator',
+      'Invoice management',
+      'CRM + client tracking',
+      'Daily job logs',
+      'AI Takeoff (plan upload)',
+      'White-label lead capture page',
+      'Live leads feed',
     ],
+    cta: 'Get Pro',
   },
-] as const;
-
-const onboardingSteps = [
-  'Pick a package and activate your workspace in under 3 minutes.',
-  'Deploy your lead page, estimator flow, and client portal from one console.',
-  'Track pipeline and conversion metrics from your first week.',
+  {
+    name: 'Business',
+    price: '$149',
+    unit: '/mo',
+    valueLine: '$9.93/job at 15 jobs/mo',
+    points: [
+      'Everything in Pro',
+      '3-5 team accounts',
+      'Branded proposals + logo',
+      'Analytics dashboard',
+      'Priority AI processing',
+      'Priority support',
+    ],
+    cta: 'Get Business',
+  },
 ] as const;
 
 const reviews = [
@@ -99,8 +128,8 @@ export default function PricingPage() {
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <a href="#packages" className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Choose Your Package</a>
-            <a href="/admin/login" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Client Login</a>
-            <a href="/construction-solutions" className="rounded-lg border border-amber-300/35 bg-amber-500/15 px-4 py-2 text-xs font-semibold hover:bg-amber-500/25">Open Estimating Solutions Hub</a>
+            <a href="/estimate" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-4 py-2 text-xs font-semibold hover:bg-cyan-500/30">Open Estimator</a>
+            <a href="/builder" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Open Site Builder</a>
           </div>
         </header>
 
@@ -116,48 +145,64 @@ export default function PricingPage() {
 
         <section id="packages" className="mt-6 rounded-3xl border border-cyan-300/30 bg-white/5 p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Packages</p>
-          <h2 className="mt-2 text-3xl font-semibold text-cyan-100">Start with the package that matches your growth stage.</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <h2 className="mt-2 text-3xl font-semibold text-cyan-100">Built for contractors. Win one extra job a year and this pays for itself.</h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
             {packageCards.map((pkg) => (
               <article
                 key={pkg.name}
                 className={`rounded-2xl border p-4 ${pkg.featured ? 'border-cyan-300/50 bg-cyan-500/12 shadow-xl shadow-cyan-950/25' : 'border-white/20 bg-black/25'}`}
               >
                 <p className="text-sm font-semibold text-stone-100">{pkg.name}</p>
-                <p className="mt-2 text-xs text-stone-300">{pkg.setup}</p>
-                <p className="text-2xl font-semibold text-cyan-100">{pkg.monthly}</p>
+                <p className="mt-2 text-3xl font-semibold text-cyan-100">{pkg.price}<span className="text-sm font-medium text-cyan-200">{pkg.unit}</span></p>
+                <p className="mt-1 text-xs text-stone-300">{pkg.valueLine}</p>
                 <div className="mt-3 space-y-1">
                   {pkg.points.map((point) => (
                     <p key={point} className="text-xs text-stone-200">- {point}</p>
                   ))}
                 </div>
+                <a href="/signup?next=/subscription" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
+                  {pkg.cta}
+                </a>
               </article>
             ))}
           </div>
         </section>
 
         <section className="mt-6 rounded-3xl border border-white/20 bg-black/25 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Optimized Onboarding</p>
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            {onboardingSteps.map((step) => (
-              <article key={step} className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                {step}
-              </article>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Plan Takeoff</p>
+          <h2 className="mt-2 text-2xl font-semibold">Upload blueprints or floor plans and get an instant itemized estimate.</h2>
+          <p className="mt-2 text-sm text-slate-300">Supports floor plans, blueprints, sketches, site plans, and hand drawings in PNG, JPG, WEBP, or PDF.</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-200">
+            {['Floor Plans', 'Blueprints', 'Sketches', 'Site Plans', 'Hand Drawings'].map((item) => (
+              <span key={item} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{item}</span>
             ))}
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">1. Upload Your Plans</p>
+              <p className="mt-2 text-sm text-slate-200">Drop your plans and run AI takeoff instantly.</p>
+              <a href="/estimate" className="mt-3 inline-flex rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Browse Files</a>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">2. Add Project Details</p>
+              <p className="mt-2 text-sm text-slate-200">Project category auto-detect + zip code for regional pricing.</p>
+              <a href="/estimate" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Run AI Takeoff</a>
+            </div>
           </div>
         </section>
 
-        <section className="mt-6">
-          <BuilderCopilotPanel
-            title="Builder Copilot From Day One"
-            subtitle="Use one copilot to fine tune website copy, app behavior, estimate logic, and launch tasks with implementation-ready instructions."
-            defaultPrompt="Give me exact next actions to improve quote precision, optimize conversion copy, and ship a polished launch in 24 hours."
-            contextLabel="pricing-home"
-            showProvisioning
-          />
-        </section>
-
         <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">
+          <article className="rounded-3xl border border-emerald-300/30 bg-emerald-500/10 p-5 lg:col-span-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Why Contractors Love Pro</p>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5 text-sm">
+              <div className="rounded-xl border border-white/15 bg-black/25 p-3">AI Proposal Generator: type a plain-English scope and get a client-ready proposal.</div>
+              <div className="rounded-xl border border-white/15 bg-black/25 p-3">E-Signatures: clients sign on phone and your team is notified instantly.</div>
+              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Job Profit Calculator: validate real margin before you send the bid.</div>
+              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Change Order Generator: create and sign formal change orders in minutes.</div>
+              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Lead Capture Page: share once, collect leads automatically.</div>
+            </div>
+          </article>
+
           <article className="rounded-3xl border border-white/20 bg-black/25 p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Local Presence</p>
             <h2 className="mt-2 text-2xl font-semibold text-cyan-100">Map + Reputation Signal</h2>
@@ -188,7 +233,7 @@ export default function PricingPage() {
 
         <section className="mt-6 rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6 text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Free Trial Pass</p>
-          <h2 className="mt-2 text-3xl font-semibold text-amber-100">Need trial access? Give them this pass code.</h2>
+          <h2 className="mt-2 text-3xl font-semibold text-amber-100">Need trial access? Use this pass code.</h2>
           <p className="mt-2 text-sm text-amber-50/90">
             Trial pass: <span className="rounded-md border border-amber-200/40 bg-black/30 px-2 py-1 font-bold tracking-[0.12em]">{trialPass}</span>
           </p>

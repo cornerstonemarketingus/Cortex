@@ -62,6 +62,12 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [connection, setConnection] = useState<ConnectionRecord | null>(null);
   const [history, setHistory] = useState<ConnectionRecord[]>([]);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deleteReason, setDeleteReason] = useState('Close account and remove platform data.');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -163,6 +169,37 @@ export default function SettingsPage() {
       setError(runError instanceof Error ? runError.message : 'Verification failed');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const submitDeletion = async () => {
+    if (deleteBusy) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    setDeleteMessage(null);
+
+    try {
+      const response = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: deleteEmail,
+          reason: deleteReason,
+          confirmText: deleteConfirmText,
+        }),
+      });
+
+      const parsed = (await response.json().catch(() => ({}))) as { ticketId?: string; status?: string; error?: string };
+      if (!response.ok) {
+        throw new Error(parsed.error || `Deletion request failed (${response.status})`);
+      }
+
+      setDeleteMessage(`Request submitted. Ticket ${parsed.ticketId || 'pending'} is ${parsed.status || 'queued'}.`);
+      setDeleteConfirmText('');
+    } catch (runError) {
+      setDeleteError(runError instanceof Error ? runError.message : 'Unable to submit deletion request.');
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -297,6 +334,71 @@ export default function SettingsPage() {
               </ul>
             </div>
           ) : null}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-rose-300/25 bg-rose-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-rose-100">Account Management</p>
+          <h2 className="mt-2 text-xl font-semibold">Request Account and Data Deletion</h2>
+          <p className="mt-2 text-sm text-rose-100/90">Use this flow for compliance and app marketplace requirements.</p>
+
+          <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+            <label className="text-xs text-rose-100 md:col-span-2">
+              Account Email
+              <input
+                value={deleteEmail}
+                onChange={(event) => setDeleteEmail(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                placeholder="you@company.com"
+              />
+            </label>
+
+            <label className="text-xs text-rose-100">
+              Confirm
+              <input
+                value={deleteConfirmText}
+                onChange={(event) => setDeleteConfirmText(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                placeholder="DELETE"
+              />
+            </label>
+          </div>
+
+          <label className="mt-3 block text-xs text-rose-100">
+            Reason
+            <textarea
+              value={deleteReason}
+              onChange={(event) => setDeleteReason(event.target.value)}
+              className="mt-1 min-h-20 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+            />
+          </label>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void submitDeletion()}
+              disabled={deleteBusy}
+              className="rounded-lg bg-rose-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-200 disabled:opacity-60"
+            >
+              {deleteBusy ? 'Submitting...' : 'Submit Deletion Request'}
+            </button>
+            <Link href="/data-deletion" className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm hover:bg-white/20">
+              Open Public Deletion Page
+            </Link>
+          </div>
+
+          {deleteMessage ? <p className="mt-3 text-sm text-emerald-200">{deleteMessage}</p> : null}
+          {deleteError ? <p className="mt-3 text-sm text-rose-200">{deleteError}</p> : null}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Legal + Support</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <Link href="/terms" className="rounded-lg border border-white/20 bg-black/20 px-3 py-2 hover:bg-black/30">Terms of Service</Link>
+            <Link href="/privacy" className="rounded-lg border border-white/20 bg-black/20 px-3 py-2 hover:bg-black/30">Privacy Policy</Link>
+            <Link href="/data-deletion" className="rounded-lg border border-white/20 bg-black/20 px-3 py-2 hover:bg-black/30">Data Deletion</Link>
+          </div>
+          <p className="mt-3 text-sm text-slate-300">Support: support@teambuildercopilot.com</p>
+          <p className="text-sm text-slate-300">Legal: legal@teambuildercopilot.com</p>
         </section>
       </div>
     </main>
