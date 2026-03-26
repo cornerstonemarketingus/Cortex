@@ -13,6 +13,7 @@ const primaryItems: MarketingNavItem[] = [
   { href: '/pricing', label: 'Home' },
   { href: '/chat', label: 'Ask Copilot' },
   { href: '/website-builder', label: 'Website Builder' },
+  { href: '/workspace', label: 'Workspace' },
   { href: '/builder-copilot', label: 'Builder Copilot' },
   { href: '/dashboard', label: 'Dashboard' },
 ];
