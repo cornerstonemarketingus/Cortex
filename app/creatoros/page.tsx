@@ -105,7 +105,7 @@ export default function CreatorOsPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-200">Cortex Builder Suite</p>
         <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Cortex</h1>
         <p className="mt-3 max-w-3xl text-sm text-fuchsia-50/90">
-          Build apps, websites, and games with AI instantly. Cortex owns full builder power, hosting, and domain lifecycle.
+          Build websites, apps, and full business operations systems with AI instantly. Cortex owns full builder power, hosting, and domain lifecycle.
         </p>
       </header>
 
@@ -118,9 +118,9 @@ export default function CreatorOsPage() {
           <p className="text-sm font-semibold text-fuchsia-100">App Builder</p>
           <p className="mt-2 text-xs text-slate-300">App architecture and module generation.</p>
         </Link>
-        <Link href="/game-builder" className="rounded-2xl border border-white/15 bg-black/25 p-5 hover:bg-black/35">
-          <p className="text-sm font-semibold text-fuchsia-100">Game Builder (Optional)</p>
-          <p className="mt-2 text-xs text-slate-300">Optional expansion lane for creator workflows.</p>
+        <Link href="/business-builder" className="rounded-2xl border border-white/15 bg-black/25 p-5 hover:bg-black/35">
+          <p className="text-sm font-semibold text-fuchsia-100">Business Builder</p>
+          <p className="mt-2 text-xs text-slate-300">Automation, CRM, and growth operations workflows.</p>
         </Link>
       </section>
 

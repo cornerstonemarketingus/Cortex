@@ -13,7 +13,7 @@ type AssistantMessage = {
 };
 
 type BuilderMode = 'plan' | 'suggest';
-type BuilderBlueprint = 'website' | 'app' | 'business' | 'game';
+type BuilderBlueprint = 'website' | 'app' | 'business';
 type QualityTier = 'foundation' | 'premium';
 
 type EntitlementsResponse = {
@@ -138,16 +138,9 @@ const builderLanes = [
   {
     id: 'business' as const,
     href: '/business-builder',
-    title: 'Business Builder',
-    description: 'Revenue operations with SEO + GEO loops, local optimization, and communication-driven conversion strategies.',
+    title: 'Business Operations Builder',
+    description: 'Revenue operations, SEO + GEO loops, lead systems, automations, and close optimization in one lane.',
     tone: 'border-emerald-400/30 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-200',
-  },
-  {
-    id: 'game' as const,
-    href: '/game-builder',
-    title: 'Game Builder Engine',
-    description: 'Roblox and cross-platform game systems with reusable mechanics, telemetry, and marketplace packaging.',
-    tone: 'border-fuchsia-400/30 bg-fuchsia-500/10 hover:bg-fuchsia-500/15 text-fuchsia-200',
   },
 ];
 
@@ -191,7 +184,7 @@ const automationIntegrationOptions = [
   { id: 'make', label: 'Make' },
   { id: 'webhooks', label: 'Webhooks' },
   { id: 'stripe', label: 'Stripe' },
-  { id: 'twilio', label: 'Twilio' },
+  { id: 'voice-cloud', label: 'Builder Copilot Voice Cloud' },
   { id: 'hubspot', label: 'HubSpot' },
   { id: 'google-ads', label: 'Google Ads' },
   { id: 'custom-api', label: 'Custom API' },
@@ -250,7 +243,7 @@ export default function BuilderEntryPage() {
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('blueprint');
-    if (requested === 'website' || requested === 'app' || requested === 'business' || requested === 'game') {
+    if (requested === 'website' || requested === 'app' || requested === 'business') {
       setBlueprint(requested);
     }
   }, []);

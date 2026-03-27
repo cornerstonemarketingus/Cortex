@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 import type { AppAction, AppModel, TemplateId } from '@/lib/copilot/appModel';
 import { createTemplateModel } from '@/lib/copilot/appModel';
+import type { CopilotMode } from '@/lib/copilot/actionEngine';
 
 type CopilotMessage = {
   id: string;
@@ -13,8 +14,16 @@ type CopilotMessage = {
 };
 
 type CopilotCommandResponse = {
+  mode: CopilotMode;
   intent: string;
   actions: AppAction[];
+  discussion?: string;
+  preview?: {
+    summary: string;
+    impact: string;
+  };
+  requires_confirmation?: boolean;
+  confidence?: number;
   ui_feedback: {
     message: string;
     highlight?: string;
@@ -120,6 +129,10 @@ export default function WorkspacePage() {
   const [loadingState, setLoadingState] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copilotSuggestions, setCopilotSuggestions] = useState<string[]>(['Build my website', 'Create estimate for a deck', 'Turn on autopilot']);
+  const [copilotMode, setCopilotMode] = useState<CopilotMode>('EXECUTE');
+  const [pendingConfirmActions, setPendingConfirmActions] = useState<AppAction[]>([]);
+  const [pendingConfirmSummary, setPendingConfirmSummary] = useState<string | null>(null);
+  const [lastDiscussMessage, setLastDiscussMessage] = useState<string | null>(null);
 
   const activePage = useMemo(() => model?.pages.find((page) => page.id === activePageId) || model?.pages[0] || null, [model, activePageId]);
 
@@ -175,12 +188,28 @@ export default function WorkspacePage() {
     try {
       const command = await postJson<CopilotCommandResponse>('/api/copilot/command', {
         message: prompt,
+        mode: copilotMode,
         context: {
           currentPage: activePageId,
         },
       });
 
       const typedCommand = command;
+
+      if (typedCommand.mode === 'DISCUSS') {
+        setLastDiscussMessage(prompt);
+        setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: typedCommand.discussion || typedCommand.ui_feedback?.message || 'Discuss mode response ready.' }]);
+        setCopilotSuggestions(typedCommand.suggestions || []);
+        return;
+      }
+
+      if (typedCommand.mode === 'CONFIRM') {
+        setPendingConfirmActions(typedCommand.actions || []);
+        setPendingConfirmSummary(typedCommand.preview?.summary || typedCommand.ui_feedback.message);
+        setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: `${typedCommand.ui_feedback.message}\n${typedCommand.preview?.summary || ''}`.trim() }]);
+        setCopilotSuggestions(typedCommand.suggestions || []);
+        return;
+      }
 
       if (!typedCommand.actions?.length) {
         setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: typedCommand.ui_feedback?.message || 'No action returned.' }]);
@@ -201,8 +230,38 @@ export default function WorkspacePage() {
       setError(runError instanceof Error ? runError.message : 'Unable to run command.');
     } finally {
       setLoading(false);
-      setChatInput('');
+      if (copilotMode !== 'DISCUSS') {
+        setChatInput('');
+      }
     }
+  };
+
+  const runPendingConfirmation = async () => {
+    if (!model || pendingConfirmActions.length === 0 || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const executed = await postJson<{ model: AppModel }>('/api/copilot/action', {
+        model,
+        actions: pendingConfirmActions,
+      });
+      setModel(executed.model);
+      await saveWorkspaceState(executed.model, 'confirmed-actions');
+      setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: 'Confirmed and executed staged actions.' }]);
+      setPendingConfirmActions([]);
+      setPendingConfirmSummary(null);
+      setCopilotMode('EXECUTE');
+    } catch (runError) {
+      setError(runError instanceof Error ? runError.message : 'Unable to execute confirmed actions.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const convertDiscussToAction = async () => {
+    if (!lastDiscussMessage) return;
+    setCopilotMode('EXECUTE');
+    setChatInput(lastDiscussMessage);
   };
 
   const regenerateSection = async (sectionId: string) => {
@@ -444,6 +503,18 @@ export default function WorkspacePage() {
 
           <aside className="rounded-2xl border border-white/15 bg-black/30 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Ask Copilot</p>
+            <div className="mt-2 flex gap-1.5 text-[11px]">
+              {(['EXECUTE', 'DISCUSS', 'CONFIRM'] as CopilotMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setCopilotMode(mode)}
+                  className={`rounded border px-2 py-1 font-semibold ${copilotMode === mode ? 'border-amber-300/45 bg-amber-500/20 text-amber-100' : 'border-white/20 bg-white/5 text-slate-300'}`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
             <div className="mt-3 h-[460px] overflow-y-auto rounded-lg border border-white/10 bg-black/25 p-3 space-y-2">
               {messages.map((message) => (
                 <article key={message.id} className={`rounded-lg border p-2 text-xs ${message.role === 'user' ? 'border-cyan-300/30 bg-cyan-500/12' : 'border-white/15 bg-white/5'}`}>
@@ -456,7 +527,13 @@ export default function WorkspacePage() {
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
               className="mt-3 min-h-20 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-xs"
-              placeholder="Example: Add testimonials section under services with 3 reviews"
+              placeholder={
+                copilotMode === 'DISCUSS'
+                  ? 'Ask, plan, or explore ideas...'
+                  : copilotMode === 'CONFIRM'
+                    ? 'Stage actions for confirmation...'
+                    : 'Tell me what to build...'
+              }
             />
 
             <button
@@ -467,6 +544,31 @@ export default function WorkspacePage() {
             >
               {loading ? 'Running...' : 'Run Command'}
             </button>
+
+            {copilotMode === 'DISCUSS' ? (
+              <button
+                type="button"
+                onClick={() => void convertDiscussToAction()}
+                className="ml-2 mt-2 rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-50 hover:bg-amber-500/30"
+              >
+                Build This
+              </button>
+            ) : null}
+
+            {pendingConfirmActions.length > 0 ? (
+              <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-2 text-xs text-amber-50">
+                <p className="font-semibold">Confirmation required</p>
+                <p className="mt-1">{pendingConfirmSummary || 'Review staged actions before execution.'}</p>
+                <button
+                  type="button"
+                  onClick={() => void runPendingConfirmation()}
+                  disabled={loading}
+                  className="mt-2 rounded border border-amber-300/45 bg-amber-500/20 px-2 py-1 font-semibold hover:bg-amber-500/30 disabled:opacity-60"
+                >
+                  Approve And Execute
+                </button>
+              </div>
+            ) : null}
 
             <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
               <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Suggested actions</p>

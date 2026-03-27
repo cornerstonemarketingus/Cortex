@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import CortexTopTabs from '@/components/navigation/CortexTopTabs';
 import { useAdminSession } from '@/components/auth/useAdminSession';
 
-type BuilderBlueprint = 'website' | 'app' | 'business' | 'game';
+type BuilderBlueprint = 'website' | 'app' | 'business';
 
 type ConciergeResponse = {
   summary: string;
@@ -36,7 +36,7 @@ type SandboxPreview = {
 };
 
 function normalizeBlueprint(value: string): BuilderBlueprint {
-  if (value === 'website' || value === 'app' || value === 'business' || value === 'game') {
+  if (value === 'website' || value === 'app' || value === 'business') {
     return value;
   }
   return 'website';
@@ -45,8 +45,7 @@ function normalizeBlueprint(value: string): BuilderBlueprint {
 function getBuilderHomeHref(blueprint: BuilderBlueprint): string {
   if (blueprint === 'website') return '/website-builder';
   if (blueprint === 'app') return '/app-builder';
-  if (blueprint === 'business') return '/business-builder';
-  return '/game-builder';
+  return '/business-builder';
 }
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -85,8 +84,7 @@ export default function BuilderPreviewClient({ initialPrompt, initialBlueprint }
   const heroTitle = useMemo(() => {
     if (blueprint === 'website') return 'Website Preview Stage';
     if (blueprint === 'app') return 'App Preview Stage';
-    if (blueprint === 'business') return 'Business System Preview Stage';
-    return 'Game Builder Preview Stage';
+    return 'Business System Preview Stage';
   }, [blueprint]);
 
   const runPreview = async (overridePrompt?: string) => {
@@ -182,7 +180,6 @@ export default function BuilderPreviewClient({ initialPrompt, initialBlueprint }
                 <option value="website">Website Builder</option>
                 <option value="app">App Builder</option>
                 <option value="business">Business Builder</option>
-                <option value="game">Game Builder</option>
               </select>
             </label>
 

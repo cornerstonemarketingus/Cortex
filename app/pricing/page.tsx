@@ -1,5 +1,6 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
+import EstimatorHeroWorkspace from '@/components/estimator/EstimatorHeroWorkspace';
 
 const roiProof = [
   { label: 'Lead Response Time', value: '< 60 sec', note: 'With AI receptionist + instant SMS handoff' },
@@ -115,11 +116,13 @@ export default function PricingPage() {
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
         <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Construction SaaS Revenue System</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Built like a modern copilot. Tuned for contractor close-rate.</h1>
+          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Get more construction jobs without chasing leads</h1>
           <p className="mt-3 max-w-4xl text-sm text-cyan-100/90 md:text-base">
-            Builder Copilot combines landing pages, estimator workflows, AI receptionist, CRM follow-up, and close loops into one revenue engine. Choose your lane, launch fast, and run it from one chat-controlled workspace.
+            Builder Copilot builds your website, creates estimates, and runs follow-up automatically so your team stays in close mode.
           </p>
         </header>
+
+        <EstimatorHeroWorkspace />
 
         <section className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
           <article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">

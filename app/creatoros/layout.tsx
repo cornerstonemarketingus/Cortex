@@ -8,7 +8,7 @@ export default function CreatorOsLayout({ children }: { children: React.ReactNod
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-200">Cortex</p>
-              <p className="text-xs text-slate-300">Website, App, and Game Builder</p>
+              <p className="text-xs text-slate-300">Website, App, and Business Builder</p>
             </div>
 
             <nav className="flex flex-wrap items-center gap-2 text-xs">

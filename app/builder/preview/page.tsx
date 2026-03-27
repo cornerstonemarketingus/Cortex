@@ -1,6 +1,6 @@
 import BuilderPreviewClient from './BuilderPreviewClient';
 
-type BuilderBlueprint = 'website' | 'app' | 'business' | 'game';
+type BuilderBlueprint = 'website' | 'app' | 'business';
 
 type BuilderPreviewPageProps = {
   searchParams?: Promise<{
@@ -10,7 +10,7 @@ type BuilderPreviewPageProps = {
 };
 
 function normalizeBlueprint(value: string | undefined): BuilderBlueprint {
-  if (value === 'website' || value === 'app' || value === 'business' || value === 'game') {
+  if (value === 'website' || value === 'app' || value === 'business') {
     return value;
   }
   return 'website';

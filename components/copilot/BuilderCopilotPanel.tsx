@@ -56,6 +56,7 @@ export default function BuilderCopilotPanel({
   showProvisioning = true,
   buildMode,
 }: BuilderCopilotPanelProps) {
+  const [assistantMode, setAssistantMode] = useState<"execute" | "discuss" | "confirm">("execute");
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [output, setOutput] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -90,7 +91,12 @@ export default function BuilderCopilotPanel({
           botIds: [1, 2, 4, 6],
           includeTeamDecision: true,
           tone: "support",
-          message: `Builder Copilot request for ${contextLabel}. Provide implementation-ready steps, precise code actions, and quality checks. Request: ${prompt}`,
+          message:
+            assistantMode === "discuss"
+              ? `Builder Copilot discuss mode for ${contextLabel}. Help plan, reason, and sequence work without executing actions. Request: ${prompt}`
+              : assistantMode === "confirm"
+                ? `Builder Copilot confirm mode for ${contextLabel}. Propose staged actions and risk checks before execution. Request: ${prompt}`
+                : `Builder Copilot execute mode for ${contextLabel}. Provide implementation-ready steps, precise code actions, and quality checks. Request: ${prompt}`,
         }),
       });
 
@@ -199,6 +205,40 @@ export default function BuilderCopilotPanel({
         onChange={(event) => setPrompt(event.target.value)}
         className="mt-3 min-h-20 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
       />
+
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+        {([
+          { id: "execute", label: "Execute" },
+          { id: "discuss", label: "Discuss" },
+          { id: "confirm", label: "Confirm" },
+        ] as const).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setAssistantMode(item.id)}
+            className={`rounded border px-2 py-1 font-semibold ${assistantMode === item.id ? "border-cyan-300/55 bg-cyan-500/20 text-cyan-50" : "border-white/20 bg-white/5 text-slate-300"}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+        {[
+          "Build my website",
+          "Create estimate for a deck",
+          "Turn on autopilot",
+        ].map((quick) => (
+          <button
+            key={quick}
+            type="button"
+            onClick={() => setPrompt(quick)}
+            className="rounded border border-cyan-300/35 bg-cyan-500/10 px-2 py-1 text-cyan-50 hover:bg-cyan-500/20"
+          >
+            {quick}
+          </button>
+        ))}
+      </div>
 
       <button
         type="button"
