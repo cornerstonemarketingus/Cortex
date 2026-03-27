@@ -133,8 +133,23 @@ export default function WorkspacePage() {
   const [pendingConfirmActions, setPendingConfirmActions] = useState<AppAction[]>([]);
   const [pendingConfirmSummary, setPendingConfirmSummary] = useState<string | null>(null);
   const [lastDiscussMessage, setLastDiscussMessage] = useState<string | null>(null);
+  const [showGuideRail, setShowGuideRail] = useState(true);
 
   const activePage = useMemo(() => model?.pages.find((page) => page.id === activePageId) || model?.pages[0] || null, [model, activePageId]);
+
+  const guideSteps = useMemo(() => {
+    const hasTemplate = Boolean(model);
+    const hasEstimate = Boolean((model?.estimates || []).length > 0);
+    const hasAutopilot = Boolean(model?.automations.some((item) => item.autopilot));
+    const hasPipelineGrowth = Boolean((model?.crm.leads || []).length >= 3);
+
+    return [
+      { id: 'template', label: 'Load a trade template', done: hasTemplate },
+      { id: 'estimate', label: 'Create first estimate draft', done: hasEstimate },
+      { id: 'autopilot', label: 'Turn on autopilot workflows', done: hasAutopilot },
+      { id: 'lead', label: 'Add a new lead to pipeline', done: hasPipelineGrowth },
+    ];
+  }, [model]);
 
   const loadWorkspaceState = async (userKey: string) => {
     try {
@@ -168,6 +183,11 @@ export default function WorkspacePage() {
     const userKey = window.localStorage.getItem('buildercopilot.ownerKey') || 'default-user';
     setOwnerKey(userKey);
     void loadWorkspaceState(userKey);
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('guide') === 'demo') {
+      setShowGuideRail(true);
+    }
   }, []);
 
   const initialize = async (templateId: TemplateId) => {
@@ -177,10 +197,9 @@ export default function WorkspacePage() {
     await saveWorkspaceState(next, `template-${templateId}`);
   };
 
-  const runChatCommand = async () => {
-    if (!chatInput.trim() || !model || loading) return;
-
-    const prompt = chatInput.trim();
+  const runChatCommand = async (promptOverride?: string) => {
+    const prompt = (promptOverride ?? chatInput).trim();
+    if (!prompt || !model || loading) return;
     setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text: prompt }]);
     setError(null);
     setLoading(true);
@@ -230,7 +249,7 @@ export default function WorkspacePage() {
       setError(runError instanceof Error ? runError.message : 'Unable to run command.');
     } finally {
       setLoading(false);
-      if (copilotMode !== 'DISCUSS') {
+      if (copilotMode !== 'DISCUSS' && !promptOverride) {
         setChatInput('');
       }
     }
@@ -349,6 +368,87 @@ export default function WorkspacePage() {
             <Link href="/automations" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Open Automations Hub</Link>
           </div>
         </header>
+
+        {showGuideRail ? (
+          <section className="mt-4 rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Start Here Guide</p>
+                <p className="mt-1 text-sm text-cyan-50/90">Follow this checklist so you always know what to do next.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuideRail(false)}
+                className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-[11px] font-semibold hover:bg-white/20"
+              >
+                Hide Guide
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
+              {guideSteps.map((item, index) => (
+                <div key={item.id} className="rounded-lg border border-white/20 bg-black/25 px-3 py-2 text-xs">
+                  <p className="text-slate-300">Step {index + 1}</p>
+                  <p className="mt-1 font-semibold text-slate-100">{item.label}</p>
+                  <p className={`mt-1 ${item.done ? 'text-emerald-200' : 'text-amber-200'}`}>{item.done ? 'Completed' : 'Pending'}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => void initialize('roofing-contractor')}
+                className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 font-semibold hover:bg-cyan-500/30"
+              >
+                1) Load Roofing Template
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCopilotMode('EXECUTE');
+                  void runChatCommand('Create estimate for a deck');
+                }}
+                disabled={!model || loading}
+                className="rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 font-semibold hover:bg-amber-500/30 disabled:opacity-60"
+              >
+                2) Create Estimate Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCopilotMode('EXECUTE');
+                  void runChatCommand('Turn on autopilot');
+                }}
+                disabled={!model || loading}
+                className="rounded-lg border border-emerald-300/40 bg-emerald-500/20 px-3 py-2 font-semibold hover:bg-emerald-500/30 disabled:opacity-60"
+              >
+                3) Turn On Autopilot
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCopilotMode('EXECUTE');
+                  void runChatCommand('Add lead');
+                }}
+                disabled={!model || loading}
+                className="rounded-lg border border-indigo-300/40 bg-indigo-500/20 px-3 py-2 font-semibold hover:bg-indigo-500/30 disabled:opacity-60"
+              >
+                4) Add Pipeline Lead
+              </button>
+            </div>
+          </section>
+        ) : (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setShowGuideRail(true)}
+              className="rounded-lg border border-cyan-300/35 bg-cyan-500/15 px-3 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/25"
+            >
+              Show Start Here Guide
+            </button>
+          </div>
+        )}
 
         <section className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
           <aside className="rounded-2xl border border-white/15 bg-black/30 p-4">

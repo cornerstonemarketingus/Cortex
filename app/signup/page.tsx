@@ -238,13 +238,34 @@ export default function SignupPage() {
               <div className="rounded-xl border border-white/20 bg-black/25 p-3">Sample estimate: Deck build range $18,400 - $24,900.</div>
               <div className="rounded-xl border border-white/20 bg-black/25 p-3">CRM demo lane with 3 sample leads and follow-up automation.</div>
             </div>
-            <div className="mt-3">
+
+            <div className="mt-4 rounded-xl border border-cyan-300/35 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Start Here (2-Minute Guided Demo)</p>
+              <div className="mt-2 space-y-1 text-xs text-slate-200">
+                <p>1. Open the demo workspace.</p>
+                <p>2. Load a trade template from the left rail.</p>
+                <p>3. Click "Create estimate for a deck" from the guide rail.</p>
+                <p>4. Click "Turn on autopilot" and watch automations activate.</p>
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => router.push("/workspace")}
+                onClick={() => router.push("/workspace?guide=demo")}
                 className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-4 py-2 text-xs font-semibold hover:bg-cyan-500/30"
               >
-                Open Demo Workspace
+                Open Guided Demo Workspace
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDemoMode(false);
+                  setStep(1);
+                }}
+                className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20"
+              >
+                I Want Setup Questions Instead
               </button>
             </div>
           </section>
