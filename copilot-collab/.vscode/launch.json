@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Copilot Backend",
+      "program": "${workspaceFolder}/backend/server.js",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

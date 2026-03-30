@@ -121,19 +121,16 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
 
   if (hasMalformedRewrite(pathname)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/pricing';
-    redirectUrl.search = '';
-    return NextResponse.redirect(redirectUrl, 308);
+    // Previously we redirected malformed rewrites to /pricing which caused
+    // unexpected root redirects. Allow the request to continue and let the
+    // app handle any routing/404s instead of forcing a pricing redirect.
+    return NextResponse.next();
   }
 
   if (host.toLowerCase() === 'teambuildercopilot.com') {
     const canonicalUrl = request.nextUrl.clone();
     canonicalUrl.hostname = 'www.teambuildercopilot.com';
-    if (canonicalUrl.pathname === '/') {
-      canonicalUrl.pathname = '/pricing';
-      canonicalUrl.search = '';
-    }
+    // Keep root canonical as '/' (no forced /pricing)
     return NextResponse.redirect(canonicalUrl, 308);
   }
 
@@ -153,17 +150,14 @@ export function proxy(request: NextRequest) {
   if (!shouldBypassSubdomain(pathname)) {
     const site = resolveSiteFromHost(host);
     if (site) {
-      if (pathname === '/') {
-        const rewriteUrl = request.nextUrl.clone();
-        rewriteUrl.pathname = '/pricing';
-        return NextResponse.rewrite(rewriteUrl);
-      }
+      // Do not rewrite root to /pricing; allow '/' to render Home directly
 
       if (!isAllowedForSite(pathname, site)) {
-        const siteUrl = request.nextUrl.clone();
-        siteUrl.pathname = '/pricing';
-        siteUrl.search = '';
-        return NextResponse.redirect(siteUrl);
+        // Previously we redirected unknown site paths to `/pricing`, which
+        // caused many hosts to be stuck on that page. Allow the request to
+        // continue so the app can handle routing (404/home) instead of forcing
+        // a pricing redirect.
+        return NextResponse.next();
       }
     }
 

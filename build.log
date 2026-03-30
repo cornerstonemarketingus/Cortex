@@ -1,0 +1,44 @@
+
+> cortex@0.1.0 build
+> prisma generate && next build
+
+Prisma schema loaded from prisma\schema.prisma.
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé  Update available 7.5.0 -> 7.6.0                        Γöé
+Γöé  Run the following to update                            Γöé
+Γöé    npm i --save-dev prisma@latest                       Γöé
+Γöé    npm i @prisma/client@latest                          Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+Γ£ö Generated Prisma Client (v7.5.0) to .\node_modules\@prisma\client in 552ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./app/chat/page.tsx:195:7
+Parsing ecmascript source code failed
+  193 | }
+  194 |         throw new Error(parsed.error || `Request failed (${response.status})`);
+> 195 |       }
+      |       ^
+  196 |
+  197 |       const outputs = Array.isArray(parsed.responses) && parsed.responses.length > 0
+  198 |         ? parsed.responses
+
+Expression expected
+
+Import trace:
+  App Route:
+    ./app/chat/page.tsx
+    ./lib/workspaces.ts
+    ./app/api/jobs/route.ts
+
+
+    at <unknown> (./app/chat/page.tsx:195:7)

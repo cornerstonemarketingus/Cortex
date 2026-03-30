@@ -6,13 +6,8 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/pricing',
-        permanent: false,
-      },
-    ];
+    // No forced redirects for root — allow Home to render at '/'
+    return [];
   },
 };
 

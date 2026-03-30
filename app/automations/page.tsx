@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
+import QuickstartTour from '@/components/automations/QuickstartTour';
 
 type AutomationResponse = {
   ok?: boolean;
@@ -132,6 +133,7 @@ const AUTOMATION_LIBRARY = [
 ] as const;
 
 export default function AutomationsPage() {
+  const [promptParam, setPromptParam] = useState('');
   const [firstName, setFirstName] = useState('Jordan');
   const [email, setEmail] = useState('jordan@example.com');
   const [phone, setPhone] = useState('+16125565408');
@@ -180,10 +182,21 @@ export default function AutomationsPage() {
       void loadStatus();
     }, 30000);
 
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      setPromptParam(sp.get('prompt') || '');
+    }
+
     return () => {
       clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (promptParam && promptParam.trim()) {
+      setScope(promptParam.trim().slice(0, 2000));
+    }
+  }, [promptParam]);
 
   const saveTemplates = async () => {
     if (templateSaveLoading) return;
@@ -259,6 +272,35 @@ export default function AutomationsPage() {
           </p>
         </header>
 
+        <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <h3 className="text-sm font-semibold text-white">Quickstart Tutorial</h3>
+            <p className="mt-2 text-xs text-slate-300">Get value immediately: follow these three tiny steps to add an automation to your business.</p>
+            <ol className="mt-3 list-decimal list-inside text-xs text-slate-200 space-y-2">
+              <li><strong>Describe the trigger</strong> — e.g., new lead form submission or missed call.</li>
+              <li><strong>Pick the outcome</strong> — send instant reply, create estimate, or schedule follow-up.</li>
+              <li><strong>Activate</strong> — run the pack and monitor delivery in the health panel.</li>
+            </ol>
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPromptParam('Create a lead follow-up automation: day 1 welcome, day 3 check-in, day 7 proposal reminder.');
+                  setScope('Create a lead follow-up automation: day 1 welcome, day 3 check-in, day 7 proposal reminder.');
+                }}
+                className="rounded-lg bg-[var(--brand-600)] px-3 py-2 text-xs font-semibold text-white hover:brightness-105"
+              >
+                Start Quick Fill
+              </button>
+              <p className="mt-2 text-xs text-slate-400">This will prefill the Automation Copilot so you can see generated steps and enable them quickly.</p>
+            </div>
+          </div>
+
+          <div>
+            <QuickstartTour setPromptParam={setPromptParam} setScope={setScope} />
+          </div>
+        </section>
+
         <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {LEAD_ENGINE_STEPS.map((step) => (
             <article key={step.title} className="rounded-2xl border border-white/20 bg-black/25 p-4">
@@ -266,6 +308,17 @@ export default function AutomationsPage() {
               <p className="mt-2 text-xs text-slate-300">{step.detail}</p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-6">
+          <BuilderCopilotPanel
+            title="Automation Copilot"
+            subtitle="Describe the automation you want and the system will scaffold triggers and steps."
+            defaultPrompt={promptParam || 'Create a lead follow-up automation: day 1 welcome, day 3 check-in, day 7 proposal reminder.'}
+            contextLabel="automations"
+            showProvisioning={false}
+            buildMode={undefined}
+          />
         </section>
 
         <section className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-500/10 p-5">

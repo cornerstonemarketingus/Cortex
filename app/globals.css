@@ -11,6 +11,18 @@ body {
     linear-gradient(160deg, #0a1a1c 0%, #101f2a 42%, #13181f 100%);
 }
 
+:root {
+  --brand-900: #05213a;
+  --brand-800: #09324f;
+  --brand-700: #0b4a73;
+  --brand-600: #1366a5;
+  --accent-500: #ffb84d;
+  --accent-600: #ff9500;
+  --muted-400: #94a3b8;
+  --bg-900: #071224;
+  --card-bg: rgba(255,255,255,0.03);
+}
+
 a {
   color: inherit;
 }

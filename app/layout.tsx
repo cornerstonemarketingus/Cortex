@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// Removed Google font imports to avoid network fetch during build.
 import ContentProtectionShield from "@/components/security/ContentProtectionShield";
 import GlobalAiAssistant from '@/components/ai/GlobalAiAssistant';
+import { BuilderStateProvider } from '@/components/ai/BuilderStateProvider';
 import SiteFooter from '@/components/navigation/SiteFooter';
 import "./globals.css";
+import AskCopilotFullWidth from '@/components/ai/AskCopilotFullWidth';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Use system font stack via globals.css instead.
 
 export const metadata: Metadata = {
   title: "Cortex | Strategic Marketing and Business Development Executive AI",
@@ -46,14 +40,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`antialiased`}>
         <ContentProtectionShield />
-        {children}
-        <SiteFooter />
-        <GlobalAiAssistant />
+        <BuilderStateProvider>
+          {children}
+          <SiteFooter />
+          <GlobalAiAssistant />
+          <AskCopilotFullWidth />
+        </BuilderStateProvider>
       </body>
     </html>
   );
 }
+

@@ -1,0 +1,38 @@
+
+> cortex@0.1.0 build
+> prisma generate && next build
+
+Prisma schema loaded from prisma\schema.prisma.
+
+Γ£ö Generated Prisma Client (v7.5.0) to .\node_modules\@prisma\client in 435ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./app/chat/page.tsx:204:5
+Parsing ecmascript source code failed
+  202 |         },
+  203 |       ]);
+> 204 |     } finally {
+      |     ^
+  205 |       setLoading(false);
+  206 |     }
+  207 |   };
+
+Expression expected
+
+Import trace:
+  App Route:
+    ./app/chat/page.tsx
+    ./lib/workspaces.ts
+    ./app/api/jobs/route.ts
+
+
+    at <unknown> (./app/chat/page.tsx:204:5)

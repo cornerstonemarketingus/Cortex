@@ -9,12 +9,12 @@ type MarketingNavItem = {
 };
 
 const primaryItems: MarketingNavItem[] = [
-  { href: '/pricing', label: 'Home' },
-  { href: '/estimate', label: 'Estimates' },
-  { href: '/automations', label: 'Automations' },
-  { href: '/builder', label: 'Page Builder' },
-  { href: '/workspace', label: 'Workspace' },
+  { href: '/', label: 'Home' },
   { href: '/signup', label: 'Start' },
+  { href: '/estimate', label: 'Estimates' },
+  { href: '/workspace', label: 'Workspace' },
+  { href: '/automations', label: 'Automations' },
+  { href: '/website-builder', label: 'Page Builder' },
 ];
 
 function isActive(pathname: string, href: string): boolean {

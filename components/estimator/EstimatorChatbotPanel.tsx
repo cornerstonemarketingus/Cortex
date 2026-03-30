@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useBuilderDispatch } from '@/components/ai/BuilderStateProvider';
 
 type EstimatorSessionResponse = {
   lead?: {
@@ -100,6 +101,7 @@ export default function EstimatorChatbotPanel({
   const [error, setError] = useState<string | null>(null);
 
   const canRun = useMemo(() => zipCode.trim().length >= 5 && description.trim().length >= 12, [zipCode, description]);
+  const dispatch = useBuilderDispatch();
 
   const pushMessage = (role: ChatMessage["role"], text: string) => {
     setChatMessages((current) => [
@@ -160,6 +162,20 @@ export default function EstimatorChatbotPanel({
       setScopeAssumptions(parsed.scopeExtraction?.assumptions || []);
       setLastEstimate(parsed);
       setHandoffLink(null);
+
+      // Emit a CREATE_ESTIMATE action so Builder UI / Copilot can prefill estimate page
+      try {
+        const payload = {
+          scope: parsed.scopeExtraction?.assumptions || [],
+          framingSqFt: undefined,
+          windowsCount: undefined,
+          zip: zipCode,
+          estimateRange: parsed.estimateRange,
+        };
+        dispatch({ type: 'CREATE_ESTIMATE', payload });
+      } catch {
+        // ignore dispatch failures
+      }
 
       const estimateText = `Range: $${parsed.estimateRange.low.toLocaleString("en-US")} - $${parsed.estimateRange.high.toLocaleString("en-US")} (avg $${parsed.estimateRange.average.toLocaleString("en-US")}).`;
       const confidence = typeof parsed.confidenceScore === "number" ? ` Confidence: ${parsed.confidenceScore}%.` : "";

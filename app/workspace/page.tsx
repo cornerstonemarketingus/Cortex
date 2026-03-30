@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import WorkspaceCopilot from '@/components/workspace/WorkspaceCopilot';
+import TemplatesLibrary from '@/components/workspace/TemplatesLibrary';
 import type { AppAction, AppModel, TemplateId } from '@/lib/copilot/appModel';
 import { createTemplateModel } from '@/lib/copilot/appModel';
 import type { CopilotMode } from '@/lib/copilot/actionEngine';
@@ -54,11 +57,6 @@ const templates: Array<{ id: TemplateId; label: string; summary: string }> = [
     summary: 'High-ticket lead handling, project pipeline, and growth automation.',
   },
   {
-    id: 'roofing-contractor',
-    label: 'Roofing template',
-    summary: 'Storm-ready estimate intake, insurance workflow, and close automation.',
-  },
-  {
     id: 'electrical-contractor',
     label: 'Electrical template',
     summary: 'Panel/service upgrade funnel with permit-friendly estimate defaults.',
@@ -100,6 +98,8 @@ const templates: Array<{ id: TemplateId; label: string; summary: string }> = [
   },
 ];
 
+// AI team panel removed from UI; AI team functionality remains available programmatically.
+
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: 'POST',
@@ -116,6 +116,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 }
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [goal, setGoal] = useState('Get more leads');
   const [ownerKey, setOwnerKey] = useState('default-user');
   const [model, setModel] = useState<AppModel | null>(null);
@@ -134,6 +135,7 @@ export default function WorkspacePage() {
   const [pendingConfirmSummary, setPendingConfirmSummary] = useState<string | null>(null);
   const [lastDiscussMessage, setLastDiscussMessage] = useState<string | null>(null);
   const [showGuideRail, setShowGuideRail] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const activePage = useMemo(() => model?.pages.find((page) => page.id === activePageId) || model?.pages[0] || null, [model, activePageId]);
 
@@ -195,6 +197,40 @@ export default function WorkspacePage() {
     setModel(next);
     setActivePageId(next.pages[0]?.id || 'home');
     await saveWorkspaceState(next, `template-${templateId}`);
+  };
+
+  const routePromptIntent = (promptText: string) => {
+    const prompt = promptText.trim();
+    if (!prompt) return false;
+
+    const lowered = prompt.toLowerCase();
+    if (lowered.includes('estimate') || lowered.includes('quote') || lowered.includes('plans') || lowered.includes('takeoff')) {
+      router.push(`/estimate?prompt=${encodeURIComponent(prompt)}`);
+      return true;
+    }
+
+    if (lowered.includes('page') || lowered.includes('website') || lowered.includes('landing')) {
+      router.push(`/builder?prompt=${encodeURIComponent(prompt)}&blueprint=website`);
+      return true;
+    }
+
+    if (lowered.includes('automation') || lowered.includes('follow-up') || lowered.includes('autopilot') || lowered.includes('pipeline')) {
+      router.push(`/automations?prompt=${encodeURIComponent(prompt)}`);
+      return true;
+    }
+
+    return false;
+  };
+
+  const runCopilotCommandCenter = async () => {
+    const prompt = chatInput.trim();
+    if (!prompt || loading) return;
+
+    if (routePromptIntent(prompt)) {
+      return;
+    }
+
+    await runChatCommand(prompt);
   };
 
   const runChatCommand = async (promptOverride?: string) => {
@@ -366,8 +402,69 @@ export default function WorkspacePage() {
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/dashboard" className="rounded-lg border border-amber-300/45 bg-amber-400/20 px-3 py-2 font-semibold hover:bg-amber-400/30">Open Unified Dashboard View</Link>
             <Link href="/automations" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Open Automations Hub</Link>
+            <button
+              type="button"
+              onClick={() => setShowSidebar((current) => !current)}
+              className="rounded-lg border border-cyan-300/35 bg-cyan-500/15 px-3 py-2 font-semibold hover:bg-cyan-500/25"
+            >
+              {showSidebar ? 'Hide Navigation' : 'Show Navigation'}
+            </button>
           </div>
         </header>
+
+        {/* Workspace split: Copilot (left) and Templates (right) */}
+        <section className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <WorkspaceCopilot defaultPrompt={"Create an estimate for a residential build"} />
+          </div>
+          <div>
+            <TemplatesLibrary />
+          </div>
+        </section>
+
+        <section className="mt-5 min-h-[60vh] rounded-3xl border border-amber-300/30 bg-black/30 p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.18em] text-amber-200">Copilot Operating System</p>
+          <h2 className="mt-2 text-3xl font-semibold md:text-5xl">Tell me what you want to build, estimate, or automate</h2>
+          <p className="mt-3 max-w-3xl text-sm text-amber-100/90 md:text-base">Type a command once and Builder Copilot routes you to the right tool with prefilled context.</p>
+
+          <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-4 md:p-5">
+            <textarea
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              className="min-h-28 w-full rounded-xl border border-white/20 bg-black/35 px-4 py-3 text-sm"
+              placeholder="Describe your project, and I'll build it for you"
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void runCopilotCommandCenter()}
+                disabled={loading}
+                className="rounded-xl bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200 disabled:opacity-60"
+              >
+                {loading ? 'Working...' : 'Run With Copilot'}
+              </button>
+              <button type="button" onClick={() => setChatInput('Create an estimate for a residential build')} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Start Estimate</button>
+              <button type="button" onClick={() => setChatInput('Build a landing page for my construction business')} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Build a Page</button>
+              <button type="button" onClick={() => setChatInput('Create a lead follow-up automation with day 1 day 3 day 7 sequence')} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Create Automation</button>
+              <button type="button" onClick={() => router.push('/estimate')} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Upload Plans</button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-amber-300/25 bg-amber-500/10 p-3 text-xs text-amber-50">
+              Suggested prompts:
+              <p className="mt-1">- Create an estimate for a residential build</p>
+              <p>- Build a landing page for framing services</p>
+              <p>- Set up a lead follow-up system</p>
+            </div>
+            <div className="rounded-xl border border-cyan-300/25 bg-cyan-500/10 p-3 text-xs text-cyan-50">
+              AI-first rule:
+              <p className="mt-1">User types → system routes → work starts instantly.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Team panel hidden from workspace UI; assignment and automation tooling remain available programmatically */}
 
         {showGuideRail ? (
           <section className="mt-4 rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-4">
@@ -398,10 +495,10 @@ export default function WorkspacePage() {
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => void initialize('roofing-contractor')}
+                onClick={() => void initialize('framing-contractor')}
                 className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 font-semibold hover:bg-cyan-500/30"
               >
-                1) Load Roofing Template
+                1) Load Framing Template
               </button>
               <button
                 type="button"
@@ -450,7 +547,8 @@ export default function WorkspacePage() {
           </div>
         )}
 
-        <section className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
+        <section className={`mt-5 grid grid-cols-1 gap-4 ${showSidebar ? 'xl:grid-cols-[260px_minmax(0,1fr)_340px]' : 'xl:grid-cols-[minmax(0,1fr)_340px]'}`}>
+          {showSidebar ? (
           <aside className="rounded-2xl border border-white/15 bg-black/30 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Navigation</p>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -475,12 +573,7 @@ export default function WorkspacePage() {
               ))}
             </div>
 
-            <div className="mt-5 rounded-lg border border-amber-300/35 bg-amber-500/12 p-3 text-xs text-amber-100">
-              Guided activation:
-              <p className="mt-1">1. Upload your first plan</p>
-              <p>2. Add your first job</p>
-              <p>3. Send your first bid</p>
-            </div>
+            {/* Guided activation removed from UI to reduce clutter. Use Copilot to start workflows instead. */}
 
             <div className="mt-5 rounded-lg border border-white/15 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Revisions</p>
@@ -500,6 +593,7 @@ export default function WorkspacePage() {
               </div>
             </div>
           </aside>
+          ) : null}
 
           <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
             {!model ? (
@@ -601,94 +695,7 @@ export default function WorkspacePage() {
             )}
           </section>
 
-          <aside className="rounded-2xl border border-white/15 bg-black/30 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Ask Copilot</p>
-            <div className="mt-2 flex gap-1.5 text-[11px]">
-              {(['EXECUTE', 'DISCUSS', 'CONFIRM'] as CopilotMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setCopilotMode(mode)}
-                  className={`rounded border px-2 py-1 font-semibold ${copilotMode === mode ? 'border-amber-300/45 bg-amber-500/20 text-amber-100' : 'border-white/20 bg-white/5 text-slate-300'}`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 h-[460px] overflow-y-auto rounded-lg border border-white/10 bg-black/25 p-3 space-y-2">
-              {messages.map((message) => (
-                <article key={message.id} className={`rounded-lg border p-2 text-xs ${message.role === 'user' ? 'border-cyan-300/30 bg-cyan-500/12' : 'border-white/15 bg-white/5'}`}>
-                  {message.text}
-                </article>
-              ))}
-            </div>
-
-            <textarea
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              className="mt-3 min-h-20 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-xs"
-              placeholder={
-                copilotMode === 'DISCUSS'
-                  ? 'Ask, plan, or explore ideas...'
-                  : copilotMode === 'CONFIRM'
-                    ? 'Stage actions for confirmation...'
-                    : 'Tell me what to build...'
-              }
-            />
-
-            <button
-              type="button"
-              onClick={() => void runChatCommand()}
-              disabled={loading || !model || loadingState}
-              className="mt-2 rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
-            >
-              {loading ? 'Running...' : 'Run Command'}
-            </button>
-
-            {copilotMode === 'DISCUSS' ? (
-              <button
-                type="button"
-                onClick={() => void convertDiscussToAction()}
-                className="ml-2 mt-2 rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-50 hover:bg-amber-500/30"
-              >
-                Build This
-              </button>
-            ) : null}
-
-            {pendingConfirmActions.length > 0 ? (
-              <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-2 text-xs text-amber-50">
-                <p className="font-semibold">Confirmation required</p>
-                <p className="mt-1">{pendingConfirmSummary || 'Review staged actions before execution.'}</p>
-                <button
-                  type="button"
-                  onClick={() => void runPendingConfirmation()}
-                  disabled={loading}
-                  className="mt-2 rounded border border-amber-300/45 bg-amber-500/20 px-2 py-1 font-semibold hover:bg-amber-500/30 disabled:opacity-60"
-                >
-                  Approve And Execute
-                </button>
-              </div>
-            ) : null}
-
-            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
-              <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Suggested actions</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {copilotSuggestions.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setChatInput(item)}
-                    className="rounded border border-cyan-300/35 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-50 hover:bg-cyan-500/20"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {error ? <p className="mt-2 text-xs text-red-300">{error}</p> : null}
-            {loadingState ? <p className="mt-2 text-xs text-slate-400">Syncing workspace state...</p> : null}
-          </aside>
+          {/* Workspace copilot aside removed to keep workspace focused on active work. Use the top Copilot command center instead. */}
         </section>
       </div>
     </main>

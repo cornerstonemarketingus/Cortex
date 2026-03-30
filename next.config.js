@@ -6,13 +6,9 @@ const nextConfig = {
     root: process.cwd(),
   },
   async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/pricing',
-        permanent: false,
-      },
-    ];
+    // Redirects intentionally removed so root no longer forces /pricing.
+    // Keep this hook in place for future redirects if needed.
+    return [];
   },
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useBuilderState } from '@/components/ai/BuilderStateProvider';
 
 type ChatResponse = {
   responses?: string[];
@@ -46,6 +47,7 @@ type BuilderCopilotPanelProps = {
   contextLabel?: string;
   showProvisioning?: boolean;
   buildMode?: "website" | "app";
+  onAction?: (action: { type: string; payload?: any }) => void;
 };
 
 export default function BuilderCopilotPanel({
@@ -55,6 +57,7 @@ export default function BuilderCopilotPanel({
   contextLabel = "general",
   showProvisioning = true,
   buildMode,
+  onAction,
 }: BuilderCopilotPanelProps) {
   const [assistantMode, setAssistantMode] = useState<"execute" | "discuss" | "confirm">("execute");
   const [prompt, setPrompt] = useState(defaultPrompt);
@@ -105,7 +108,28 @@ export default function BuilderCopilotPanel({
         throw new Error(parsed.error || `Copilot request failed (${response.status})`);
       }
 
-      setOutput(parsed.teamDecision || parsed.responses?.[0] || null);
+      const finalText = parsed.teamDecision || parsed.responses?.[0] || null;
+      setOutput(finalText);
+
+      // Emit a structured action when a consumer wants it. Use a simple intent detector as a fallback.
+      if (onAction) {
+        const txt = prompt.toLowerCase();
+        let intent = 'unknown';
+        if (/estimate|quote|bid|sqft|square foot|square footage/.test(txt)) intent = 'estimate';
+        if (/page|website|landing|hero|headline/.test(txt)) intent = 'page';
+        if (/automation|workflow|follow up|autopilot|sequence|trigger/.test(txt)) intent = 'automation';
+
+        let action = { type: 'NOOP', payload: { prompt } };
+        if (intent === 'estimate') action = { type: 'CREATE_ESTIMATE', payload: { prompt } };
+        if (intent === 'page') action = { type: 'CREATE_PAGE', payload: { prompt } };
+        if (intent === 'automation') action = { type: 'CREATE_AUTOMATION', payload: { prompt } };
+
+        try {
+          onAction(action);
+        } catch (e) {
+          // swallow errors from consumer handlers
+        }
+      }
     } catch (runError) {
       setError(runError instanceof Error ? runError.message : "Unable to run Builder Copilot right now.");
     } finally {
@@ -195,15 +219,49 @@ export default function BuilderCopilotPanel({
     }
   };
 
+  // Auto-prefill from global builder state lastAction
+  const builderState = useBuilderState();
+  useEffect(() => {
+    const act = builderState?.lastAction;
+    if (!act) return;
+
+    try {
+      if (act.type === 'CREATE_ESTIMATE') {
+        const p = (act.payload && act.payload.prompt) || act.payload?.description || '';
+        if (p) setPrompt((cur) => (cur === defaultPrompt ? p : p));
+        if (act.payload?.businessName) setBusinessName(act.payload.businessName);
+        if (act.payload?.websiteUrl) setWebsiteUrl(act.payload.websiteUrl);
+        if (act.payload?.phoneNumber) setPhoneNumber(act.payload.phoneNumber);
+        if (act.payload?.email) setEmail(act.payload.email);
+      }
+
+      if (act.type === 'CREATE_PAGE') {
+        const p = (act.payload && act.payload.prompt) || act.payload?.title || '';
+        if (p) setPrompt(p);
+      }
+
+      if (act.type === 'CREATE_AUTOMATION') {
+        const p = (act.payload && act.payload.prompt) || act.payload?.description || '';
+        if (p) setPrompt(p);
+      }
+    } catch (e) {
+      // swallow
+    }
+  }, [builderState?.lastAction]);
+
   return (
-    <section className="rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
-      <h2 className="text-lg font-semibold text-cyan-100">{title}</h2>
-      <p className="mt-1 text-xs text-cyan-50/90">{subtitle}</p>
+    <section
+      className="rounded-2xl border p-5"
+      style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'var(--card-bg)' }}
+    >
+      <h2 className="text-lg font-semibold" style={{ color: 'var(--brand-900)' }}>{title}</h2>
+      <p className="mt-1 text-xs" style={{ color: 'var(--muted-400)' }}>{subtitle}</p>
 
       <textarea
         value={prompt}
         onChange={(event) => setPrompt(event.target.value)}
-        className="mt-3 min-h-20 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+        className="mt-3 min-h-20 w-full rounded-xl border px-3 py-2 text-sm"
+        style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.18)', color: 'var(--muted-400)' }}
       />
 
       <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
@@ -216,7 +274,7 @@ export default function BuilderCopilotPanel({
             key={item.id}
             type="button"
             onClick={() => setAssistantMode(item.id)}
-            className={`rounded border px-2 py-1 font-semibold ${assistantMode === item.id ? "border-cyan-300/55 bg-cyan-500/20 text-cyan-50" : "border-white/20 bg-white/5 text-slate-300"}`}
+            className={`rounded border px-2 py-1 font-semibold ${assistantMode === item.id ? "bg-[var(--brand-600)]/14 text-white" : "border-white/20 bg-white/5 text-slate-300"}`}
           >
             {item.label}
           </button>
@@ -233,7 +291,8 @@ export default function BuilderCopilotPanel({
             key={quick}
             type="button"
             onClick={() => setPrompt(quick)}
-            className="rounded border border-cyan-300/35 bg-cyan-500/10 px-2 py-1 text-cyan-50 hover:bg-cyan-500/20"
+            className="rounded border px-2 py-1 text-white hover:brightness-105"
+            style={{ borderColor: 'rgba(0,0,0,0.08)', background: 'var(--brand-600)' }}
           >
             {quick}
           </button>
@@ -244,7 +303,8 @@ export default function BuilderCopilotPanel({
         type="button"
         onClick={() => void runCopilot()}
         disabled={loading}
-        className="mt-3 rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
+        className="mt-3 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60"
+        style={{ background: 'var(--brand-600)', color: 'white' }}
       >
         {loading ? "Running..." : "Run Builder Copilot"}
       </button>
@@ -254,7 +314,8 @@ export default function BuilderCopilotPanel({
           type="button"
           onClick={() => void runInstantBuild()}
           disabled={buildLoading}
-          className="ml-2 mt-3 rounded-lg border border-cyan-300/45 bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/30 disabled:opacity-60"
+          className="ml-2 mt-3 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60"
+          style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'var(--accent-600)', color: 'white' }}
         >
           {buildLoading ? "Building..." : "Generate 80% Build Instantly"}
         </button>
@@ -267,21 +328,22 @@ export default function BuilderCopilotPanel({
       ) : null}
 
       {buildPreviewHtml && !provisioning?.chatbotSnippet ? (
-        <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-white">
+        <div className="mt-4 overflow-hidden rounded-xl" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'white' }}>
           <iframe title="Builder Copilot preview" srcDoc={buildPreviewHtml} className="h-[460px] w-full border-0" />
         </div>
       ) : null}
 
       {showProvisioning ? (
-        <div className="mt-5 rounded-xl border border-white/15 bg-black/25 p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-cyan-100">Business Booster Intake</p>
-          <p className="mt-1 text-xs text-slate-300">Enter business details to generate voice receptionist + chatbot setup instructions and embed code.</p>
+        <div className="mt-5 rounded-xl p-4" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.18)' }}>
+          <p className="text-xs uppercase tracking-[0.14em]" style={{ color: 'var(--accent-600)' }}>Business Booster Intake</p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--muted-400)' }}>Enter business details to generate voice receptionist + chatbot setup instructions and embed code.</p>
 
           {buildMode === "website" ? (
             <button
               type="button"
               onClick={() => setShowBoosterIntake((current) => !current)}
-              className="mt-3 rounded-lg border border-cyan-300/45 bg-cyan-500/20 px-3 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/30"
+              className="mt-3 rounded-lg px-3 py-2 text-xs font-semibold"
+              style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'var(--brand-600)', color: 'white' }}
             >
               {showBoosterIntake ? "Hide Intake Fields" : "Open Business Booster Intake"}
             </button>
@@ -324,11 +386,12 @@ export default function BuilderCopilotPanel({
           </div>
           ) : null}
 
-          <button
+            <button
             type="button"
             onClick={() => void configureBusiness()}
             disabled={provisioningLoading}
-            className="mt-3 rounded-lg border border-cyan-300/45 bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-50 hover:bg-cyan-500/30 disabled:opacity-60"
+            className="mt-3 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60"
+            style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'var(--accent-600)', color: 'white' }}
           >
             {provisioningLoading ? "Configuring..." : "Configure Voice + Chatbot"}
           </button>
@@ -360,10 +423,10 @@ export default function BuilderCopilotPanel({
               ) : null}
 
               {provisioning.tokenRecommendation ? (
-                <div className="rounded-lg border border-cyan-300/25 bg-cyan-500/10 p-2">
-                  <p className="text-cyan-100">Recommended token package: {provisioning.tokenRecommendation.name}</p>
-                  <p className="mt-1 text-slate-300">{provisioning.tokenRecommendation.tokens.toLocaleString()} tokens at ${provisioning.tokenRecommendation.priceUsd}/mo</p>
-                  <p className="mt-1 text-slate-400">{provisioning.tokenRecommendation.notes}</p>
+                <div className="rounded-lg p-2" style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.06)' }}>
+                  <p style={{ color: 'var(--accent-600)' }}>Recommended token package: {provisioning.tokenRecommendation.name}</p>
+                  <p className="mt-1" style={{ color: 'var(--muted-400)' }}>{provisioning.tokenRecommendation.tokens.toLocaleString()} tokens at ${provisioning.tokenRecommendation.priceUsd}/mo</p>
+                  <p className="mt-1" style={{ color: 'var(--muted-400)' }}>{provisioning.tokenRecommendation.notes}</p>
                 </div>
               ) : null}
 

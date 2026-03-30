@@ -1,6 +1,6 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
-import EstimatorHeroWorkspace from '@/components/estimator/EstimatorHeroWorkspace';
+import UnifiedCopilotChat from '@/components/copilot/UnifiedCopilotChat';
 
 const roiProof = [
   { label: 'Lead Response Time', value: '< 60 sec', note: 'With AI receptionist + instant SMS handoff' },
@@ -122,7 +122,7 @@ export default function PricingPage() {
           </p>
         </header>
 
-        <EstimatorHeroWorkspace />
+        <UnifiedCopilotChat />
 
         <section className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
           <article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">

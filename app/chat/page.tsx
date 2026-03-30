@@ -1,40 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import { useEffect, useRef, useState } from "react";
+import PublicMarketingNav from "@/components/navigation/PublicMarketingNav";
+import { handleCopilotRequest } from "@/core/copilot/copilot.service";
+import { loadContextFromStorage, type CopilotContext } from "@/core/copilot/context.store";
+import type { Intent } from "@/core/copilot/intent.classifier";
 
 type ChatMessage = {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   text: string;
+  intent?: Intent;
+  estimate?: any;
 };
 
-type ChatApiResponse = {
-  responses?: string[];
-  results?: Array<{ agent: string; result: string }>;
-  error?: string;
-};
-
-const STORAGE_KEY = 'bidbuilder.chat.messages';
-
-const QUICK_ACTIONS = [
-  'Update my profile settings and improve account onboarding copy.',
-  'Make direct code edits to improve my website builder onboarding flow.',
-  'Refactor my app build prompt for better production launch readiness.',
-  'Generate a launch plan with QA checklist for my current build.',
-] as const;
+const STORAGE_KEY = "bidbuilder.chat.messages";
 
 export default function ChatPage() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: 'system-welcome',
-      role: 'system',
-      text: 'Copilot is ready. Describe your profile, app, or website change request and I will produce direct implementation steps and executable updates.',
+      id: "system-welcome",
+      role: "system",
+      text: "I'm your AI Copilot. I can help with estimates, websites, automations, or general questions. What would you like to do?",
     },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [context, setContext] = useState<CopilotContext>(() =>
+    loadContextFromStorage()
+  );
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -43,18 +38,18 @@ export default function ChatPage() {
       if (!raw) return;
       const parsed = JSON.parse(raw) as ChatMessage[];
       if (Array.isArray(parsed) && parsed.length > 0) {
-        setMessages(parsed.slice(-80));
+        setMessages([messages[0], ...parsed.slice(-30)]);
       }
     } catch {
-      // Ignore local storage parsing issues.
+      // Ignore storage errors
     }
   }, []);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-80)));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(1).slice(-30)));
     } catch {
-      // Ignore storage quota issues.
+      // Ignore quota errors
     }
   }, [messages]);
 
@@ -70,65 +65,30 @@ export default function ChatPage() {
     const text = (overrideText ?? input).trim();
     if (!text || loading) return;
 
-    setMessages((current) => [
-      ...current,
-      {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        text,
-      },
-    ]);
-    setInput('');
+    setMessages((current) => [...current, { id: `user-${Date.now()}`, role: "user", text }]);
+    setInput("");
     setError(null);
     setLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'assistant',
-          provider: 'auto',
-          tone: 'support',
-          systemPrompt:
-            'You are Builder Copilot, a senior software and product engineering assistant for Bid Builder. Help users make direct profile updates and app/website build changes with practical implementation steps, safe assumptions, and execution-ready guidance.',
-          message: text,
-        }),
-      });
-
-      const parsed = (await response.json().catch(() => ({}))) as ChatApiResponse;
-      if (!response.ok) {
-        throw new Error(parsed.error || `Request failed (${response.status})`);
-      }
-
-      const outputs = Array.isArray(parsed.responses) && parsed.responses.length > 0
-        ? parsed.responses
-        : Array.isArray(parsed.results)
-        ? parsed.results.map((item) => item.result)
-        : [];
-
-      if (outputs.length === 0) {
-        throw new Error('No assistant output returned.');
-      }
-
-      setMessages((current) => [
-        ...current,
-        ...outputs.map((textOutput, index) => ({
-          id: `assistant-${Date.now()}-${index}`,
-          role: 'assistant' as const,
-          text: textOutput,
-        })),
-      ]);
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : 'Assistant request failed.';
-      setError(message);
+      const copilotResponse = await handleCopilotRequest(text, context);
       setMessages((current) => [
         ...current,
         {
-          id: `error-${Date.now()}`,
-          role: 'system',
-          text: `Error: ${message}`,
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          text: copilotResponse.response,
+          intent: copilotResponse.classification.intent,
+          estimate: copilotResponse.toolResult.data?.breakdown,
         },
+      ]);
+      setContext(copilotResponse.context);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Request failed";
+      setError(message);
+      setMessages((current) => [
+        ...current,
+        { id: `error-${Date.now()}`, role: "system", text: `Error: ${message}` },
       ]);
     } finally {
       setLoading(false);
@@ -136,74 +96,69 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#081b4b] via-[#0d2f72] to-[#0a1d4f] text-slate-100">
+    <main className="min-h-screen bg-[#0b0d12] text-slate-100 flex flex-col">
       <PublicMarketingNav />
-
-      <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 md:px-8 md:py-10">
-        <header className="rounded-3xl border border-blue-300/35 bg-blue-500/15 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Bid Builder Chat</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Ask Copilot</h1>
-          <p className="mt-3 max-w-3xl text-sm text-blue-100/90 md:text-base">
-            Ask for direct profile updates, code changes, and app or website build improvements. This chat is dedicated to implementation support.
-          </p>
-        </header>
-
-        <section className="rounded-2xl border border-white/20 bg-black/25 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-blue-200">Quick Actions</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {QUICK_ACTIONS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => void send(prompt)}
-                className="rounded-lg border border-blue-300/35 bg-blue-500/20 px-3 py-2 text-xs font-semibold text-blue-50 hover:bg-blue-500/30"
+      <div className="flex-1 overflow-y-auto p-6">
+        <div ref={listRef} className="mx-auto max-w-4xl space-y-4">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`max-w-2xl rounded-lg px-4 py-3 ${
+                  msg.role === "user"
+                    ? "bg-[var(--brand-600)]/40 border border-[var(--brand-600)]/60"
+                    : msg.role === "assistant"
+                    ? "bg-[var(--accent-600)]/25 border border-[var(--accent-600)]/40"
+                    : "bg-[var(--muted-400)]/15 border border-[var(--muted-400)]/30 text-slate-300"
+                }`}
               >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-white/20 bg-black/30 p-4">
-          <div ref={listRef} className="h-[52vh] overflow-y-auto rounded-xl border border-white/15 bg-[#06153c]/80 p-3">
-            <div className="space-y-3">
-              {messages.map((message) => (
-                <article
-                  key={message.id}
-                  className={`rounded-xl border px-3 py-2 text-sm whitespace-pre-wrap ${
-                    message.role === 'user'
-                      ? 'ml-8 border-blue-300/35 bg-blue-500/20'
-                      : message.role === 'assistant'
-                      ? 'mr-8 border-cyan-300/35 bg-cyan-500/15'
-                      : 'border-amber-300/35 bg-amber-500/15'
-                  }`}
-                >
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">{message.role}</p>
-                  {message.text}
-                </article>
-              ))}
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                {msg.estimate && (
+                  <div className="mt-3 space-y-1 border-t border-white/20 pt-3 text-xs text-slate-300">
+                    <p className="font-semibold text-white">Total: ${msg.estimate.total.toFixed(2)}</p>
+                    <p>Materials: ${msg.estimate.materialsTotal.toFixed(2)}</p>
+                    <p>Labor: ${msg.estimate.laborTotal.toFixed(2)}</p>
+                  </div>
+                )}
+                {msg.intent && msg.role === "assistant" && (
+                  <p className="mt-2 text-[11px] uppercase tracking-wider text-slate-400">Intent: {msg.intent}</p>
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <textarea
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-[var(--accent-600)]/25 border border-[var(--accent-600)]/40 rounded-lg px-4 py-3">
+                <p className="text-sm">Thinking...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="border-t border-white/10 bg-[#0b0d12]/95 backdrop-blur px-6 py-4">
+        <div className="mx-auto max-w-4xl">
+          {error && <p className="mb-2 text-xs text-red-300">{error}</p>}
+          <div className="flex gap-3">
+            <input
               value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Describe the direct change you want to make..."
-              className="min-h-20 flex-1 rounded-xl border border-white/20 bg-[#06153c]/90 px-3 py-2 text-sm"
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+              placeholder="Ask Copilot..."
+              className="flex-1 rounded-lg border border-white/20 bg-white/8 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-400 focus:border-[var(--brand-600)]/60 focus:outline-none"
             />
             <button
-              type="button"
               onClick={() => void send()}
               disabled={loading || !input.trim()}
-              className="h-fit rounded-xl bg-blue-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-blue-200 disabled:opacity-60"
+              className="rounded-lg bg-[var(--brand-600)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-600)]/90 disabled:opacity-50"
             >
-              {loading ? 'Sending...' : 'Send'}
+              {loading ? "..." : "Send"}
             </button>
           </div>
-
-          {error ? <p className="mt-2 text-xs text-red-300">{error}</p> : null}
-        </section>
+        </div>
       </div>
     </main>
   );

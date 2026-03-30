@@ -1,9 +1,23 @@
 "use client";
 
+import { useMemo, useEffect, useState } from 'react';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
-import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
+import BuilderCoppilotPanel from '@/components/copilot/BuilderCopilotPanel';
 
 export default function WebsiteBuilderPage() {
+  const [promptParam, setPromptParam] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      setPromptParam(sp.get('prompt') || '');
+    }
+  }, []);
+
+  const defaultPrompt = useMemo(() => {
+    return promptParam || 'Build me a contractor website with lead capture, CRM pipeline, chatbot embed, voice receptionist setup, and SEO/GEO service pages.';
+  }, [promptParam]);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#2c1205] via-[#4a1d0a] to-[#140704] text-slate-100">
       <PublicMarketingNav />
@@ -22,10 +36,10 @@ export default function WebsiteBuilderPage() {
         </header>
 
         <section className="mt-6">
-          <BuilderCopilotPanel
+          <BuilderCoppilotPanel
             title="Built-in Builder Copilot"
             subtitle="Tell it what to build. It generates pages, flow logic, SEO/GEO structure, chatbot install, and voice receptionist setup steps."
-            defaultPrompt="Build me a contractor website with lead capture, CRM pipeline, chatbot embed, voice receptionist setup, and SEO/GEO service pages."
+            defaultPrompt={defaultPrompt}
             contextLabel="website-builder"
             showProvisioning
             buildMode="website"

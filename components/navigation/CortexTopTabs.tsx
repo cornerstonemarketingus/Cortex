@@ -10,12 +10,12 @@ type NavTab = {
 };
 
 const navTabs: NavTab[] = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/chat', label: 'Internal Copilot' },
-  { href: '/builder', label: 'Page Builder' },
-  { href: '/builder-copilot', label: 'Builder Copilot' },
-  { href: '/estimates', label: 'Estimates' },
-  { href: '/subscription', label: 'Usage' },
+  { href: '/', label: 'Home' },
+  { href: '/signup', label: 'Start' },
+  { href: '/estimate', label: 'Estimates' },
+  { href: '/workspace', label: 'Workspace' },
+  { href: '/automations', label: 'Automations' },
+  { href: '/website-builder', label: 'Page Builder' },
 ];
 
 function isActive(pathname: string, href: string): boolean {

@@ -28,7 +28,10 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "axios": "^1.13.6",
     "bullmq": "^5.71.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "ioredis": "^5.10.0",
     "jose": "^6.2.1",
     "lucide-react": "^0.577.0",
@@ -54,7 +57,26 @@
     "postcss": "^8.5.8",
     "prisma": "^7.5.0",
     "tailwindcss": "^4.2.1",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
+  "main": "cortexFinishSetup.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cornerstonemarketingus/Cortex.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cornerstonemarketingus/Cortex/issues"
+  },
+  "homepage": "https://github.com/cornerstonemarketingus/Cortex#readme"
 }
