@@ -100,21 +100,6 @@ const LEAD_ENGINE_STEPS = [
   },
 ] as const;
 
-const AUTOMATION_PACKAGES = [
-  {
-    name: 'Starter',
-    bullets: ['Website lead capture', 'Basic CRM pipeline', 'Estimate builder'],
-  },
-  {
-    name: 'Growth',
-    bullets: ['Lead qualification AI', 'Follow-up automations', 'Missed call text-back'],
-  },
-  {
-    name: 'Pro',
-    bullets: ['AI estimator + approvals', 'Autopilot mode', 'Advanced automation intelligence'],
-  },
-] as const;
-
 const AUTOMATION_LIBRARY = [
   'Lead Qualification AI (project type, budget, timeline, score + routing)',
   'Instant Estimate Generator (draft + contractor approval)',
@@ -321,23 +306,6 @@ export default function AutomationsPage() {
           />
         </section>
 
-        <section className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.16em] text-amber-200">Product Packaging</p>
-          <h2 className="mt-1 text-xl font-semibold">Offer outcomes, not feature clutter</h2>
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-            {AUTOMATION_PACKAGES.map((pack) => (
-              <article key={pack.name} className="rounded-xl border border-white/20 bg-black/25 p-3 text-xs">
-                <p className="text-sm font-semibold text-amber-100">{pack.name}</p>
-                <div className="mt-2 space-y-1 text-slate-200">
-                  {pack.bullets.map((bullet) => (
-                    <p key={bullet}>- {bullet}</p>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">
           <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Autopilot Mode</p>
           <h2 className="mt-1 text-xl font-semibold">Turn on Autopilot to run lead-to-close workflow automatically</h2>
@@ -457,16 +425,6 @@ export default function AutomationsPage() {
           </button>
 
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
-        </section>
-
-        <section className="mt-6">
-          <BuilderCopilotPanel
-            title="Automations Copilot (Embedded)"
-            subtitle="Internal copilot is built into your automation hub to generate workflow actions, message improvements, and failure recovery steps in-context."
-            defaultPrompt="Improve my automation handoff after estimate delivery and generate follow-up logic with fallback steps."
-            contextLabel="automations-hub"
-            showProvisioning={false}
-          />
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">

@@ -27,7 +27,7 @@ export default function ConstructOsLayout({ children }: { children: React.ReactN
             </nav>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-300">
+          <div className="mt-3 hidden flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-300 md:flex">
             <span className="rounded-full border border-blue-300/30 bg-blue-500/10 px-3 py-1">Engine</span>
             <span>to</span>
             <span className="rounded-full border border-cyan-300/30 bg-cyan-500/10 px-3 py-1">Builder</span>

@@ -1,5 +1,5 @@
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
-import UnifiedCopilotChat from '@/components/copilot/UnifiedCopilotChat';
+import EstimatorTool from '@/components/estimator/EstimatorTool';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -7,8 +7,8 @@ export default function HomePage() {
 		<main className="min-h-screen bg-[#071014] text-slate-100">
 			<PublicMarketingNav />
 
-			{/* Unified Copilot Chat Parent */}
-			<UnifiedCopilotChat />
+			{/* Quick Estimator Tool */}
+			<EstimatorTool />
 
 			{/* Quick Action Links Below */}
 			<div className="mx-auto max-w-6xl px-4 py-12">

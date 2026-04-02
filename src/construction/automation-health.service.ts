@@ -97,75 +97,74 @@ async function getQueueHealth(name: 'workflow' | 'reminder'): Promise<QueueHealt
   }
 }
 
+async function safeQueryCrmMetrics(oneHourAgo: Date) {
+  try {
+    const [outboundInteractions, workflowFailures, reminderBacklog, recentInbound, recentOutbound] =
+      await Promise.all([
+        crmDb.interaction.findMany({
+          where: {
+            type: 'outbound_message',
+            createdAt: { gte: oneHourAgo },
+          },
+          select: { payload: true },
+          take: 400,
+        }),
+        crmDb.workflowExecution.count({
+          where: {
+            status: WorkflowExecutionStatus.FAILED,
+            createdAt: { gte: oneHourAgo },
+          },
+        }),
+        crmDb.reminder.count({
+          where: {
+            sentAt: null,
+            sendAt: { lte: new Date() },
+          },
+        }),
+        crmDb.conversationMessage.findMany({
+          where: {
+            direction: 'INBOUND',
+            createdAt: { gte: oneHourAgo },
+          },
+          select: { createdAt: true, conversationId: true },
+          orderBy: { createdAt: 'asc' },
+          take: 300,
+        }),
+        crmDb.conversationMessage.findMany({
+          where: {
+            direction: 'OUTBOUND',
+            createdAt: { gte: oneHourAgo },
+          },
+          select: { createdAt: true, conversationId: true },
+          orderBy: { createdAt: 'asc' },
+          take: 600,
+        }),
+      ]);
+    return { ok: true as const, outboundInteractions, workflowFailures, reminderBacklog, recentInbound, recentOutbound };
+  } catch {
+    return {
+      ok: false as const,
+      outboundInteractions: [] as Array<{ payload: unknown }>,
+      workflowFailures: 0,
+      reminderBacklog: 0,
+      recentInbound: [] as Array<{ createdAt: Date; conversationId: string }>,
+      recentOutbound: [] as Array<{ createdAt: Date; conversationId: string }>,
+    };
+  }
+}
+
 export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSnapshot> {
   const now = Date.now();
   const oneHourAgo = new Date(now - 60 * 60 * 1000);
 
-  const [workflowQueue, reminderQueue, outboundInteractions, workflowFailures, reminderBacklog, recentInbound, recentOutbound] =
+  const [workflowQueue, reminderQueue, crmMetrics] =
     await Promise.all([
       getQueueHealth('workflow'),
       getQueueHealth('reminder'),
-      crmDb.interaction.findMany({
-        where: {
-          type: 'outbound_message',
-          createdAt: {
-            gte: oneHourAgo,
-          },
-        },
-        select: {
-          payload: true,
-        },
-        take: 400,
-      }),
-      crmDb.workflowExecution.count({
-        where: {
-          status: WorkflowExecutionStatus.FAILED,
-          createdAt: {
-            gte: oneHourAgo,
-          },
-        },
-      }),
-      crmDb.reminder.count({
-        where: {
-          sentAt: null,
-          sendAt: {
-            lte: new Date(),
-          },
-        },
-      }),
-      crmDb.conversationMessage.findMany({
-        where: {
-          direction: 'INBOUND',
-          createdAt: {
-            gte: oneHourAgo,
-          },
-        },
-        select: {
-          createdAt: true,
-          conversationId: true,
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-        take: 300,
-      }),
-      crmDb.conversationMessage.findMany({
-        where: {
-          direction: 'OUTBOUND',
-          createdAt: {
-            gte: oneHourAgo,
-          },
-        },
-        select: {
-          createdAt: true,
-          conversationId: true,
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-        take: 600,
-      }),
+      safeQueryCrmMetrics(oneHourAgo),
     ]);
+
+  const { ok: crmReachable, outboundInteractions, workflowFailures, reminderBacklog, recentInbound, recentOutbound } = crmMetrics;
 
   let failedDeliveryLastHour = 0;
   for (const interaction of outboundInteractions) {
@@ -204,6 +203,10 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
 
   const alerts: string[] = [];
 
+  if (!crmReachable) {
+    alerts.push('CRM database is unreachable. Interaction metrics are unavailable; provision CRM_DATABASE_URL to enable full health monitoring.');
+  }
+
   if (!providers.openAiConfigured) {
     alerts.push('OPENAI_API_KEY is missing. AI chat responder and AI drafting can fail.');
   }
@@ -228,6 +231,7 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
     alerts.push(`Failed deliveries in last hour are elevated (${failedDeliveryLastHour}).`);
   }
 
+  // CRM DB unavailability is a warning (not a blocker) — the UI still works without live metrics
   const critical =
     !providers.openAiConfigured ||
     (!providers.twilioConfigured && !providers.sendgridConfigured) ||

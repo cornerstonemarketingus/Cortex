@@ -83,6 +83,7 @@ export default function SignupPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingUnavailable, setBillingUnavailable] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [status, setStatus] = useState<StatusResponse | null>(null);
 
@@ -147,6 +148,7 @@ export default function SignupPage() {
 
     setLoading(true);
     setError(null);
+    setBillingUnavailable(false);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
@@ -184,10 +186,15 @@ export default function SignupPage() {
 
       const parsed = (await response.json().catch(() => ({}))) as {
         error?: string;
+        code?: string;
         checkout?: { checkoutUrl?: string };
       };
 
       if (!response.ok || !parsed.checkout?.checkoutUrl) {
+        if (parsed.code === 'STRIPE_KEY_MISSING') {
+          setBillingUnavailable(true);
+          return;
+        }
         throw new Error(parsed.error || "Unable to launch checkout.");
       }
 
@@ -424,6 +431,28 @@ export default function SignupPage() {
             </button>
 
             {error ? <p className="mt-2 text-xs text-red-300">{error}</p> : null}
+
+            {billingUnavailable ? (
+              <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs text-amber-100">
+                Billing is not configured in this environment yet, so checkout is unavailable. You can continue in preview mode and complete setup later once Stripe is connected.
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/workspace?guide=demo')}
+                    className="rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-200"
+                  >
+                    Continue In Preview Workspace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingUnavailable(false)}
+                    className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {checkoutSuccess && status?.active ? (
               <div className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/15 p-3 text-xs text-emerald-100">

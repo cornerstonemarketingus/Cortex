@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 // Removed Google font imports to avoid network fetch during build.
 import ContentProtectionShield from "@/components/security/ContentProtectionShield";
-import GlobalAiAssistant from '@/components/ai/GlobalAiAssistant';
 import { BuilderStateProvider } from '@/components/ai/BuilderStateProvider';
 import SiteFooter from '@/components/navigation/SiteFooter';
+import CopilotChrome from '@/components/ai/CopilotChrome';
 import "./globals.css";
-import AskCopilotFullWidth from '@/components/ai/AskCopilotFullWidth';
 
 // Use system font stack via globals.css instead.
 
@@ -45,8 +44,7 @@ export default function RootLayout({
         <BuilderStateProvider>
           {children}
           <SiteFooter />
-          <GlobalAiAssistant />
-          <AskCopilotFullWidth />
+          <CopilotChrome />
         </BuilderStateProvider>
       </body>
     </html>

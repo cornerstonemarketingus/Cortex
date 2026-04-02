@@ -30,7 +30,7 @@ export default function AutoFlowLayout({ children }: { children: React.ReactNode
             </nav>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-300">
+          <div className="mt-3 hidden flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-300 md:flex">
             <span className="rounded-full border border-emerald-300/30 bg-emerald-500/10 px-3 py-1">Engine</span>
             <span>to</span>
             <span className="rounded-full border border-amber-300/30 bg-amber-500/10 px-3 py-1">CRM</span>

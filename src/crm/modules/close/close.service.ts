@@ -12,8 +12,10 @@ import { getStripeSecretKey } from '@/src/crm/core/env';
 import { syncSubscriptionEvent } from '@/src/billing/subscription.service';
 import type {
   CreateCheckoutInput,
+  CreateDepositInput,
   CreateInvoiceInput,
   CreateProposalInput,
+  DepositIntentResult,
   ProposalLineItem,
   TextToPayInput,
 } from './close.types';
@@ -322,6 +324,108 @@ export class CloseService {
     return pdfBuffer;
   }
 
+  async createDepositIntent(input: CreateDepositInput): Promise<DepositIntentResult> {
+    const stripe = getStripeClient();
+
+    const pct = Math.max(1, Math.min(100, input.depositPercent ?? 30));
+
+    const invoice = await crmDb.invoice.findUnique({
+      where: { id: input.invoiceId },
+      include: { lead: true },
+    });
+
+    if (!invoice) {
+      throw new ApiError(404, 'Invoice not found', 'INVOICE_NOT_FOUND');
+    }
+
+    const depositCents = Math.round((invoice.totalCents * pct) / 100);
+
+    if (depositCents < 50) {
+      throw new ApiError(400, 'Deposit amount is below Stripe minimum ($0.50)', 'DEPOSIT_TOO_LOW');
+    }
+
+    const existingRecord = await crmDb.paymentIntentRecord.findFirst({
+      where: {
+        invoiceId: invoice.id,
+        status: PaymentStatus.PENDING,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingRecord) {
+      const existing = await stripe.paymentIntents.retrieve(existingRecord.stripePaymentIntentId);
+      if (
+        existing.status === 'requires_payment_method' ||
+        existing.status === 'requires_confirmation' ||
+        existing.status === 'requires_action'
+      ) {
+        return {
+          paymentIntentId: existing.id,
+          clientSecret: existing.client_secret!,
+          depositCents,
+          invoiceTotalCents: invoice.totalCents,
+          leadId: invoice.leadId,
+        };
+      }
+    }
+
+    const createParams: Stripe.PaymentIntentCreateParams = {
+      amount: depositCents,
+      currency: invoice.currency.toLowerCase(),
+      metadata: {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.number,
+        leadId: invoice.leadId,
+        depositPercent: String(pct),
+      },
+      receipt_email: invoice.lead.email || undefined,
+      description: `Deposit for Invoice ${invoice.number} (${pct}%)`,
+    };
+
+    const intentCreateOptions: Stripe.RequestOptions = input.idempotencyKey
+      ? { idempotencyKey: input.idempotencyKey }
+      : {};
+
+    const intent = await stripe.paymentIntents.create(createParams, intentCreateOptions);
+
+    await crmDb.paymentIntentRecord.create({
+      data: {
+        invoiceId: invoice.id,
+        stripePaymentIntentId: intent.id,
+        amountCents: depositCents,
+        currency: intent.currency.toUpperCase(),
+        status: PaymentStatus.PENDING,
+        metadata: {
+          depositPercent: pct,
+          invoiceNumber: invoice.number,
+        },
+      },
+    });
+
+    await crmDb.interaction.create({
+      data: {
+        leadId: invoice.leadId,
+        type: 'deposit_intent_created',
+        payload: {
+          invoiceId: invoice.id,
+          paymentIntentId: intent.id,
+          depositCents,
+          depositPercent: pct,
+        },
+      },
+    });
+
+    await this.leadScoringService.updateLeadScore(invoice.leadId);
+
+    return {
+      paymentIntentId: intent.id,
+      clientSecret: intent.client_secret!,
+      depositCents,
+      invoiceTotalCents: invoice.totalCents,
+      leadId: invoice.leadId,
+    };
+  }
+
   async handleStripeWebhook(signature: string | null, payload: string) {
     const stripe = getStripeClient();
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -368,6 +472,141 @@ export class CloseService {
         });
 
         await this.leadScoringService.updateLeadScore(order.leadId);
+      }
+    }
+
+    if (event.type === 'payment_intent.succeeded') {
+      const intent = event.data.object as Stripe.PaymentIntent;
+
+      const record = await crmDb.paymentIntentRecord.findUnique({
+        where: { stripePaymentIntentId: intent.id },
+      });
+
+      if (record) {
+        await crmDb.paymentIntentRecord.update({
+          where: { id: record.id },
+          data: { status: PaymentStatus.PAID },
+        });
+
+        if (record.invoiceId) {
+          const invoice = await crmDb.invoice.findUnique({
+            where: { id: record.invoiceId },
+            include: { paymentIntentRecords: true },
+          });
+
+          if (invoice) {
+            const totalPaidCents = invoice.paymentIntentRecords
+              .filter((r) => r.id === record.id ? true : r.status === PaymentStatus.PAID)
+              .reduce((sum, r) => sum + r.amountCents, 0);
+
+            const newStatus =
+              totalPaidCents >= invoice.totalCents
+                ? PaymentStatus.PAID
+                : PaymentStatus.PENDING;
+
+            await crmDb.invoice.update({
+              where: { id: invoice.id },
+              data: {
+                status: newStatus,
+                paidAt: newStatus === PaymentStatus.PAID ? new Date() : undefined,
+              },
+            });
+
+            await crmDb.interaction.create({
+              data: {
+                leadId: invoice.leadId,
+                type: 'deposit_payment_succeeded',
+                payload: {
+                  paymentIntentId: intent.id,
+                  invoiceId: invoice.id,
+                  amountCents: record.amountCents,
+                  totalPaidCents,
+                  invoiceFullyPaid: newStatus === PaymentStatus.PAID,
+                },
+              },
+            });
+
+            await this.leadScoringService.updateLeadScore(invoice.leadId);
+          }
+        }
+      }
+    }
+
+    if (event.type === 'payment_intent.payment_failed') {
+      const intent = event.data.object as Stripe.PaymentIntent;
+
+      const record = await crmDb.paymentIntentRecord.findUnique({
+        where: { stripePaymentIntentId: intent.id },
+      });
+
+      if (record) {
+        await crmDb.paymentIntentRecord.update({
+          where: { id: record.id },
+          data: { status: PaymentStatus.FAILED },
+        });
+
+        if (record.invoiceId) {
+          const invoice = await crmDb.invoice.findUnique({
+            where: { id: record.invoiceId },
+          });
+
+          if (invoice) {
+            await crmDb.interaction.create({
+              data: {
+                leadId: invoice.leadId,
+                type: 'deposit_payment_failed',
+                payload: {
+                  paymentIntentId: intent.id,
+                  invoiceId: invoice.id,
+                  amountCents: record.amountCents,
+                  failureMessage: intent.last_payment_error?.message,
+                  failureCode: intent.last_payment_error?.code,
+                },
+              },
+            });
+          }
+        }
+      }
+    }
+
+    if (event.type === 'charge.refunded') {
+      const charge = event.data.object as Stripe.Charge;
+      if (charge.payment_intent && typeof charge.payment_intent === 'string') {
+        const record = await crmDb.paymentIntentRecord.findUnique({
+          where: { stripePaymentIntentId: charge.payment_intent },
+        });
+
+        if (record) {
+          await crmDb.paymentIntentRecord.update({
+            where: { id: record.id },
+            data: { status: PaymentStatus.REFUNDED },
+          });
+
+          if (record.invoiceId) {
+            const invoice = await crmDb.invoice.findUnique({
+              where: { id: record.invoiceId },
+            });
+
+            if (invoice) {
+              await crmDb.invoice.update({
+                where: { id: invoice.id },
+                data: { status: PaymentStatus.REFUNDED },
+              });
+
+              await crmDb.interaction.create({
+                data: {
+                  leadId: invoice.leadId,
+                  type: 'payment_refunded',
+                  payload: {
+                    chargeId: charge.id,
+                    paymentIntentId: charge.payment_intent,
+                    amountRefundedCents: charge.amount_refunded,
+                  },
+                },
+              });
+            }
+          }
+        }
       }
     }
 

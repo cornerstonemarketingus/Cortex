@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import PublicMarketingNav from "@/components/navigation/PublicMarketingNav";
 import { handleCopilotRequest } from "@/core/copilot/copilot.service";
 import { loadContextFromStorage, type CopilotContext } from "@/core/copilot/context.store";
 import type { Intent, ClassificationResult } from "@/core/copilot/intent.classifier";
@@ -116,8 +115,6 @@ export default function UnifiedCopilotChat() {
 
   return (
     <main className="min-h-screen bg-[#0b0d12] text-slate-100 flex flex-col">
-      <PublicMarketingNav />
-
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Column */}
         <div className="flex-1 flex flex-col overflow-hidden">

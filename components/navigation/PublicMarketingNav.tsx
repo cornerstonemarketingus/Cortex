@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 type MarketingNavItem = {
@@ -12,6 +13,7 @@ const primaryItems: MarketingNavItem[] = [
   { href: '/', label: 'Home' },
   { href: '/signup', label: 'Start' },
   { href: '/estimate', label: 'Estimates' },
+  { href: '/bid-board', label: 'Bid Board' },
   { href: '/workspace', label: 'Workspace' },
   { href: '/automations', label: 'Automations' },
   { href: '/website-builder', label: 'Page Builder' },
@@ -26,6 +28,11 @@ function isActive(pathname: string, href: string): boolean {
 
 export default function PublicMarketingNav() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b0d12]/95 backdrop-blur-xl">
@@ -59,7 +66,7 @@ export default function PublicMarketingNav() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 xl:flex">
           <Link
             href="/signup?next=/workspace"
             className="rounded-md border border-cyan-300/40 bg-cyan-500/20 px-3.5 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-cyan-50 transition hover:bg-cyan-500/30"
@@ -67,28 +74,47 @@ export default function PublicMarketingNav() {
             Login
           </Link>
         </div>
+
+        <button
+          type="button"
+          aria-controls="public-marketing-mobile-menu"
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          onClick={() => setMobileMenuOpen((current) => !current)}
+          className="inline-flex items-center rounded-md border border-white/15 bg-white/5 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-100 transition hover:bg-white/10 xl:hidden"
+        >
+          {mobileMenuOpen ? 'Close' : 'Menu'}
+        </button>
       </div>
 
-      <div className="border-t border-white/10 bg-[#0b0d12] xl:hidden">
-        <div className="mx-auto flex max-w-7xl gap-1.5 overflow-x-auto px-4 py-1.5 md:px-10">
-          {primaryItems.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={`${item.href}-${item.label}`}
-                href={item.href}
-                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition ${
-                  active
-                    ? 'border border-cyan-300/45 bg-cyan-500/20 text-cyan-50'
-                    : 'text-slate-200 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+      {mobileMenuOpen ? (
+        <div id="public-marketing-mobile-menu" className="border-t border-white/10 bg-[#0b0d12] xl:hidden">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-4 py-3 md:px-10">
+            {primaryItems.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={`${item.href}-${item.label}`}
+                  href={item.href}
+                  className={`rounded-md px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition ${
+                    active
+                      ? 'border border-cyan-300/45 bg-cyan-500/20 text-cyan-50'
+                      : 'border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+
+            <Link
+              href="/signup?next=/workspace"
+              className="rounded-md border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.08em] text-cyan-50 transition hover:bg-cyan-500/30"
+            >
+              Login
+            </Link>
+          </div>
         </div>
-      </div>
+      ) : null}
     </header>
   );
 }
