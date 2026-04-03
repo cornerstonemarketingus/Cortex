@@ -18,7 +18,6 @@ export default function SiteFooter() {
             <Link href="/estimate" className="hover:text-white">Estimates</Link>
             <Link href="/automations" className="hover:text-white">Automations</Link>
             <Link href="/builder" className="hover:text-white">Page Builder</Link>
-            <Link href="/internal-copilot" className="hover:text-white">Internal Copilot</Link>
           </div>
 
           <p className="mt-4 text-sm font-semibold text-slate-100">Legal</p>
