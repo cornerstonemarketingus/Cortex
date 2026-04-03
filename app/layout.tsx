@@ -9,25 +9,25 @@ import "./globals.css";
 // Use system font stack via globals.css instead.
 
 export const metadata: Metadata = {
-  title: "Cortex | Strategic Marketing and Business Development Executive AI",
+  title: "TeamBuilderCopilot | AI Estimating, Automations & Page Builder for Contractors",
   description:
-    "Cortex is an executive AI partner for local service businesses in Minnesota and across the U.S., combining pro estimating, CRM automations, lead generation websites, and app builder execution.",
+    "TeamBuilderCopilot is the all-in-one AI platform for contractors: generate professional estimates instantly, automate follow-up workflows, and build high-converting landing pages.",
   keywords: [
-    'Minnesota local service business marketing',
-    'U.S. local service business growth',
-    'construction lead generation',
-    'AI CRM automation',
-    'strategic marketing executive',
-    'business development executive',
-    'contractor estimator software',
-    'gohighlevel style automation',
-    'lead generation website builder',
-    'service business AI agent',
+    'contractor estimating software',
+    'construction estimate AI',
+    'contractor automation',
+    'contractor page builder',
+    'TeamBuilderCopilot',
+    'construction CRM automation',
+    'bid estimate generator',
+    'contractor lead generation',
+    'automated follow-up contractor',
+    'Minnesota contractor software',
   ],
   openGraph: {
-    title: 'Cortex | Strategic Marketing and Business Development Executive AI',
+    title: 'TeamBuilderCopilot | AI for Contractors',
     description:
-      'Executive-grade AI for local service business growth: estimator, CRM automations, and lead-gen builder workflows for Minnesota and nationwide markets.',
+      'Generate estimates, automate workflows, and build pages — the complete AI platform for contractors.',
     type: 'website',
   },
 };

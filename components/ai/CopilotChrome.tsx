@@ -2,11 +2,11 @@
 
 import { usePathname } from 'next/navigation';
 import GlobalAiAssistant from '@/components/ai/GlobalAiAssistant';
-import AskCopilotFullWidth from '@/components/ai/AskCopilotFullWidth';
 
 const HIDDEN_ROUTES = [
   '/automations',
   '/chat',
+  '/copilot',
   '/workspace',
   '/pricing',
   '/website-builder',
@@ -29,10 +29,5 @@ export default function CopilotChrome() {
     return null;
   }
 
-  return (
-    <>
-      <GlobalAiAssistant />
-      <AskCopilotFullWidth />
-    </>
-  );
+  return <GlobalAiAssistant />;
 }

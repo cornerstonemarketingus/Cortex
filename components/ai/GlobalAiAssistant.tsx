@@ -177,51 +177,51 @@ export default function GlobalAiAssistant() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="fixed bottom-20 right-4 z-[60] rounded-full border border-[var(--brand-600)]/70 bg-[var(--brand-600)]/25 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-black/40 hover:brightness-105"
+        className="fixed bottom-4 right-4 z-[60] rounded-full border border-[var(--brand-600)]/70 bg-[#1E3A5F] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-black/40 hover:bg-[#1E3A5F]/80 transition"
       >
-        {open ? 'Close Copilot' : 'Ask Copilot'}
+        {open ? 'Close' : '✦ Copilot'}
       </button>
 
       {open ? (
-        <section className="fixed bottom-16 right-4 z-[60] h-[min(44vh,360px)] w-[min(320px,calc(100vw-1rem))] rounded-2xl border border-[var(--brand-600)]/35 bg-[var(--brand-900)]/95 p-3 text-white shadow-2xl">
+        <section className="fixed bottom-14 right-4 z-[60] h-[min(46vh,380px)] w-[min(320px,calc(100vw-1rem))] rounded-2xl border border-[#1E3A5F]/60 bg-[#080c14]/96 p-3 text-white shadow-2xl backdrop-blur-xl">
           <header className="mb-2 flex items-start justify-between gap-2">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--accent-500)]">Builder Copilot</p>
-              <h2 className="text-sm font-semibold">Direct build support</h2>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[#C69C6D]">TeamBuilder Copilot</p>
+              <h2 className="text-sm font-semibold mt-0.5">How can I help?</h2>
             </div>
             <button
               type="button"
               aria-label="Close assistant"
               onClick={() => setOpen(false)}
-              className="rounded-md border border-white/20 bg-white/10 px-2 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
+              className="rounded-md border border-white/15 bg-white/8 px-2 py-1 text-xs text-slate-300 hover:bg-white/15"
             >
-              X
+              ✕
             </button>
           </header>
 
           <div className="mb-2 flex flex-wrap gap-1">
             {quickPrompts.slice(0, 3).map((prompt) => (
-                <button
+              <button
                 key={prompt}
                 type="button"
                 onClick={() => void send(prompt)}
-                className="rounded-md border border-[var(--brand-600)]/30 bg-[var(--brand-600)]/18 px-2 py-1 text-[10px] text-white hover:brightness-105"
+                className="rounded-md border border-[#1E3A5F]/50 bg-[#1E3A5F]/30 px-2 py-1 text-[10px] text-slate-300 hover:bg-[#1E3A5F]/50 transition"
               >
-                {prompt.slice(0, 28)}{prompt.length > 28 ? '...' : ''}
+                {prompt.slice(0, 30)}{prompt.length > 30 ? '…' : ''}
               </button>
             ))}
           </div>
 
-          <div ref={listRef} className="h-[58%] overflow-y-auto rounded-xl border border-white/10 bg-black/25 p-2 space-y-2">
+          <div ref={listRef} className="h-[52%] overflow-y-auto rounded-xl border border-white/8 bg-black/30 p-2 space-y-2">
             {messages.map((message) => (
               <article
                 key={message.id}
                 className={`rounded-lg border px-2 py-1.5 text-xs whitespace-pre-wrap ${
                   message.role === 'user'
-                    ? 'border-[var(--brand-600)]/35 bg-[var(--brand-600)]/20'
+                    ? 'border-[#1E3A5F]/50 bg-[#1E3A5F]/30'
                     : message.role === 'assistant'
-                    ? 'border-[var(--accent-600)]/35 bg-[var(--accent-600)]/15'
-                    : 'border-[var(--muted-400)]/35 bg-[var(--muted-400)]/12'
+                    ? 'border-[#C69C6D]/20 bg-[#C69C6D]/8'
+                    : 'border-white/10 bg-white/5 text-slate-400'
                 }`}
               >
                 {message.text}
@@ -239,25 +239,25 @@ export default function GlobalAiAssistant() {
                   void send();
                 }
               }}
-              placeholder="Ask for a change..."
-              className="flex-1 rounded-lg border border-white/15 bg-[var(--bg-900)]/60 px-2 py-1.5 text-xs"
+              placeholder="Ask anything…"
+              className="flex-1 rounded-lg border border-white/12 bg-white/6 px-2 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#C69C6D]/40"
             />
             <button
               type="button"
               onClick={() => void send()}
               disabled={loading || !input.trim()}
-              className="rounded-lg bg-[var(--brand-600)] px-2.5 py-1.5 text-xs font-semibold text-white hover:brightness-105 disabled:opacity-60"
+              className="rounded-lg bg-[#1E3A5F] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E3A5F]/80 disabled:opacity-50 transition"
             >
-              {loading ? '...' : 'Send'}
+              {loading ? '…' : 'Send'}
             </button>
           </div>
 
           {error ? <p className="mt-1 text-[11px] text-red-300">{error}</p> : null}
 
-          <div className="mt-1 flex items-center justify-between">
-            <p className="text-[10px] text-slate-400">Need full workspace?</p>
-            <Link href="/chat" className="text-[10px] font-semibold text-blue-200 hover:text-blue-100">
-              Open chat
+          <div className="mt-2 flex items-center justify-between">
+            <p className="text-[10px] text-slate-500">Quick assist — estimates, pages, automations</p>
+            <Link href="/copilot" className="text-[10px] font-semibold text-[#C69C6D] hover:text-[#C69C6D]/80 transition">
+              Full Copilot →
             </Link>
           </div>
         </section>
