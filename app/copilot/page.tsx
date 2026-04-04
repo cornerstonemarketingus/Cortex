@@ -5,8 +5,12 @@ import Link from 'next/link';
 import ThinkingIndicator from '@/components/copilot/ThinkingIndicator';
 import EstimateResultCard from '@/components/copilot/EstimateResultCard';
 import PageBuilderResultCard from '@/components/copilot/PageBuilderResultCard';
+import ProposalResultCard from '@/components/copilot/ProposalResultCard';
+import AppPreviewCard from '@/components/copilot/AppPreviewCard';
 
 // ── Types ──────────────────────────────────────────────────────────────────
+type Mode = 'estimator' | 'builder';
+
 interface EstimatePayload {
   templateName: string;
   sqft: number;
@@ -31,6 +35,34 @@ interface AutomationPayload {
   description: string;
 }
 
+interface ProposalPayload {
+  clientName?: string;
+  contractorName?: string;
+  projectAddress?: string;
+  trades: Array<{
+    tradeName: string;
+    sqft: number;
+    breakdown: {
+      materialsTotal: number;
+      laborTotal: number;
+      subtotal: number;
+      overheadAmount: number;
+      taxAmount: number;
+      profitAmount: number;
+      total: number;
+    };
+  }>;
+  grandTotal: number;
+  timeline?: Array<{ tradeName: string; startDay: number; durationDays: number }>;
+}
+
+interface AppPayload {
+  code: string;
+  appTitle: string;
+  appType: string;
+  input: string;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -40,17 +72,47 @@ interface Message {
   estimatePayload?: EstimatePayload;
   pagePayload?: PagePayload;
   automationPayload?: AutomationPayload;
+  proposalPayload?: ProposalPayload;
+  appPayload?: AppPayload;
 }
 
-// ── Suggestion chips ───────────────────────────────────────────────────────
-const SUGGESTIONS = [
-  'Estimate residential framing for 2,500 sqft',
-  'Build a roofing company landing page',
-  'Set up a missed call automation',
-  'Quote drywall finishing for 1,800 sqft',
-  'Create a plumbing services page',
-  'Estimate hardwood flooring for 1,200 sqft',
-];
+// ── Mode configs ───────────────────────────────────────────────────────────
+const MODE_CONFIG: Record<Mode, {
+  label: string;
+  icon: string;
+  placeholder: string;
+  suggestions: string[];
+  accent: string;
+}> = {
+  estimator: {
+    label: 'Estimator Mode',
+    icon: '📐',
+    placeholder: 'Describe your project… "Estimate residential framing for 2,400 sqft"',
+    suggestions: [
+      'Estimate residential framing for 2,400 sqft',
+      'Quote drywall finishing for 1,800 sqft',
+      'Estimate hardwood flooring for 1,200 sqft',
+      'Roof replacement for 2,200 sqft in 55123',
+      'Plumbing rough-in for 1,600 sqft home',
+      'Generate a proposal for my roofing estimate',
+    ],
+    accent: '#C69C6D',
+  },
+  builder: {
+    label: 'Builder Mode',
+    icon: '🏗️',
+    placeholder: 'Describe what to build… "Create a landing page for my roofing company"',
+    suggestions: [
+      'Build a landing page for my roofing company',
+      'Create a plumbing services website',
+      'Generate a contractor CRM dashboard',
+      'Build an HVAC company landing page',
+      'Create an estimator app for my team',
+      'Build a lead tracking dashboard',
+    ],
+    accent: '#60a5fa',
+  },
+};
 
 // ── Automation display ─────────────────────────────────────────────────────
 function AutomationResultCard({ payload }: { payload: AutomationPayload }) {
@@ -75,10 +137,7 @@ function AutomationResultCard({ payload }: { payload: AutomationPayload }) {
         )}
       </div>
       <div className="px-4 pb-3">
-        <Link
-          href="/os"
-          className="block text-center rounded-lg py-2 text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/80 transition"
-        >
+        <Link href="/automations" className="block text-center rounded-lg py-2 text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/80 transition">
           Manage Automations
         </Link>
       </div>
@@ -88,6 +147,7 @@ function AutomationResultCard({ payload }: { payload: AutomationPayload }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function CopilotPage() {
+  const [mode, setMode] = useState<Mode>('estimator');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,38 +156,30 @@ export default function CopilotPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const cfg = MODE_CONFIG[mode];
+
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, thinkingSteps, scrollToBottom]);
+  useEffect(() => { scrollToBottom(); }, [messages, thinkingSteps, scrollToBottom]);
 
   async function send(text?: string) {
     const prompt = (text ?? input).trim();
     if (!prompt || isLoading) return;
 
     setInput('');
-    const userMsg: Message = {
-      id: `u-${Date.now()}`,
-      role: 'user',
-      text: prompt,
-    };
+    const userMsg: Message = { id: `u-${Date.now()}`, role: 'user', text: prompt };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setThinkingSteps([]);
+    setThinkingSteps(['Analyzing your request…']);
     setThinkingActive(true);
-
-    // Start thinking simulation while waiting for API
-    const baseSteps = ['Analyzing your request…'];
-    setThinkingSteps(baseSteps);
 
     try {
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: prompt }),
+        body: JSON.stringify({ input: prompt, mode }),
       });
 
       const data = await res.json() as {
@@ -141,11 +193,9 @@ export default function CopilotPage() {
       const responseText = data.text ?? data.error ?? 'Something went wrong.';
       const action = data.action ?? { type: 'NOOP' };
 
-      // Show thinking steps from server
       setThinkingSteps(thinking);
       setThinkingActive(false);
 
-      // Build the assistant message
       const assistantMsg: Message = {
         id: `a-${Date.now()}`,
         role: 'assistant',
@@ -163,17 +213,19 @@ export default function CopilotPage() {
       if (action.type === 'CREATE_AUTOMATION' && action.payload) {
         assistantMsg.automationPayload = action.payload as unknown as AutomationPayload;
       }
+      if (action.type === 'GENERATE_PROPOSAL' && action.payload) {
+        assistantMsg.proposalPayload = action.payload as unknown as ProposalPayload;
+      }
+      if (action.type === 'GENERATE_APP' && action.payload) {
+        assistantMsg.appPayload = action.payload as unknown as AppPayload;
+      }
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
       setThinkingActive(false);
       setMessages((prev) => [
         ...prev,
-        {
-          id: `err-${Date.now()}`,
-          role: 'system',
-          text: '⚠️ Connection error — please try again.',
-        },
+        { id: `err-${Date.now()}`, role: 'system', text: '⚠️ Connection error — please try again.' },
       ]);
     } finally {
       setIsLoading(false);
@@ -187,83 +239,69 @@ export default function CopilotPage() {
   return (
     <div
       className="relative flex flex-col h-screen overflow-hidden"
-      style={{
-        background: 'radial-gradient(ellipse at 50% 0%, #0f1f38 0%, #080c14 50%, #050709 100%)',
-      }}
+      style={{ background: 'radial-gradient(ellipse at 50% 0%, #0f1f38 0%, #080c14 55%, #050709 100%)' }}
     >
-      {/* Subtle grid overlay */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage:
-            'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px)',
           backgroundSize: '48px 48px',
         }}
       />
 
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm"
-        >
+        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           <span>Back</span>
         </Link>
 
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #1E3A5F, #C69C6D)' }}
-          >
-            <span className="text-white text-[10px] font-black">TB</span>
-          </div>
-          <span className="text-sm font-semibold text-white/90">TeamBuilder Copilot</span>
+        {/* Mode toggle */}
+        <div className="flex items-center gap-1 rounded-xl bg-white/[0.05] border border-white/[0.08] p-1">
+          {(Object.keys(MODE_CONFIG) as Mode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => { setMode(m); setMessages([]); setInput(''); }}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                mode === m ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <span>{MODE_CONFIG[m].icon}</span>
+              <span className="hidden sm:inline">{MODE_CONFIG[m].label}</span>
+            </button>
+          ))}
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/os" className="text-xs text-slate-500 hover:text-slate-300 transition">
-            OS
-          </Link>
-          <Link href="/json-builder" className="text-xs text-slate-500 hover:text-slate-300 transition">
-            Builder
-          </Link>
-          <Link href="/estimates" className="text-xs text-slate-500 hover:text-slate-300 transition">
-            Estimates
-          </Link>
+          <Link href="/automations" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Automations</Link>
+          <Link href="/estimate" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Estimates</Link>
+          <Link href="/json-builder" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Builder</Link>
         </div>
       </header>
 
-      {/* Messages area */}
+      {/* Messages */}
       <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto max-w-2xl space-y-6">
-
-          {/* Empty state */}
           {isEmpty && !isLoading && (
-            <div className="flex flex-col items-center justify-center pt-16 pb-8 text-center select-none">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 shadow-xl"
-                style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #C69C6D 100%)' }}
-              >
-                <span className="text-white text-2xl font-black">TB</span>
+            <div className="flex flex-col items-center justify-center pt-12 pb-8 text-center select-none">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 shadow-xl text-3xl">
+                {cfg.icon}
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
-                What can I build for you?
+                {mode === 'estimator' ? 'What are we estimating?' : 'What should I build?'}
               </h1>
               <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-                Ask me to create a construction estimate, build a website page, or set up an automation workflow.
+                {mode === 'estimator'
+                  ? "Describe your project and I'll generate a trade-based estimate with materials, labor, and timeline."
+                  : "Describe what you want — a landing page, CRM, or any tool. I'll generate it instantly."}
               </p>
             </div>
           )}
 
-          {/* Message list */}
           {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'user' ? (
                 <div
                   className="max-w-xl rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white"
@@ -277,17 +315,12 @@ export default function CopilotPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-1 max-w-xl w-full">
-                  {/* Thinking steps (collapsed, shown inline) */}
                   {msg.thinking && msg.thinking.length > 0 && (
                     <ThinkingIndicator steps={msg.thinking} isActive={false} />
                   )}
-
-                  {/* Response bubble */}
                   <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-slate-100 bg-white/[0.05] border border-white/[0.08]">
                     {msg.text}
                   </div>
-
-                  {/* Result cards */}
                   {msg.estimatePayload && (
                     <EstimateResultCard
                       breakdown={{
@@ -298,20 +331,18 @@ export default function CopilotPage() {
                     />
                   )}
                   {msg.pagePayload && (
-                    <PageBuilderResultCard
-                      pageTitle={msg.pagePayload.pageTitle}
-                      sections={msg.pagePayload.sections}
-                    />
+                    <PageBuilderResultCard pageTitle={msg.pagePayload.pageTitle} sections={msg.pagePayload.sections} />
                   )}
-                  {msg.automationPayload && (
-                    <AutomationResultCard payload={msg.automationPayload} />
+                  {msg.automationPayload && <AutomationResultCard payload={msg.automationPayload} />}
+                  {msg.proposalPayload && <ProposalResultCard proposalData={msg.proposalPayload} />}
+                  {msg.appPayload && (
+                    <AppPreviewCard code={msg.appPayload.code} appTitle={msg.appPayload.appTitle} appType={msg.appPayload.appType} />
                   )}
                 </div>
               )}
             </div>
           ))}
 
-          {/* Active thinking indicator */}
           {isLoading && thinkingSteps.length > 0 && (
             <div className="flex justify-start">
               <div className="max-w-xl w-full rounded-2xl rounded-tl-sm px-4 py-3 bg-white/[0.04] border border-white/[0.07]">
@@ -319,7 +350,6 @@ export default function CopilotPage() {
               </div>
             </div>
           )}
-
           <div ref={bottomRef} />
         </div>
       </main>
@@ -327,10 +357,26 @@ export default function CopilotPage() {
       {/* Bottom input */}
       <div className="relative z-10 border-t border-white/[0.06] bg-[#080c14]/80 backdrop-blur-xl px-4 py-4">
         <div className="mx-auto max-w-2xl">
-          {/* Suggestion chips (only when empty) */}
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full border"
+              style={{ color: cfg.accent, borderColor: `${cfg.accent}40`, background: `${cfg.accent}10` }}
+            >
+              {cfg.icon} {cfg.label}
+            </span>
+            {!isEmpty && (
+              <button
+                onClick={() => { setMessages([]); setInput(''); }}
+                className="text-[10px] text-slate-500 hover:text-slate-300 transition ml-auto"
+              >
+                New conversation
+              </button>
+            )}
+          </div>
+
           {isEmpty && !isLoading && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {SUGGESTIONS.map((s) => (
+              {cfg.suggestions.map((s) => (
                 <button
                   key={s}
                   onClick={() => void send(s)}
@@ -342,21 +388,18 @@ export default function CopilotPage() {
             </div>
           )}
 
-          {/* Input row */}
           <div
-            className="flex items-end gap-3 rounded-2xl border border-white/[0.12] bg-white/[0.05] px-4 py-3 focus-within:border-[#C69C6D]/40 transition"
+            className="flex items-end gap-3 rounded-2xl border bg-white/[0.05] px-4 py-3 transition focus-within:border-opacity-60"
+            style={{ borderColor: `${cfg.accent}30` }}
           >
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void send();
-                }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
               }}
-              placeholder="Ask anything — estimate, page, automation, or chat…"
+              placeholder={cfg.placeholder}
               rows={1}
               className="flex-1 resize-none bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none leading-relaxed max-h-32 overflow-y-auto"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
@@ -367,7 +410,7 @@ export default function CopilotPage() {
               className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-30"
               style={{
                 background: input.trim() && !isLoading
-                  ? 'linear-gradient(135deg, #1E3A5F, #C69C6D)'
+                  ? `linear-gradient(135deg, #1E3A5F, ${cfg.accent})`
                   : 'rgba(255,255,255,0.06)',
               }}
               aria-label="Send"
@@ -386,7 +429,7 @@ export default function CopilotPage() {
           </div>
 
           <p className="mt-2 text-center text-[10px] text-slate-600">
-            TeamBuilderCopilot — AI for contractors &amp; construction businesses
+            TeamBuilderCopilot — AI construction workspace for contractors
           </p>
         </div>
       </div>

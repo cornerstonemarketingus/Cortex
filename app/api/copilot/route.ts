@@ -4,8 +4,15 @@ import { buildFromTemplate, listTemplates } from '@/lib/estimator/templates';
 import engine from '@/lib/estimator/engine';
 import { createSection, DEFAULT_SECTION_PROPS, type SectionType } from '@/lib/builder/page-model';
 import { generateWorkflowFromPrompt } from '@/lib/automation/engine';
+import { computeTimeline } from '@/lib/estimator/timeline';
 
-export type CopilotActionType = 'CREATE_ESTIMATE' | 'CREATE_PAGE' | 'CREATE_AUTOMATION' | 'NOOP';
+export type CopilotActionType =
+  | 'CREATE_ESTIMATE'
+  | 'CREATE_PAGE'
+  | 'CREATE_AUTOMATION'
+  | 'GENERATE_PROPOSAL'
+  | 'GENERATE_APP'
+  | 'NOOP';
 
 export interface CopilotResult {
   text: string;
@@ -18,10 +25,19 @@ export interface CopilotResult {
 
 function detectIntent(input: string): CopilotActionType {
   const txt = input.toLowerCase();
-  if (/estimate|quote|bid|sqft|square foot|square footage|material|labor|cost|price/.test(txt))
+  // Proposal — must check before estimate (more specific)
+  if (/proposal|contract|client doc|client package|send.*client|generate.*proposal/.test(txt))
+    return 'GENERATE_PROPOSAL';
+  // App / tool generation
+  if (/build.*app|create.*app|generate.*app|build.*crm|create.*crm|build.*dashboard|generate.*dashboard|build.*tool/.test(txt))
+    return 'GENERATE_APP';
+  // Estimate
+  if (/estimate|quote|bid|sqft|square foot|square footage|material|labor|cost|price|how much|how much will/.test(txt))
     return 'CREATE_ESTIMATE';
-  if (/page|website|landing|hero|headline|section|layout|design|build.*site/.test(txt))
+  // Page / website
+  if (/page|website|landing|hero|headline|section|layout|design|build.*site|create.*site|build.*page|create.*page|landing page/.test(txt))
     return 'CREATE_PAGE';
+  // Automation
   if (/automation|workflow|follow.?up|autopilot|sequence|trigger|notify|when.*then/.test(txt))
     return 'CREATE_AUTOMATION';
   return 'NOOP';
@@ -238,6 +254,115 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------
+    // GENERATE_PROPOSAL
+    // ------------------------------------------------------------------
+    if (actionType === 'GENERATE_PROPOSAL') {
+      thinking.push('Extracting project details for proposal…');
+
+      // Try to build estimate from context in the input
+      const sqft = parseSqft(input);
+      const template = pickTemplate(input);
+      const estimateInput = buildFromTemplate(template.id, sqft);
+      const breakdown = engine.calculateEstimate(estimateInput);
+      const timeline = computeTimeline([template.id], sqft);
+
+      thinking.push(`Building proposal for ${template.name} — $${breakdown.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
+      thinking.push('Generating scope, terms, and formatting…');
+
+      const proposalData = {
+        clientName: 'Valued Client',
+        contractorName: process.env.BUSINESS_NAME || 'TeamBuilderCopilot',
+        projectAddress: 'Project Address TBD',
+        trades: [{
+          tradeName: template.name,
+          sqft,
+          breakdown: {
+            materialsTotal: breakdown.materialsTotal,
+            laborTotal: breakdown.laborTotal,
+            subtotal: breakdown.subtotal,
+            overheadAmount: breakdown.overheadAmount,
+            taxAmount: breakdown.taxAmount,
+            profitAmount: breakdown.profitAmount,
+            total: breakdown.total,
+          },
+        }],
+        grandTotal: breakdown.total,
+        timeline,
+      };
+
+      let text: string;
+      try {
+        text = await llm(
+          `Briefly describe a construction proposal you've just generated for a contractor. Trade: ${template.name}, ${sqft} sqft, total $${breakdown.total.toFixed(0)}. Keep it to 2 sentences.`,
+          'estimate'
+        );
+      } catch {
+        text = `I've generated a client-ready proposal for ${template.name} at ${sqft.toLocaleString()} sqft (total $${breakdown.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}). Review and send it to your client.`;
+      }
+
+      const result: CopilotResult = {
+        text,
+        thinking,
+        action: {
+          type: 'GENERATE_PROPOSAL',
+          payload: proposalData as unknown as Record<string, unknown>,
+        },
+      };
+      return NextResponse.json(result);
+    }
+
+    // ------------------------------------------------------------------
+    // GENERATE_APP
+    // ------------------------------------------------------------------
+    if (actionType === 'GENERATE_APP') {
+      thinking.push('Analyzing app requirements…');
+
+      const txt = input.toLowerCase();
+      const appType = /crm|lead|client|contact/.test(txt)
+        ? 'crm'
+        : /dashboard|analytics|report/.test(txt)
+        ? 'dashboard'
+        : 'landing-page';
+
+      thinking.push(`Generating ${appType === 'crm' ? 'CRM dashboard' : appType === 'dashboard' ? 'analytics dashboard' : 'landing page'}…`);
+
+      let code = '';
+      let appTitle = '';
+      try {
+        const basePrompt = appType === 'crm'
+          ? `Generate a contractor CRM React component using Tailwind CSS with: stats row, leads table (Name/Phone/Status/Date), add-lead form. Dark theme. Use useState. Export as: export default function ContractorCRM()`
+          : `Generate a React landing page component using Tailwind for: "${input}". Include Hero, Services (3), Why Choose Us, CTA. Dark theme. Export as: export default function GeneratedPage()`;
+        code = await llm(basePrompt, 'code', 'Return only valid React JSX. No markdown, no imports needed.');
+        appTitle = appType === 'crm' ? 'Contractor CRM' : `Landing Page — ${input.split(' ').slice(0, 4).join(' ')}`;
+        thinking.push(`${appType} component generated (${code.length} chars)`);
+      } catch {
+        thinking.push('Code generation unavailable — template fallback applied');
+        code = `export default function GeneratedPage() { return <div className="p-8 text-white bg-gray-900 min-h-screen"><h1 className="text-3xl font-bold">${input}</h1><p className="mt-4 text-gray-400">Content generated here.</p></div>; }`;
+        appTitle = input.split(' ').slice(0, 4).join(' ');
+      }
+
+      let text: string;
+      try {
+        text = await llm(
+          `Briefly describe a generated ${appType} app component to a contractor: "${input}". 2 sentences max.`,
+          'builder'
+        );
+      } catch {
+        text = `I've generated a ${appType === 'crm' ? 'contractor CRM dashboard' : 'landing page'} for "${input}". Click "Preview" to see it rendered, or copy the code directly.`;
+      }
+
+      const result: CopilotResult = {
+        text,
+        thinking,
+        action: {
+          type: 'GENERATE_APP',
+          payload: { code, appTitle, appType, input },
+        },
+      };
+      return NextResponse.json(result);
+    }
+
+    // ------------------------------------------------------------------
     // NOOP — General chat
     // ------------------------------------------------------------------
     thinking.push('Processing your message…');
@@ -246,10 +371,10 @@ export async function POST(req: Request) {
       text = await llm(
         input,
         'chat',
-        'You are TeamBuilderCopilot, an expert AI assistant for contractors and construction businesses. Be helpful, concise, and professional. You can help with estimates, website pages, automations, and general business advice.'
+        'You are TeamBuilderCopilot, an expert AI assistant for contractors and construction businesses. Be helpful, concise, and professional. You can help with estimates, proposals, website pages, apps, automations, and general business advice.'
       );
     } catch {
-      text = "I'm here to help! You can ask me to create an estimate, build a website page, or set up an automation workflow.";
+      text = "I'm here to help! Ask me to create an estimate, build a page, generate a proposal, or set up an automation.";
     }
     thinking.push('Response ready');
 
