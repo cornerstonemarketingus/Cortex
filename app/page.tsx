@@ -87,30 +87,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Copilot CTA strip ── */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
-        <div
-          className="rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6"
-          style={{ background: 'linear-gradient(135deg, #0f1f38 0%, #08121e 100%)', border: '1px solid rgba(198,156,109,0.2)' }}
-        >
-          <div>
-            <p className="text-xs uppercase tracking-widest text-[#C69C6D] mb-1">AI Copilot</p>
-            <h3 className="text-xl font-bold text-white">
-              Ask Copilot to build anything
-            </h3>
-            <p className="mt-1 text-sm text-slate-400">
-              "Estimate residential framing for 2,400 sqft" or "Build a roofing company page" — done instantly.
-            </p>
-          </div>
-          <Link
-            href="/copilot"
-            className="flex-shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition whitespace-nowrap"
-            style={{ background: 'linear-gradient(135deg, #1E3A5F, #C69C6D)' }}
-          >
-            Open Copilot →
-          </Link>
-        </div>
-      </section>
     </main>
   );
 }
