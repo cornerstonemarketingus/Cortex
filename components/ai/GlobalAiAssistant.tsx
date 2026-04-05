@@ -61,7 +61,7 @@ export default function GlobalAiAssistant() {
     {
       id: 'welcome',
       role: 'system',
-      text: 'Cortex AI is ready. Ask me to generate estimates, build automations, create pages, or navigate anywhere.',
+      text: 'Builder Copilot is ready. Ask me to generate estimates, build automations, create pages, or navigate anywhere.'
     },
   ]);
 
@@ -145,7 +145,7 @@ export default function GlobalAiAssistant() {
           provider: 'auto',
           tone: 'support',
           systemPrompt:
-            `You are a Cortex AI assistant for TeamBuilderCopilot, an AI platform for contractors. ` +
+            `You are Builder Copilot, an AI assistant for TeamBuilderCopilot — an AI platform for contractors. ` +
             `Give direct, practical guidance for estimates, proposals, automations, and page building. ` +
             `Never mention OpenAI, Anthropic, Claude, GPT, or any third-party AI provider names. ` +
             `If the user wants to navigate somewhere, reply with exactly: [NAV:/path] on its own line. ` +
@@ -204,7 +204,7 @@ export default function GlobalAiAssistant() {
         onClick={() => setOpen((value) => !value)}
         className="fixed bottom-4 right-4 z-[60] rounded-full border border-[#C69C6D]/50 bg-[#1E3A5F] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-black/40 hover:bg-[#1E3A5F]/80 transition"
       >
-        {open ? '✕ Close' : '✦ Cortex AI'}
+        {open ? '✕ Close' : '✦ Builder Copilot'}
       </button>
 
       {open ? (
@@ -212,7 +212,7 @@ export default function GlobalAiAssistant() {
           {/* Header */}
           <header className="flex items-start justify-between gap-2 px-4 pt-4 pb-3 border-b border-white/8 flex-shrink-0">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-[#C69C6D]">Cortex AI</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[#C69C6D]">Builder Copilot</p>
               <h2 className="text-sm font-semibold text-white mt-0.5">How can I help?</h2>
             </div>
             <button
