@@ -260,7 +260,7 @@ export default function ContractorOSPage() {
               </div>
               <div className="p-5 space-y-3">
                 {[
-                  { name: 'LLM Router', sub: 'OpenAI + Claude + Local', status: 'active' },
+                  { name: 'LLM Router', sub: 'Cortex AI Engine', status: 'active' },
                   { name: 'Copilot Context Engine', sub: 'Multi-page awareness', status: 'active' },
                   { name: 'Estimator Engine', sub: '16 trade templates loaded', status: 'active' },
                   { name: 'Voice Agent', sub: 'AI receptionist — Twilio', status: 'standby' },

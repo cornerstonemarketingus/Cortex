@@ -16,6 +16,9 @@ const HIDDEN_ROUTES = [
   '/game-builder',
   '/creatoros',
   '/autoflow',
+  '/json-builder',
+  '/builder',
+  '/devboard',
 ];
 
 function shouldHideCopilotChrome(pathname: string): boolean {

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type AssistantMessage = {
   id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
+  navAction?: string;
 };
 
 type ChatApiResponse = {
@@ -16,26 +17,40 @@ type ChatApiResponse = {
   error?: string;
 };
 
-const STORAGE_KEY = 'bidbuilder.copilot.messages';
+const STORAGE_KEY = 'cortex.copilot.messages';
 
-function getStarterPrompt(pathname: string): string {
-  if (pathname.startsWith('/website-builder')) {
-    return 'Help me improve my website build flow and launch quality.';
+// Detect navigation intent from user message — no API call needed
+function detectNavIntent(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/\b(go to|open|take me to|show me|navigate to|launch)\b/.test(t)) {
+    if (/automat/.test(t)) return '/automations';
+    if (/estimat|quote|bid/.test(t)) return '/copilot';
+    if (/proposal/.test(t)) return '/copilot';
+    if (/builder|build|page|website|app/.test(t)) return '/copilot';
+    if (/dashboard/.test(t)) return '/dashboard';
+    if (/pricing/.test(t)) return '/pricing';
+    if (/onboard/.test(t)) return '/onboarding';
   }
+  return null;
+}
 
-  if (pathname.startsWith('/app-builder')) {
-    return 'Help me improve my app build architecture and launch checklist.';
+function getPageSuggestions(pathname: string): string[] {
+  if (pathname.startsWith('/automations')) {
+    return ['Run the full lead engine', 'Show me automation templates', 'Open the estimator →'];
   }
-
-  if (pathname.startsWith('/bidbuilder')) {
-    return 'Help me run estimator-first growth strategy and automation activation.';
+  if (pathname.startsWith('/dashboard')) {
+    return ['Take me to automations', 'Open the AI builder', 'Generate an estimate'];
   }
-
-  return 'Help me make direct profile and build updates.';
+  return [
+    'Open the AI builder',
+    'Take me to automations',
+    'Generate an estimate for a roof replacement',
+  ];
 }
 
 export default function GlobalAiAssistant() {
   const pathname = usePathname();
+  const router = useRouter();
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const [open, setOpen] = useState(false);
@@ -46,19 +61,11 @@ export default function GlobalAiAssistant() {
     {
       id: 'welcome',
       role: 'system',
-      text: 'Copilot is online. Ask for direct build, profile, or automation updates.',
+      text: 'Cortex AI is ready. Ask me to generate estimates, build automations, create pages, or navigate anywhere.',
     },
   ]);
 
-  const quickPrompts = useMemo(
-    () => [
-      'Improve my estimator conversion and follow-up flow.',
-      'Refine my website launch checklist and publish steps.',
-      'Create a practical app build optimization plan.',
-      getStarterPrompt(pathname),
-    ],
-    [pathname]
-  );
+  const quickPrompts = useMemo(() => getPageSuggestions(pathname), [pathname]);
 
   useEffect(() => {
     try {
@@ -106,28 +113,43 @@ export default function GlobalAiAssistant() {
 
     setMessages((current) => [
       ...current,
-      {
-        id: `u-${Date.now()}`,
-        role: 'user',
-        text,
-      },
+      { id: `u-${Date.now()}`, role: 'user', text },
     ]);
     setInput('');
     setError(null);
+
+    // Client-side nav intent — instant, no API call needed
+    const navTarget = detectNavIntent(text);
+    if (navTarget) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `nav-${Date.now()}`,
+          role: 'assistant',
+          text: `Taking you to ${navTarget}…`,
+          navAction: navTarget,
+        },
+      ]);
+      setTimeout(() => router.push(navTarget), 600);
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'assistant',
           provider: 'auto',
           tone: 'support',
           systemPrompt:
-            'You are Builder Copilot, a premium build assistant for Bid Builder. Give direct, practical guidance for app, website, profile, estimator, and automation improvements.',
+            `You are a Cortex AI assistant for TeamBuilderCopilot, an AI platform for contractors. ` +
+            `Give direct, practical guidance for estimates, proposals, automations, and page building. ` +
+            `Never mention OpenAI, Anthropic, Claude, GPT, or any third-party AI provider names. ` +
+            `If the user wants to navigate somewhere, reply with exactly: [NAV:/path] on its own line. ` +
+            `Available paths: /copilot (estimates + builder), /automations, /dashboard, /pricing, /onboarding.`,
           message: `${text}\n\nCurrent page: ${pathname}`,
           includeCapabilities: false,
         }),
@@ -135,7 +157,7 @@ export default function GlobalAiAssistant() {
 
       const parsed = (await response.json().catch(() => ({}))) as ChatApiResponse;
       if (!response.ok) {
-        throw new Error(parsed.error || `Assistant request failed (${response.status})`);
+        throw new Error(parsed.error || `Request failed (${response.status})`);
       }
 
       const outputs = Array.isArray(parsed.responses) && parsed.responses.length > 0
@@ -144,28 +166,31 @@ export default function GlobalAiAssistant() {
         ? parsed.results.map((item) => item.result)
         : [];
 
-      if (outputs.length === 0) {
-        throw new Error('Assistant returned no output.');
-      }
+      if (outputs.length === 0) throw new Error('No response returned.');
 
-      setMessages((current) => [
-        ...current,
-        ...outputs.map((textOutput, index) => ({
-          id: `a-${Date.now()}-${index}`,
-          role: 'assistant' as const,
-          text: textOutput,
-        })),
-      ]);
+      for (const raw of outputs) {
+        const navMatch = raw.match(/\[NAV:(\/[^\]]*)\]/);
+        if (navMatch) {
+          const dest = navMatch[1];
+          const cleanText = raw.replace(/\[NAV:\/[^\]]*\]/, '').trim() || `Navigating to ${dest}…`;
+          setMessages((current) => [
+            ...current,
+            { id: `a-${Date.now()}`, role: 'assistant', text: cleanText, navAction: dest },
+          ]);
+          setTimeout(() => router.push(dest), 800);
+        } else {
+          setMessages((current) => [
+            ...current,
+            { id: `a-${Date.now()}`, role: 'assistant', text: raw },
+          ]);
+        }
+      }
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : 'Assistant request failed';
+      const message = requestError instanceof Error ? requestError.message : 'Request failed';
       setError(message);
       setMessages((current) => [
         ...current,
-        {
-          id: `e-${Date.now()}`,
-          role: 'system',
-          text: `Error: ${message}`,
-        },
+        { id: `e-${Date.now()}`, role: 'system', text: `Error: ${message}` },
       ]);
     } finally {
       setLoading(false);
@@ -177,17 +202,18 @@ export default function GlobalAiAssistant() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="fixed bottom-4 right-4 z-[60] rounded-full border border-[var(--brand-600)]/70 bg-[#1E3A5F] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-black/40 hover:bg-[#1E3A5F]/80 transition"
+        className="fixed bottom-4 right-4 z-[60] rounded-full border border-[#C69C6D]/50 bg-[#1E3A5F] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-black/40 hover:bg-[#1E3A5F]/80 transition"
       >
-        {open ? 'Close' : '✦ Copilot'}
+        {open ? '✕ Close' : '✦ Cortex AI'}
       </button>
 
       {open ? (
-        <section className="fixed bottom-14 right-4 z-[60] h-[min(46vh,380px)] w-[min(320px,calc(100vw-1rem))] rounded-2xl border border-[#1E3A5F]/60 bg-[#080c14]/96 p-3 text-white shadow-2xl backdrop-blur-xl">
-          <header className="mb-2 flex items-start justify-between gap-2">
+        <section className="fixed bottom-14 right-4 z-[60] flex flex-col h-[min(60vh,520px)] w-[min(360px,calc(100vw-1.5rem))] rounded-2xl border border-[#1E3A5F]/60 bg-[#080c14]/97 shadow-2xl backdrop-blur-xl overflow-hidden">
+          {/* Header */}
+          <header className="flex items-start justify-between gap-2 px-4 pt-4 pb-3 border-b border-white/8 flex-shrink-0">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-[#C69C6D]">TeamBuilder Copilot</p>
-              <h2 className="text-sm font-semibold mt-0.5">How can I help?</h2>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[#C69C6D]">Cortex AI</p>
+              <h2 className="text-sm font-semibold text-white mt-0.5">How can I help?</h2>
             </div>
             <button
               type="button"
@@ -199,37 +225,52 @@ export default function GlobalAiAssistant() {
             </button>
           </header>
 
-          <div className="mb-2 flex flex-wrap gap-1">
-            {quickPrompts.slice(0, 3).map((prompt) => (
+          {/* Quick prompts */}
+          <div className="flex flex-wrap gap-1 px-3 pt-2 pb-1 flex-shrink-0">
+            {quickPrompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 onClick={() => void send(prompt)}
                 className="rounded-md border border-[#1E3A5F]/50 bg-[#1E3A5F]/30 px-2 py-1 text-[10px] text-slate-300 hover:bg-[#1E3A5F]/50 transition"
               >
-                {prompt.slice(0, 30)}{prompt.length > 30 ? '…' : ''}
+                {prompt.length > 34 ? prompt.slice(0, 34) + '…' : prompt}
               </button>
             ))}
           </div>
 
-          <div ref={listRef} className="h-[52%] overflow-y-auto rounded-xl border border-white/8 bg-black/30 p-2 space-y-2">
+          {/* Messages */}
+          <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
             {messages.map((message) => (
               <article
                 key={message.id}
-                className={`rounded-lg border px-2 py-1.5 text-xs whitespace-pre-wrap ${
+                className={`rounded-lg border px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed ${
                   message.role === 'user'
-                    ? 'border-[#1E3A5F]/50 bg-[#1E3A5F]/30'
+                    ? 'border-[#1E3A5F]/60 bg-[#1E3A5F]/35 text-slate-100 ml-4'
                     : message.role === 'assistant'
-                    ? 'border-[#C69C6D]/20 bg-[#C69C6D]/8'
+                    ? 'border-[#C69C6D]/20 bg-[#C69C6D]/8 text-slate-200'
                     : 'border-white/10 bg-white/5 text-slate-400'
                 }`}
               >
                 {message.text}
+                {message.navAction ? (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-[#C69C6D]/20 px-2 py-0.5 text-[10px] text-[#C69C6D]">
+                    → {message.navAction}
+                  </span>
+                ) : null}
               </article>
             ))}
+            {loading ? (
+              <div className="flex gap-1 px-3 py-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#C69C6D] animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#C69C6D] animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#C69C6D] animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            ) : null}
           </div>
 
-          <div className="mt-2 flex gap-2">
+          {/* Input */}
+          <div className="flex gap-2 px-3 pb-3 pt-2 border-t border-white/8 flex-shrink-0">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -239,23 +280,23 @@ export default function GlobalAiAssistant() {
                   void send();
                 }
               }}
-              placeholder="Ask anything…"
-              className="flex-1 rounded-lg border border-white/12 bg-white/6 px-2 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#C69C6D]/40"
+              placeholder="Ask anything or say 'open builder'…"
+              className="flex-1 rounded-lg border border-white/12 bg-white/6 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#C69C6D]/40"
             />
             <button
               type="button"
               onClick={() => void send()}
               disabled={loading || !input.trim()}
-              className="rounded-lg bg-[#1E3A5F] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E3A5F]/80 disabled:opacity-50 transition"
+              className="rounded-lg bg-[#1E3A5F] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1E3A5F]/80 disabled:opacity-50 transition"
             >
-              {loading ? '…' : 'Send'}
+              {loading ? '…' : '↑'}
             </button>
           </div>
 
-          {error ? <p className="mt-1 text-[11px] text-red-300">{error}</p> : null}
+          {error ? <p className="px-3 pb-2 text-[11px] text-red-300 flex-shrink-0">{error}</p> : null}
 
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-[10px] text-slate-500">Quick assist — estimates, pages, automations</p>
+          <div className="flex items-center justify-between px-3 pb-3 flex-shrink-0">
+            <p className="text-[10px] text-slate-500">Estimates · Proposals · Automations · Builder</p>
             <Link href="/copilot" className="text-[10px] font-semibold text-[#C69C6D] hover:text-[#C69C6D]/80 transition">
               Full Copilot →
             </Link>

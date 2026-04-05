@@ -70,19 +70,25 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Automations */}
+          {/* Automations — featured card */}
           <Link
             href="/automations"
-            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1826] p-6 hover:border-emerald-500/30 transition-all"
+            className="group relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-[#0a1f1f] to-[#0d1826] p-6 hover:border-cyan-400/50 transition-all sm:col-span-2 lg:col-span-1"
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-900/40 flex items-center justify-center text-xl mb-4">⚡</div>
-            <p className="text-xs uppercase tracking-widest text-emerald-400 font-semibold mb-1">Automations</p>
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-cyan-500/5 -translate-y-8 translate-x-8 pointer-events-none" />
+            <div className="w-10 h-10 rounded-xl bg-cyan-900/50 flex items-center justify-center text-xl mb-4">⚡</div>
+            <p className="text-xs uppercase tracking-widest text-cyan-400 font-semibold mb-1">Automations</p>
             <h2 className="text-lg font-bold text-white mb-2">Smart Workflow Engine</h2>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Trigger SMS/email follow-ups, auto-invoice after approval, request reviews on job complete — describe it, Copilot builds it.
+            <p className="text-sm text-slate-400 leading-relaxed mb-3">
+              Instant lead reply, missed-call text-back, estimate follow-up, review requests — run on autopilot.
             </p>
-            <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-emerald-400 group-hover:gap-2 transition-all">
-              Create a workflow <span>→</span>
+            <ul className="space-y-1 text-[11px] text-cyan-300/80">
+              <li>✓ Lead capture → qualify → convert</li>
+              <li>✓ SMS + email follow-up sequences</li>
+              <li>✓ 14 pre-built automation templates</li>
+            </ul>
+            <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-cyan-400 group-hover:gap-2 transition-all">
+              Turn on Autopilot <span>→</span>
             </div>
           </Link>
 

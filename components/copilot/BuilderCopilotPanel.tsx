@@ -252,9 +252,9 @@ export default function BuilderCopilotPanel({
   return (
     <section
       className="rounded-2xl border p-5"
-      style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'var(--card-bg)' }}
+      style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(8,12,20,0.96)' }}
     >
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--brand-900)' }}>{title}</h2>
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
       <p className="mt-1 text-xs" style={{ color: 'var(--muted-400)' }}>{subtitle}</p>
 
       <textarea
