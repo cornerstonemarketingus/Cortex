@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 
+// AI Construction Workspace — Estimating, Automations, Builder + Proposals
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#070b10] text-slate-100">
@@ -33,23 +34,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 3 Core Features ── */}
+      {/* ── 4 Core Features ── */}
       <section className="mx-auto max-w-5xl px-6 pb-16">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Estimating */}
           <Link
-            href="/estimate"
+            href="/copilot"
             className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1826] p-6 hover:border-[#1E3A5F]/60 transition-all"
           >
             <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/60 flex items-center justify-center text-xl mb-4">📐</div>
             <p className="text-xs uppercase tracking-widest text-[#C69C6D] font-semibold mb-1">Estimating</p>
             <h2 className="text-lg font-bold text-white mb-2">AI Construction Estimates</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              16 trade templates with per-sqft scaling, materials + labor breakdown, location pricing, and PDF export — ready in seconds.
+              16 trade templates, per-sqft scaling, materials + labor breakdown, and timeline sequencing — done in seconds.
             </p>
             <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-[#C69C6D] group-hover:gap-2 transition-all">
               Start an estimate <span>→</span>
+            </div>
+          </Link>
+
+          {/* Proposals */}
+          <Link
+            href="/copilot"
+            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1826] p-6 hover:border-amber-500/30 transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-900/40 flex items-center justify-center text-xl mb-4">📄</div>
+            <p className="text-xs uppercase tracking-widest text-amber-400 font-semibold mb-1">Proposals</p>
+            <h2 className="text-lg font-bold text-white mb-2">Client-Ready Proposals</h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              From any estimate, generate a printable proposal with scope of work, itemized costs, Gantt timeline, and signature block.
+            </p>
+            <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-amber-400 group-hover:gap-2 transition-all">
+              Generate a proposal <span>→</span>
             </div>
           </Link>
 
@@ -71,17 +88,17 @@ export default function HomePage() {
 
           {/* Builder */}
           <Link
-            href="/json-builder"
+            href="/copilot"
             className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d1826] p-6 hover:border-blue-500/30 transition-all"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-900/40 flex items-center justify-center text-xl mb-4">🏗️</div>
-            <p className="text-xs uppercase tracking-widest text-blue-400 font-semibold mb-1">Page Builder</p>
-            <h2 className="text-lg font-bold text-white mb-2">Drag-and-Drop Pages</h2>
+            <p className="text-xs uppercase tracking-widest text-blue-400 font-semibold mb-1">Builder</p>
+            <h2 className="text-lg font-bold text-white mb-2">Pages & Apps</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Generate contractor landing pages in one prompt — hero, services, testimonials, pricing, contact form — then customize live.
+              Generate contractor landing pages, CRM dashboards, and internal tools from one prompt — then customize live.
             </p>
             <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-blue-400 group-hover:gap-2 transition-all">
-              Build a page <span>→</span>
+              Build something <span>→</span>
             </div>
           </Link>
         </div>
