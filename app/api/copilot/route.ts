@@ -6,6 +6,8 @@ import { createSection, DEFAULT_SECTION_PROPS, type SectionType } from '@/lib/bu
 import { generateWorkflowFromPrompt } from '@/lib/automation/engine';
 import { computeTimeline } from '@/lib/estimator/timeline';
 
+export const runtime = 'nodejs';
+
 export type CopilotActionType =
   | 'CREATE_ESTIMATE'
   | 'CREATE_PAGE'
@@ -21,6 +23,18 @@ export interface CopilotResult {
     type: CopilotActionType;
     payload?: Record<string, unknown>;
   };
+}
+
+const MAX_INPUT_CHARS = 4_000;
+
+function jsonError(message: string, status: number) {
+  return NextResponse.json(
+    { error: message },
+    {
+      status,
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    },
+  );
 }
 
 function detectIntent(input: string): CopilotActionType {
@@ -97,9 +111,16 @@ function pickSections(input: string): SectionType[] {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const body = await req.json().catch(() => null) as Record<string, unknown> | null;
+    if (!body || typeof body !== 'object') {
+      return jsonError('Invalid JSON body', 400);
+    }
+
     const input = ((body.input || body.prompt || '') as string).trim();
-    if (!input) return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
+    if (!input) return jsonError('Missing prompt', 400);
+    if (input.length > MAX_INPUT_CHARS) {
+      return jsonError(`Prompt too long. Max ${MAX_INPUT_CHARS} characters.`, 413);
+    }
 
     const actionType = detectIntent(input);
     const thinking: string[] = [];
@@ -151,7 +172,10 @@ export async function POST(req: Request) {
           },
         },
       };
-      return NextResponse.json(result);
+      return NextResponse.json(
+        result,
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+      );
     }
 
     // ------------------------------------------------------------------
@@ -213,7 +237,10 @@ export async function POST(req: Request) {
           },
         },
       };
-      return NextResponse.json(result);
+      return NextResponse.json(
+        result,
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+      );
     }
 
     // ------------------------------------------------------------------
@@ -250,7 +277,10 @@ export async function POST(req: Request) {
           payload: { workflow, description: input },
         },
       };
-      return NextResponse.json(result);
+      return NextResponse.json(
+        result,
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+      );
     }
 
     // ------------------------------------------------------------------
@@ -308,7 +338,10 @@ export async function POST(req: Request) {
           payload: proposalData as unknown as Record<string, unknown>,
         },
       };
-      return NextResponse.json(result);
+      return NextResponse.json(
+        result,
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+      );
     }
 
     // ------------------------------------------------------------------
@@ -359,7 +392,10 @@ export async function POST(req: Request) {
           payload: { code, appTitle, appType, input },
         },
       };
-      return NextResponse.json(result);
+      return NextResponse.json(
+        result,
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+      );
     }
 
     // ------------------------------------------------------------------
@@ -383,8 +419,12 @@ export async function POST(req: Request) {
       thinking,
       action: { type: 'NOOP' },
     };
-    return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json(
+      result,
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Invalid request';
+    return jsonError(message, 400);
   }
 }
