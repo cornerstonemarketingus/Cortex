@@ -154,22 +154,6 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
 }
 
 function localFallback(req: LLMRequest): LLMResponse {
-  if (req.task === 'estimate') {
-    // Parse estimate prompt for key details
-    const tradesMatch = req.prompt.match(/Trades: (.*?)\\./i) || req.prompt.match(/trades?:? (.*?)\\./i);
-    const trades = tradesMatch ? tradesMatch[1].trim() : 'project trades';
-    const totalMatch = req.prompt.match(/Total: \\$(\\d+(?:,\\d{3})*)/i);
-    const total = totalMatch ? totalMatch[1] : '$XX,XXX';
-    const sqftMatch = req.prompt.match(/Square footage: (\\d+)/i);
-    const sqft = sqftMatch ? sqftMatch[1] : 'X,XXX';
-    
-    return {
-      text: `Professional construction estimate summary:\\n\\n**Total Project Cost: ${total}**\\n**Scope: ${sqft} sqft, ${trades}**\\n\\nThis bid includes complete material, labor, overhead (12%), tax (7%), and profit (18%). Timeline: 2-4 weeks typical. Valid 30 days. Questions? Call for detailed takeoff.`,
-      provider: 'local',
-      model: 'estimator-local',
-    };
-  }
-  
   return {
     text: `[Local model] Received task "${req.task}". Configure OPENAI_API_KEY or ANTHROPIC_API_KEY for full AI responses.`,
     provider: 'local',
@@ -203,9 +187,16 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const task = safeReq.task ?? detectTask(safeReq.prompt);
   const provider = selectProvider(task);
 
+  // When the preferred provider is OpenAI but its key is absent, fall back to Claude
+  // before resorting to the local model, so that a configured ANTHROPIC_API_KEY is used.
+  const resolvedProvider: LLMProvider =
+    provider === 'openai' && !process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY
+      ? 'claude'
+      : provider;
+
   try {
-    if (provider === 'claude') return await callClaude({ ...safeReq, task });
-    if (provider === 'local') return localFallback({ ...safeReq, task });
+    if (resolvedProvider === 'claude') return await callClaude({ ...safeReq, task });
+    if (resolvedProvider === 'local') return localFallback({ ...safeReq, task });
     return await callOpenAI({ ...safeReq, task });
   } catch {
     return localFallback({ ...safeReq, task });
