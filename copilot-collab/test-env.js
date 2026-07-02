@@ -1,2 +1,2 @@
 require('dotenv').config();
-console.log(process.env.ANTHROPIC_API_KEY);
+console.log('ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
