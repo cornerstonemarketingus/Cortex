@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callOpenAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/openai';
+import { callAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/ai';
 import { buildRoleResponse, sanitizePrompt } from '@/lib/chatBots';
 
 export const runtime = 'nodejs';
@@ -103,7 +103,7 @@ async function runAgent(
       ].filter(Boolean).join('\n\n'),
     },
   ];
-  return callOpenAiChat(messages, tone);
+  return callAiChat(messages, tone);
 }
 
 async function synthesizeDecision(
@@ -128,7 +128,7 @@ async function synthesizeDecision(
     ].join('\n');
   }
 
-  return callOpenAiChat(
+  return callAiChat(
     [
       {
         role: 'user',

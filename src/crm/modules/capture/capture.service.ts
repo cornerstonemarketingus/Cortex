@@ -77,24 +77,24 @@ function parseContactFromRawText(rawText: string): ParsedBusinessCard {
 }
 
 async function parseBusinessCardWithAi(imageDataUrl: string): Promise<ParsedBusinessCard> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.AI_API_KEY;
   if (!apiKey) {
-    throw new ApiError(400, 'ANTHROPIC_API_KEY is required for image-based business card parsing', 'AI_KEY_REQUIRED');
+    throw new ApiError(400, 'AI_API_KEY is required for image-based business card parsing', 'AI_KEY_REQUIRED');
   }
 
-  const model = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
+  const model = process.env.AI_MODEL ?? '';
+  const apiUrl = process.env.AI_API_URL ?? '';
 
   // Extract base64 data and media type from the data URL
   const dataUrlMatch = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
   const mediaType = (dataUrlMatch?.[1] ?? 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
   const imageData = dataUrlMatch?.[2] ?? imageDataUrl;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
       model,

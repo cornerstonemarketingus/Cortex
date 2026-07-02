@@ -6,7 +6,7 @@ import { jsonResponse, parseOptionalString, withApiHandler } from '@/src/crm/cor
 import { LeadCaptureService } from '@/src/crm/modules/capture';
 import { NurtureService } from '@/src/crm/modules/nurture';
 import { buildPrompt } from '@/src/platform/prompt-engineering';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { consumePromptCredits } from '@/src/billing/subscription.service';
 import { buildApprovalPayload } from '@/src/platform/approval-lifecycle';
 import { recordBelongsToTenant, requireTenantContext } from '@/src/platform/tenant-enforcement';
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const aiResponse = await callOpenAiChat(
+    const aiResponse = await callAiChat(
       [
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.content },

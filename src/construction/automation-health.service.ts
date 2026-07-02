@@ -198,7 +198,7 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
   const providers = {
     twilioConfigured: boolTwilioConfigured(),
     sendgridConfigured: boolSendgridConfigured(),
-    aiConfigured: hasValue('ANTHROPIC_API_KEY'),
+    aiConfigured: hasValue('AI_API_KEY'),
   };
 
   const alerts: string[] = [];
@@ -208,7 +208,7 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
   }
 
   if (!providers.aiConfigured) {
-    alerts.push('ANTHROPIC_API_KEY is missing. AI chat responder and AI drafting can fail.');
+    alerts.push('AI_API_KEY is missing. AI chat responder and AI drafting can fail.');
   }
 
   if (!providers.twilioConfigured && !providers.sendgridConfigured) {

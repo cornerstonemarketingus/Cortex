@@ -4,7 +4,7 @@ import { jsonResponse, parseBoolean, parseOptionalString, withApiHandler } from 
 import { BLOG_REGIONS, createBlogPost, type BlogRegion } from '@/src/content/blog-engine';
 import { appendTaskDrafts } from '@/src/cto/taskQueue';
 import { buildPrompt } from '@/src/platform/prompt-engineering';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { requireTenantContext } from '@/src/platform/tenant-enforcement';
 import { consumePromptCredits } from '@/src/billing/subscription.service';
 
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         },
       });
 
-      communicationPlan = await callOpenAiChat(
+      communicationPlan = await callAiChat(
         [
           { role: 'system', content: prompt.system },
           { role: 'user', content: prompt.content },

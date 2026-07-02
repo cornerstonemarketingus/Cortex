@@ -1,7 +1,7 @@
 /**
  * LLM Router — Multi-model orchestration layer
  * Routes prompts to the best model based on task type, cost, and availability.
- * Provider: Claude (Anthropic), Local (fast/private)
+ * Provider: Primary AI, Local (fast/private)
  */
 
 export type LLMTask =
@@ -15,7 +15,7 @@ export type LLMTask =
   | 'seo'
   | 'fast';
 
-export type LLMProvider = 'claude' | 'local';
+export type LLMProvider = 'primary' | 'local';
 
 export interface LLMRequest {
   task: LLMTask;
@@ -36,14 +36,14 @@ export interface LLMResponse {
 const LLM_HTTP_TIMEOUT_MS = Number(process.env.LLM_HTTP_TIMEOUT_MS || 20_000);
 
 const MODEL_ROUTING: Record<LLMTask, LLMProvider> = {
-  code: 'claude',
-  builder: 'claude',
-  estimate: 'claude',
-  seo: 'claude',
-  reasoning: 'claude',
-  automation: 'claude',
-  voice: 'claude',
-  chat: 'claude',
+  code: 'primary',
+  builder: 'primary',
+  estimate: 'primary',
+  seo: 'primary',
+  reasoning: 'primary',
+  automation: 'primary',
+  voice: 'primary',
+  chat: 'primary',
   fast: 'local',
 };
 
@@ -61,14 +61,15 @@ function detectTask(prompt: string): LLMTask {
 export function selectProvider(task: LLMTask): LLMProvider {
   const override = process.env.LLM_PROVIDER_OVERRIDE as LLMProvider | undefined;
   if (override) return override;
-  return MODEL_ROUTING[task] ?? 'claude';
+  return MODEL_ROUTING[task] ?? 'primary';
 }
 
-async function callClaude(req: LLMRequest): Promise<LLMResponse> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+async function callAi(req: LLMRequest): Promise<LLMResponse> {
+  const apiKey = process.env.AI_API_KEY;
   if (!apiKey) return localFallback(req);
 
-  const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
+  const model = process.env.AI_MODEL ?? '';
+  const apiUrl = process.env.AI_API_URL ?? '';
   const body: Record<string, unknown> = {
     model,
     max_tokens: req.maxTokens ?? 4096,
@@ -80,12 +81,11 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
   const timer = setTimeout(() => controller.abort(), LLM_HTTP_TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -103,7 +103,7 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
   const text = data.content?.[0]?.text ?? '';
   return {
     text,
-    provider: 'claude',
+    provider: 'primary',
     model,
     tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
   };
@@ -111,7 +111,7 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
 
 function localFallback(req: LLMRequest): LLMResponse {
   return {
-    text: `[Local model] Received task "${req.task}". Configure ANTHROPIC_API_KEY for full AI responses.`,
+    text: `[Local model] Received task "${req.task}". Configure AI_API_KEY for full AI responses.`,
     provider: 'local',
     model: 'local-fallback',
   };
@@ -145,7 +145,7 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
 
   try {
     if (provider === 'local') return localFallback({ ...safeReq, task });
-    return await callClaude({ ...safeReq, task });
+    return await callAi({ ...safeReq, task });
   } catch {
     return localFallback({ ...safeReq, task });
   }

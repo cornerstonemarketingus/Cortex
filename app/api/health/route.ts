@@ -23,8 +23,8 @@ export async function GET() {
   const checks: Record<string, unknown> = {};
 
   // ── API key (reports presence only — never the value) ─────────────────────
-  checks.api_key_anthropic = !!process.env.ANTHROPIC_API_KEY;
-  checks.has_any_api_key   = checks.api_key_anthropic;
+  checks.api_key_ai    = !!process.env.AI_API_KEY;
+  checks.has_any_api_key = checks.api_key_ai;
 
   // ── Python runtime ────────────────────────────────────────────────────────
   checks.python = await checkPython();
@@ -55,7 +55,7 @@ export async function GET() {
 
   // ── Determine overall status ──────────────────────────────────────────────
   // database is optional until migrated; assets_store is created lazily
-  const OPTIONAL = new Set(['database', 'assets_store', 'has_any_api_key', 'api_key_anthropic']);
+  const OPTIONAL = new Set(['database', 'assets_store', 'has_any_api_key', 'api_key_ai']);
   const degraded = Object.entries(checks).some(([k, v]) => {
     if (OPTIONAL.has(k)) return false;
     return v === false || v === 'unavailable' || v === 'timeout';
@@ -63,7 +63,7 @@ export async function GET() {
 
   const pythonRuntime = typeof checks.python === 'string' ? checks.python : 'unavailable';
   const apiKeys = {
-    anthropic: !!checks.api_key_anthropic,
+    ai: !!checks.api_key_ai,
     any: !!checks.has_any_api_key,
   };
   const agentRunner = checks.agent_runner ? 'ok' : 'missing';

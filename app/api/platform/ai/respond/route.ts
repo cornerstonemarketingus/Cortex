@@ -1,7 +1,7 @@
 import { ApiError, readJson } from '@/src/crm/core/api';
 import { requireCrmAuth } from '@/src/crm/core/auth';
 import { jsonResponse, parseOptionalString, parseRecord, withApiHandler } from '@/src/crm/core/http';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { buildPrompt, type PromptMode } from '@/src/platform/prompt-engineering';
 import { requireTenantContext } from '@/src/platform/tenant-enforcement';
 import { consumePromptCredits } from '@/src/billing/subscription.service';
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       facts: parseRecord(body.facts),
     });
 
-    const response = await callOpenAiChat(
+    const response = await callAiChat(
       [
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.content },

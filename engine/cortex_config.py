@@ -14,7 +14,7 @@ from typing import Optional
 
 PROMPT_MAX_CHARS: int = int(os.environ.get("CORTEX_PROMPT_MAX_CHARS", "8000"))
 RATE_LIMIT_RPM: int = int(os.environ.get("CORTEX_RATE_LIMIT_RPM", "60"))
-DEFAULT_MODEL: str = os.environ.get("CORTEX_MODEL", "claude-3-5-haiku-20241022")
+DEFAULT_MODEL: str = os.environ.get("CORTEX_MODEL", "")
 AGENT_TIMEOUT_S: int = int(os.environ.get("CORTEX_AGENT_TIMEOUT_S", "30"))
 MAX_RETRIES: int = int(os.environ.get("CORTEX_MAX_RETRIES", "3"))
 
@@ -23,11 +23,11 @@ MAX_RETRIES: int = int(os.environ.get("CORTEX_MAX_RETRIES", "3"))
 # ---------------------------------------------------------------------------
 
 _PROVIDER_KEYS: dict[str, str] = {
-    "anthropic": "ANTHROPIC_API_KEY",
+    "ai": "AI_API_KEY",
 }
 
 
-def get_api_key(provider: str = "anthropic") -> Optional[str]:
+def get_api_key(provider: str = "ai") -> Optional[str]:
     """Return the API key for the given provider, or None if not set."""
     env_var = _PROVIDER_KEYS.get(provider.lower())
     return os.environ.get(env_var) if env_var else None

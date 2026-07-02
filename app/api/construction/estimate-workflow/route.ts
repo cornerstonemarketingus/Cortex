@@ -1,11 +1,11 @@
 import { ChannelType, LeadSourceType, PipelineStageType } from '@/generated/crm-client';
 import { ApiError } from '@/src/crm/core/api';
-import { callOpenAiChat } from '@/src/crm/core/openai';
 import { crmDb } from '@/src/crm/core/crmDb';
 import { jsonResponse, parseOptionalString, withApiHandler } from '@/src/crm/core/http';
 import { LeadCaptureService } from '@/src/crm/modules/capture';
 import { CloseService, type ProposalLineItem } from '@/src/crm/modules/close';
 import { NurtureService } from '@/src/crm/modules/nurture';
+import { llm } from '@/lib/llm/router';
 import {
   createBidEstimate,
   createTakeoffEstimate,
@@ -171,21 +171,16 @@ async function buildFollowUpDrafts(params: {
   ];
 
   try {
-    const aiText = await callOpenAiChat(
+    const aiText = await llm(
       [
-        {
-          role: 'user',
-          content: [
-            'Create three short post-bid follow-up messages for a construction client.',
-            'Return plain text with one message per line and no numbering.',
-            `Client: ${params.clientName}`,
-            `Project type: ${params.categoryLabel}`,
-            `Ballpark total: $${Math.round(params.totalUsd).toLocaleString('en-US')}`,
-            `Estimated duration: ${params.timelineDays} days`,
-          ].join('\n'),
-        },
-      ],
-      'sales'
+        'Create three short post-bid follow-up messages for a construction client.',
+        'Return plain text with one message per line and no numbering.',
+        `Client: ${params.clientName}`,
+        `Project type: ${params.categoryLabel}`,
+        `Ballpark total: $${Math.round(params.totalUsd).toLocaleString('en-US')}`,
+        `Estimated duration: ${params.timelineDays} days`,
+      ].join('\n'),
+      'estimate'
     );
 
     const parsed = aiText

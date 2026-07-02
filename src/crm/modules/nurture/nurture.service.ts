@@ -7,7 +7,7 @@ import {
   type Workflow,
 } from '@/generated/crm-client';
 import { ApiError } from '@/src/crm/core/api';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { crmDb } from '@/src/crm/core/crmDb';
 import { enqueueReminder } from '@/src/crm/core/queue';
 import { publishRealtimeEvent } from '@/src/crm/core/realtime';
@@ -158,7 +158,7 @@ export class NurtureService {
       content: message.content,
     }));
 
-    const aiText = await callOpenAiChat(aiMessages, tone);
+    const aiText = await callAiChat(aiMessages, tone);
 
     const reply = await crmDb.conversationMessage.create({
       data: {

@@ -10,7 +10,7 @@ export type AiMessage = {
 
 export type ConversationTone = 'friendly' | 'sales' | 'support';
 
-const CLAUDE_BASE_URL = 'https://api.anthropic.com/v1/messages';
+const AI_BASE_URL = process.env.AI_API_URL ?? '';
 
 class FixedWindowRateLimiter {
   private readonly requestsPerWindow: number;
@@ -61,12 +61,12 @@ function latestUserMessage(messages: AiMessage[]): string {
   return userMessages[userMessages.length - 1]?.content || 'Thanks for your message.';
 }
 
-export async function callOpenAiChat(
+export async function callAiChat(
   messages: AiMessage[],
   tone: ConversationTone,
   maxRetries = 3
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.AI_API_KEY;
 
   // Fallback keeps workflows operational in local/dev when key is missing.
   if (!apiKey) {
@@ -74,10 +74,10 @@ export async function callOpenAiChat(
     return `Auto-reply (${tone}): Received "${userText}". A team member will follow up shortly.`;
   }
 
-  const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
+  const model = process.env.AI_MODEL ?? '';
 
   const systemMessage = getTonePrompt(tone);
-  const claudeMessages = messages
+  const aiMessages = messages
     .filter((m) => m.role !== 'system')
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
@@ -90,24 +90,23 @@ export async function callOpenAiChat(
     await limiter.acquire();
 
     try {
-      const response = await fetch(CLAUDE_BASE_URL, {
+      const response = await fetch(AI_BASE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
           model,
           system: systemMessage,
           max_tokens: 1024,
-          messages: claudeMessages,
+          messages: aiMessages,
         }),
       });
 
       if (!response.ok) {
         const errorBody = await response.text();
-        lastError = `Claude ${response.status}: ${errorBody}`;
+        lastError = `AI ${response.status}: ${errorBody}`;
 
         if (response.status >= 500 || response.status === 429) {
           await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 8000)));

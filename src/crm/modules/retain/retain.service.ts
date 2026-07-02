@@ -7,7 +7,7 @@ import {
 } from '@/generated/crm-client';
 import { ApiError } from '@/src/crm/core/api';
 import { crmDb } from '@/src/crm/core/crmDb';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { publishRealtimeEvent } from '@/src/crm/core/realtime';
 import { toPrismaJson } from '@/src/crm/core/json';
 import type {
@@ -205,7 +205,7 @@ export class RetainService {
       { role: 'user' as const, content: `Draft a short public reply for this review. Rating: ${review.rating}/5. Comment: ${review.comment || 'No comment.'}` },
     ];
 
-    const aiReply = await callOpenAiChat(prompt, 'friendly');
+    const aiReply = await callAiChat(prompt, 'friendly');
 
     const updated = await crmDb.review.update({
       where: { id: reviewId },

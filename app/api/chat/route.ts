@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { toApiError } from '@/src/crm/core/api';
 import { parseBoolean } from '@/src/crm/core/http';
-import { callOpenAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/openai';
+import { callAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/ai';
 import { buildRolloutTasks, listSystemModules, type RolloutScope } from '@/src/crm/modules/platform';
 import { createGameBuilderPlan } from '@/src/game-builder/v1';
 import { createBlogPost } from '@/src/content/blog-engine';
@@ -263,7 +263,7 @@ async function buildTeamDecisionSummary(
 
   if (provider !== 'local') {
     try {
-      return await callOpenAiChat(
+      return await callAiChat(
         [
           {
             role: 'user',
@@ -593,7 +593,7 @@ export async function POST(request: Request) {
       const useLocal = provider === 'local';
       const resultText = useLocal
         ? buildRoleResponse('AI Visionary', effectivePrompt)
-        : await callOpenAiChat(aiMessages, tone);
+        : await callAiChat(aiMessages, tone);
 
       results.push({
         agent: useLocal ? 'Cortex Local Assistant' : 'Cortex Assistant',

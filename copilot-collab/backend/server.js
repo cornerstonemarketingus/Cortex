@@ -5,19 +5,21 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-// Claude call
-async function callClaude(code) {
+// AI call
+async function callAi(code) {
+  const apiKey = process.env.AI_API_KEY;
+  const apiUrl = process.env.AI_API_URL ?? '';
+  const model = process.env.AI_MODEL ?? '';
   const res = await axios.post(
-    'https://api.anthropic.com/v1/messages',
+    apiUrl,
     {
-      model: 'claude-3-5-haiku-20241022',
+      model,
       max_tokens: 2000,
       messages: [{ role: 'user', content: code }],
     },
     {
       headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
       },
     }
@@ -28,7 +30,7 @@ async function callClaude(code) {
 // Suggest endpoint
 app.post('/suggest', async (req, res) => {
   const code = req.body.code || '';
-  const result = await callClaude(code);
+  const result = await callAi(code);
   res.json({ result });
 });
 
