@@ -32,20 +32,13 @@ type EstimatorSessionResponse = {
     labor?: Array<{ trade: string; hours: number; totalCost?: number }>;
     assumptions?: string[];
   };
-  scopeExtraction?: {
-    assumptions?: string[];
-  };
-  preview?: {
-    html?: string;
-  };
+  scopeExtraction?: { assumptions?: string[] };
+  preview?: { html?: string };
   error?: string;
 };
 
 type HandoffResponse = {
-  handoffSummary?: {
-    proposalId: string;
-    checkoutUrl: string;
-  };
+  handoffSummary?: { proposalId: string; checkoutUrl: string };
   error?: string;
 };
 
@@ -63,13 +56,8 @@ type EstimatorChatbotPanelProps = {
   onDescriptionChange: (value: string) => void;
 };
 
-function generateProjectPrompt(projectType: string, zipCode: string, description: string) {
-  return [
-    `Build an interactive ${projectType} estimate landing experience.`,
-    `Target ZIP: ${zipCode}.`,
-    `Project context: ${description}`,
-    "Include one clear CTA to request an exact quote and one trust section.",
-  ].join(" ");
+function fmt(n: number): string {
+  return "$" + Math.round(n).toLocaleString("en-US");
 }
 
 export default function EstimatorChatbotPanel({
@@ -79,17 +67,17 @@ export default function EstimatorChatbotPanel({
   onZipCodeChange,
   onDescriptionChange,
 }: EstimatorChatbotPanelProps) {
-  const [chatInput, setChatInput] = useState("Give me a fast range and show me a live landing preview for this project.");
-  const [firstName, setFirstName] = useState("Jordan");
+  const [chatInput, setChatInput] = useState("Give me a fast range for this project.");
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: "assistant-1",
+      id: "welcome",
       role: "assistant",
-      text: "Estimator Chat is ready. Add ZIP + project description, then I will return a cost range and generate a live project preview.",
+      text: "Ready. Enter your ZIP code and project description, then click Run to get a cost range.",
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -100,277 +88,250 @@ export default function EstimatorChatbotPanel({
   const [handoffLoading, setHandoffLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canRun = useMemo(() => zipCode.trim().length >= 5 && description.trim().length >= 12, [zipCode, description]);
+  const canRun = useMemo(
+    () => zipCode.trim().length >= 5 && description.trim().length >= 10,
+    [zipCode, description],
+  );
+
   const dispatch = useBuilderDispatch();
 
-  const pushMessage = (role: ChatMessage["role"], text: string) => {
-    setChatMessages((current) => [
-      ...current,
-      {
-        id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        role,
-        text,
-      },
+  const push = (role: ChatMessage["role"], text: string) => {
+    setChatMessages((prev) => [
+      ...prev,
+      { id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, role, text },
     ]);
   };
 
-  const runEstimatorChat = async () => {
-    if (loading || !canRun) return;
+  // Alias to avoid closure lint warnings
+  const setChatMessages = setMessages;
 
-    const userText = chatInput.trim() || "Run estimate and generate preview.";
-    pushMessage("user", userText);
+  const runEstimate = async () => {
+    if (loading || !canRun) return;
+    const userText = chatInput.trim() || "Run estimate.";
+    push("user", userText);
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/estimating/chat/session", {
+      const res = await fetch("/api/estimating/chat/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           leadId,
-          firstName,
-          email,
-          phone,
+          firstName: firstName || "Guest",
+          email: email || undefined,
+          phone: phone || undefined,
           projectType,
           zipCode,
-          squareFootage: undefined,
           description,
-          budget: "",
-          timeline: "",
           userMessage: userText,
-          files: attachedFiles.map((file) => ({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          })),
+          files: attachedFiles.map((f) => ({ name: f.name, type: f.type, size: f.size })),
         }),
       });
 
-      const parsed = (await response.json().catch(() => ({}))) as EstimatorSessionResponse;
-      if (!response.ok || !parsed.estimateRange) {
-        throw new Error(parsed.error || `Estimator request failed (${response.status})`);
+      const data = (await res.json().catch(() => ({}))) as EstimatorSessionResponse;
+      if (!res.ok || !data.estimateRange) {
+        throw new Error(data.error || `Request failed (${res.status})`);
       }
 
-      if (parsed.lead?.id) {
-        setLeadId(parsed.lead.id);
-      }
-
-      if (parsed.preview?.html) {
-        setSandboxHtml(parsed.preview.html);
-      }
-
-      setScopeAssumptions(parsed.scopeExtraction?.assumptions || []);
-      setLastEstimate(parsed);
+      if (data.lead?.id) setLeadId(data.lead.id);
+      if (data.preview?.html) setSandboxHtml(data.preview.html);
+      setScopeAssumptions(data.scopeExtraction?.assumptions ?? []);
+      setLastEstimate(data);
       setHandoffLink(null);
 
-      // Emit a CREATE_ESTIMATE action so Builder UI / Copilot can prefill estimate page
       try {
-        const payload = {
-          scope: parsed.scopeExtraction?.assumptions || [],
-          framingSqFt: undefined,
-          windowsCount: undefined,
-          zip: zipCode,
-          estimateRange: parsed.estimateRange,
-        };
-        dispatch({ type: 'CREATE_ESTIMATE', payload });
-      } catch {
-        // ignore dispatch failures
-      }
+        dispatch({
+          type: "CREATE_ESTIMATE",
+          payload: { scope: data.scopeExtraction?.assumptions ?? [], zip: zipCode, estimateRange: data.estimateRange },
+        });
+      } catch { /* ignore */ }
 
-      const estimateText = `Range: $${parsed.estimateRange.low.toLocaleString("en-US")} - $${parsed.estimateRange.high.toLocaleString("en-US")} (avg $${parsed.estimateRange.average.toLocaleString("en-US")}).`;
-      const confidence = typeof parsed.confidenceScore === "number" ? ` Confidence: ${parsed.confidenceScore}%.` : "";
-      const scopeNote = parsed.scopeExtraction?.assumptions?.length ? ` Scope assumptions extracted: ${parsed.scopeExtraction.assumptions.length}.` : "";
-      pushMessage(
+      const range = data.estimateRange;
+      const conf = typeof data.confidenceScore === "number" ? ` · ${data.confidenceScore}% confidence` : "";
+      push(
         "assistant",
-        `${estimateText}${confidence} Live preview re-rendered from your command.${scopeNote}`
+        `Estimate ready${conf}\n\nRange:  ${fmt(range.low)} – ${fmt(range.high)}\nBest:   ${fmt(range.average)}`,
       );
-    } catch (runError) {
-      const message = runError instanceof Error ? runError.message : "Unable to run estimator chat right now.";
-      setError(message);
-      pushMessage("assistant", `I hit an issue: ${message}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unable to run estimate right now.";
+      setError(msg);
+      push("assistant", `Something went wrong: ${msg}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const runOneClickHandoff = async () => {
+  const runHandoff = async () => {
     if (!leadId || !lastEstimate?.estimate || handoffLoading) return;
-
     setHandoffLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/estimating/chat/handoff", {
+      const res = await fetch("/api/estimating/chat/handoff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId,
-          estimate: lastEstimate.estimate,
-        }),
+        body: JSON.stringify({ leadId, estimate: lastEstimate.estimate }),
       });
 
-      const parsed = (await response.json().catch(() => ({}))) as HandoffResponse;
-      if (!response.ok || !parsed.handoffSummary?.checkoutUrl) {
-        throw new Error(parsed.error || `Handoff failed (${response.status})`);
+      const data = (await res.json().catch(() => ({}))) as HandoffResponse;
+      if (!res.ok || !data.handoffSummary?.checkoutUrl) {
+        throw new Error(data.error || `Handoff failed (${res.status})`);
       }
 
-      setHandoffLink(parsed.handoffSummary.checkoutUrl);
-      pushMessage(
-        "assistant",
-        `Handoff complete. Proposal ${parsed.handoffSummary.proposalId} is ready and payment link has been generated.`
-      );
-    } catch (handoffError) {
-      const message = handoffError instanceof Error ? handoffError.message : "Unable to complete one-click handoff.";
-      setError(message);
+      setHandoffLink(data.handoffSummary.checkoutUrl);
+      push("assistant", `Proposal ${data.handoffSummary.proposalId} created. Payment link is ready.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Handoff unavailable.";
+      setError(msg);
     } finally {
       setHandoffLoading(false);
     }
   };
 
   return (
-    <section className="rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
-      <p className="text-xs uppercase tracking-[0.16em] text-cyan-100">Main Estimator Chat</p>
-      <h2 className="mt-2 text-xl font-semibold text-cyan-50">Chat-first estimate intake with live sandbox preview</h2>
-      <p className="mt-2 text-sm text-slate-200">
-        Enter ZIP and project description below, then chat to generate an estimate range plus a live landing preview tailored to this project.
+    <section className="rounded-2xl border border-white/10 bg-[#0d1117] p-5">
+      <p className="text-xs uppercase tracking-widest text-slate-400">Estimator Chat</p>
+      <h2 className="mt-1 text-xl font-semibold text-slate-100">Instant cost range + live preview</h2>
+      <p className="mt-1 text-sm text-slate-400">
+        Enter project details below and click Run — no AI API key needed.
       </p>
 
-      <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-        <label className="text-xs text-slate-200">
+      {/* Inputs */}
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="block text-xs text-slate-400">
           ZIP code
           <input
             value={zipCode}
-            onChange={(event) => onZipCodeChange(event.target.value)}
+            onChange={(e) => onZipCodeChange(e.target.value)}
             placeholder="55123"
-            className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100"
           />
         </label>
-
-        <label className="text-xs text-slate-200">
+        <label className="block text-xs text-slate-400">
           Project description
           <input
             value={description}
-            onChange={(event) => onDescriptionChange(event.target.value)}
-            placeholder="Replace roof, update flashing, and improve ventilation."
-            className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            placeholder="Replace roof, update flashing, improve ventilation"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100"
           />
         </label>
       </div>
 
-      <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
-        <input
-          value={firstName}
-          onChange={(event) => setFirstName(event.target.value)}
-          placeholder="First name"
-          className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        />
-        <input
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="Email for lead resume"
-          className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        />
-        <input
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          placeholder="Phone"
-          className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        />
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name (optional)" className="rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100" />
+        <input value={email}     onChange={(e) => setEmail(e.target.value)}     placeholder="Email (optional)"      className="rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100" />
+        <input value={phone}     onChange={(e) => setPhone(e.target.value)}     placeholder="Phone (optional)"      className="rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100" />
       </div>
 
-      <label className="mt-2 block text-xs text-slate-200">
-        Drag plans/photos (or browse) for auto scope extraction
+      <label className="mt-3 block text-xs text-slate-400">
+        Plans / photos (optional — for scope extraction)
         <input
           type="file"
           multiple
           accept=".pdf,.png,.jpg,.jpeg,.webp"
-          onChange={(event) => setAttachedFiles(Array.from(event.target.files || []))}
-          className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
+          onChange={(e) => setAttachedFiles(Array.from(e.target.files ?? []))}
+          className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100"
         />
       </label>
+      {attachedFiles.length > 0 && (
+        <p className="mt-1 text-xs text-slate-400">{attachedFiles.map((f) => f.name).join(", ")}</p>
+      )}
 
-      {attachedFiles.length > 0 ? (
-        <p className="mt-2 text-xs text-cyan-100">Attached files: {attachedFiles.map((file) => file.name).join(", ")}</p>
-      ) : null}
-
-      <div className="mt-4 rounded-xl border border-white/15 bg-black/25 p-3">
-        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-          {chatMessages.map((message) => (
+      {/* Chat window */}
+      <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+        <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+          {messages.map((msg) => (
             <div
-              key={message.id}
-              className={
-                message.role === "assistant"
-                  ? "rounded-lg border border-cyan-200/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-50"
-                  : "rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs text-slate-100"
-              }
+              key={msg.id}
+              className={`rounded-lg px-3 py-2 text-xs whitespace-pre-wrap ${
+                msg.role === "assistant"
+                  ? "border border-blue-500/20 bg-blue-500/10 text-blue-50"
+                  : "border border-white/15 bg-white/8 text-slate-100"
+              }`}
             >
-              {message.text}
+              {msg.text}
             </div>
           ))}
         </div>
 
-        <div className="mt-3 flex flex-col gap-2 md:flex-row">
+        <div className="mt-3 flex gap-2">
           <input
             value={chatInput}
-            onChange={(event) => setChatInput(event.target.value)}
-            className="w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
-            placeholder="Ask for price range, scope cuts, and conversion improvements"
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void runEstimate(); }}
+            placeholder="e.g. Focus on materials breakdown"
+            className="flex-1 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-slate-100"
           />
           <button
             type="button"
-            onClick={() => void runEstimatorChat()}
+            onClick={() => void runEstimate()}
             disabled={loading || !canRun}
-            className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            {loading ? "Running..." : "Run Estimator Chat"}
+            {loading ? "Running…" : "Run"}
           </button>
         </div>
       </div>
 
-      {lastEstimate?.estimateRange ? (
-        <div className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/10 p-3 text-xs text-emerald-100">
-          Latest range: ${lastEstimate.estimateRange.low.toLocaleString("en-US")} - ${lastEstimate.estimateRange.high.toLocaleString("en-US")} (avg
-          {' '}${lastEstimate.estimateRange.average.toLocaleString("en-US")})
-          {lastEstimate.confidenceScore ? ` | Confidence ${lastEstimate.confidenceScore}%` : ""}
-        </div>
-      ) : null}
-
-      {scopeAssumptions.length > 0 ? (
-        <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs text-amber-100">
-          <p className="font-semibold">Scope assumptions from uploads/chat context</p>
-          <ul className="mt-1 space-y-1">
-            {scopeAssumptions.slice(0, 8).map((item) => (
-              <li key={item}>- {item}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {leadId && lastEstimate?.estimate ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void runOneClickHandoff()}
-            disabled={handoffLoading}
-            className="rounded-lg border border-amber-300/45 bg-amber-400/80 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-300 disabled:opacity-60"
-          >
-            {handoffLoading ? "Handing Off..." : "One-Click Handoff: Proposal + Payment + Follow-up"}
-          </button>
-          {handoffLink ? (
-            <a href={handoffLink} target="_blank" rel="noreferrer" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
-              Open Payment Link
-            </a>
+      {/* Estimate summary strip */}
+      {lastEstimate?.estimateRange && (
+        <div className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-100">
+          <span className="font-semibold">Latest range: </span>
+          {fmt(lastEstimate.estimateRange.low)} – {fmt(lastEstimate.estimateRange.high)}
+          <span className="text-slate-400"> · avg {fmt(lastEstimate.estimateRange.average)}</span>
+          {lastEstimate.confidenceScore ? (
+            <span className="text-slate-400"> · {lastEstimate.confidenceScore}% confidence</span>
           ) : null}
         </div>
-      ) : null}
+      )}
 
-      {error ? <p className="mt-3 text-xs text-red-300">{error}</p> : null}
-
-      {sandboxHtml ? (
-        <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-white">
-          <iframe title="Estimator live project preview" srcDoc={sandboxHtml} className="h-[460px] w-full border-0" />
+      {/* Scope assumptions */}
+      {scopeAssumptions.length > 0 && (
+        <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-100">
+          <p className="font-semibold">Extracted scope assumptions</p>
+          <ul className="mt-1 space-y-0.5">
+            {scopeAssumptions.slice(0, 8).map((a) => <li key={a}>· {a}</li>)}
+          </ul>
         </div>
-      ) : null}
+      )}
+
+      {/* Handoff */}
+      {leadId && lastEstimate?.estimate && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void runHandoff()}
+            disabled={handoffLoading}
+            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-amber-300 disabled:opacity-50"
+          >
+            {handoffLoading ? "Processing…" : "One-Click Handoff"}
+          </button>
+          {handoffLink && (
+            <a
+              href={handoffLink}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-white/15 bg-white/8 px-3 py-2 text-xs font-semibold hover:bg-white/15"
+            >
+              Open Payment Link
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Error */}
+      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+
+      {/* Sandbox preview */}
+      {sandboxHtml && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-white">
+          <iframe title="Live project preview" srcDoc={sandboxHtml} className="h-[460px] w-full border-0" />
+        </div>
+      )}
     </section>
   );
 }
+
+

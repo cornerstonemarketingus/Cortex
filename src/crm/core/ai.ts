@@ -68,10 +68,8 @@ export async function callAiChat(
 ): Promise<string> {
   const apiKey = process.env.AI_API_KEY;
 
-  // Fallback keeps workflows operational in local/dev when key is missing.
   if (!apiKey) {
-    const userText = latestUserMessage(messages);
-    return `Auto-reply (${tone}): Received "${userText}". A team member will follow up shortly.`;
+    throw new ApiError(503, 'AI service is not configured.', 'AI_NOT_CONFIGURED');
   }
 
   const model = process.env.AI_MODEL ?? '';

@@ -233,7 +233,7 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
 
   // CRM DB unavailability is a warning (not a blocker) — the UI still works without live metrics
   const critical =
-    !providers.openAiConfigured ||
+    !providers.aiConfigured ||
     (!providers.twilioConfigured && !providers.sendgridConfigured) ||
     !workflowQueue.reachable ||
     !reminderQueue.reachable;

@@ -1,8 +1,204 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useBuilderDispatch } from '@/components/ai/BuilderStateProvider';
-import { generateEstimateFromStructured } from '@/lib/estimator';
+import { useState, useCallback } from "react";
+import { buildFromTemplate, listTemplates, type TemplateId } from "@/lib/estimator/templates";
+import { calculateEstimate, type EstimateBreakdown } from "@/lib/estimator/engine";
+
+const TRADE_IDS: TemplateId[] = [
+  "residential-framing",
+  "commercial-framing",
+  "roofing-shingle",
+  "roofing-metal",
+  "drywall-finish",
+  "concrete-foundation",
+  "electrical-rough",
+  "plumbing-rough",
+  "painting-interior",
+  "flooring-hardwood",
+];
+
+function locationFactor(zip: string): number {
+  if (!/^\d{5}$/.test(zip)) return 1.0;
+  const pre = parseInt(zip.slice(0, 2), 10);
+  if (pre >= 90) return 1.15;
+  if (pre <= 9) return 1.10;
+  return 1.0;
+}
+
+function fmt(n: number): string {
+  return "$" + Math.round(n).toLocaleString("en-US");
+}
+
+function compute(tradeId: TemplateId, sqft: number, zip: string, laborAdj: number): EstimateBreakdown {
+  const loc = locationFactor(zip);
+  const la = 1 + laborAdj / 100;
+  const raw = buildFromTemplate(tradeId, sqft);
+  return calculateEstimate({
+    ...raw,
+    materials: raw.materials.map((m) => ({ ...m, unitCost: m.unitCost * loc })),
+    labor: raw.labor.map((l) => ({ ...l, hourlyRate: l.hourlyRate * loc * la })),
+  });
+}
+
+export default function EstimatorTwoPanel({
+  initialProjectType = "residential-framing",
+  initialZip = "55123",
+  initialSqft = 1500,
+}: {
+  initialProjectType?: string;
+  initialZip?: string;
+  initialSqft?: number;
+}) {
+  const [tradeId, setTradeId] = useState<TemplateId>(
+    TRADE_IDS.includes(initialProjectType as TemplateId) ? (initialProjectType as TemplateId) : "residential-framing",
+  );
+  const [sqft, setSqft] = useState(initialSqft.toString());
+  const [zip, setZip] = useState(initialZip);
+  const [laborAdj, setLaborAdj] = useState(0);
+  const [breakdown, setBreakdown] = useState<EstimateBreakdown | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const templates = listTemplates();
+
+  const run = useCallback(() => {
+    setError(null);
+    const n = parseInt(sqft, 10);
+    if (!n || n < 100) { setError("Enter at least 100 sq ft."); return; }
+    try {
+      setBreakdown(compute(tradeId, n, zip, laborAdj));
+    } catch {
+      setError("Computation failed. Check your inputs.");
+    }
+  }, [tradeId, sqft, zip, laborAdj]);
+
+  const bd = breakdown;
+  const n = parseInt(sqft, 10) || 0;
+  const tradeName = templates.find((t) => t.id === tradeId)?.name ?? tradeId;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {/* ── Left panel: inputs ── */}
+      <div className="rounded-2xl border border-white/10 bg-[#0d1117] p-5">
+        <p className="text-xs uppercase tracking-widest text-slate-400">Project Inputs</p>
+        <h3 className="mt-1 text-lg font-semibold text-slate-100">Configure estimate</h3>
+
+        <div className="mt-4 space-y-4">
+          <label className="block text-xs text-slate-400">
+            Trade / work type
+            <select
+              value={tradeId}
+              onChange={(e) => setTradeId(e.target.value as TemplateId)}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm text-slate-100"
+            >
+              {TRADE_IDS.map((id) => {
+                const t = templates.find((t) => t.id === id);
+                return <option key={id} value={id}>{t?.name ?? id}</option>;
+              })}
+            </select>
+          </label>
+
+          <label className="block text-xs text-slate-400">
+            Square footage
+            <input
+              type="number"
+              value={sqft}
+              min={100}
+              max={100000}
+              onChange={(e) => setSqft(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm text-slate-100"
+            />
+          </label>
+
+          <label className="block text-xs text-slate-400">
+            ZIP code
+            <input
+              value={zip}
+              maxLength={5}
+              onChange={(e) => setZip(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm text-slate-100"
+              placeholder="55123"
+            />
+          </label>
+
+          <div>
+            <p className="text-xs text-slate-400">Labor rate adjustment: <span className="text-slate-200">{laborAdj > 0 ? "+" : ""}{laborAdj}%</span></p>
+            <input
+              type="range"
+              min={-20}
+              max={40}
+              step={5}
+              value={laborAdj}
+              onChange={(e) => setLaborAdj(Number(e.target.value))}
+              className="mt-1 w-full accent-blue-500"
+            />
+          </div>
+        </div>
+
+        {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+
+        <button
+          type="button"
+          onClick={run}
+          className="mt-5 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 transition"
+        >
+          Calculate
+        </button>
+      </div>
+
+      {/* ── Right panel: live estimate ── */}
+      <div className="rounded-2xl border border-white/10 bg-[#0b1220] p-5">
+        <p className="text-xs uppercase tracking-widest text-slate-400">Live Estimate</p>
+        <h3 className="mt-1 text-lg font-semibold text-slate-100">Results</h3>
+
+        {!bd ? (
+          <p className="mt-6 text-sm text-slate-500">Fill in the inputs and click Calculate to see your estimate.</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl border border-white/10 bg-white/4 p-4">
+              <p className="text-xs text-slate-400">{tradeName} · {n.toLocaleString()} sq ft</p>
+              <p className="mt-2 text-3xl font-bold text-emerald-300">{fmt(bd.total)}</p>
+              <div className="mt-2 flex gap-6 text-xs text-slate-400">
+                <span>Low: <span className="text-slate-200">{fmt(Math.round(bd.total * 0.88))}</span></span>
+                <span>High: <span className="text-slate-200">{fmt(Math.round(bd.total * 1.15))}</span></span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/4 p-4 text-sm">
+              {[
+                { label: "Materials",     value: bd.materialsTotal },
+                { label: "Labor",         value: bd.laborTotal },
+                { label: "Overhead",      value: bd.overheadAmount },
+                { label: "Profit",        value: bd.profitAmount },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between">
+                  <span className="text-slate-400">{row.label}</span>
+                  <span className="font-semibold text-slate-100">{fmt(row.value)}</span>
+                </div>
+              ))}
+            </div>
+
+            {bd.details.materials.length > 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/4 p-4 text-xs">
+                <p className="mb-2 font-semibold text-slate-300">Top materials</p>
+                {bd.details.materials.slice(0, 4).map((item) => (
+                  <div key={item.key} className="flex justify-between text-slate-400">
+                    <span>{item.key}</span><span className="text-slate-200">{fmt(item.cost)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500">Generate Proposal</button>
+              <button type="button" onClick={run} className="rounded-lg border border-white/15 bg-white/8 px-4 py-2 text-xs hover:bg-white/15">Recalculate</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 type StructuredFields = {
   scope: string[];
@@ -11,266 +207,3 @@ type StructuredFields = {
   laborTier?: "budget" | "standard" | "premium";
   materialGrade?: "low" | "mid" | "high";
 };
-
-export default function EstimatorTwoPanel({
-  initialProjectType = "roof-replacement",
-  initialZip = "55123",
-  initialSqft = 1200,
-  initialDescription = "",
-}: {
-  initialProjectType?: string;
-  initialZip?: string;
-  initialSqft?: number;
-  initialDescription?: string;
-}) {
-  const [zip, setZip] = useState(initialZip);
-  const [projectType, setProjectType] = useState(initialProjectType);
-  const [sqft, setSqft] = useState(initialSqft.toString());
-  const [description, setDescription] = useState(initialDescription || "Describe your project, e.g. framing + windows for a 2-story addition.");
-
-  const [structured, setStructured] = useState<StructuredFields>({ scope: [] });
-  const [estimateRange, setEstimateRange] = useState<{ low: number; avg: number; high: number } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [laborAdj, setLaborAdj] = useState(0); // percent
-  const [quality, setQuality] = useState<"low" | "mid" | "high">("mid");
-  const dispatch = useBuilderDispatch();
-
-  useEffect(() => {
-    // always show a baseline preview so UI never feels empty
-    void runPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const simpleParse = (text: string): StructuredFields => {
-    const lower = text.toLowerCase();
-    const scope: string[] = [];
-    if (/(frame|framing|roof|roofing)/.test(lower)) scope.push("framing");
-    if (/(window|windows)/.test(lower)) scope.push("windows");
-    if (/(demo|demolition|remove)/.test(lower)) scope.push("demo");
-
-    const windowsMatch = lower.match(/(\d+)\s*(windows|window)/);
-    const sqftMatch = lower.match(/(\d{3,6})\s*(sqft|sq ft|square feet|square foot)/);
-
-    return {
-      scope,
-      framingSqFt: sqftMatch ? Number(sqftMatch[1]) : undefined,
-      windowsCount: windowsMatch ? Number(windowsMatch[1]) : undefined,
-      laborTier: /premium/.test(lower) ? "premium" : /budget/.test(lower) ? "budget" : "standard",
-      materialGrade: /high|premium/.test(lower) ? "high" : /low|budget/.test(lower) ? "low" : "mid",
-    };
-  };
-
-  const enhanceWithCopilot = async () => {
-    // quick local parse now; if server AI is configured, we can extend to call /api/copilot
-    const parsed = simpleParse(description);
-    if (!parsed.scope.length) {
-      // ensure at least the project type is present
-      parsed.scope.push(projectType.includes("roof") ? "framing" : "framing");
-    }
-    if (!parsed.framingSqFt) parsed.framingSqFt = Number(sqft) || undefined;
-    setStructured(parsed);
-    await runPreview(parsed);
-  };
-
-  const unitPrices = {
-    framing: { material: 4.5, labor: 6.5 }, // per sqft
-    windows: { material: 600, labor: 500 }, // per unit
-  } as const;
-
-  const locationMultiplier = (zipCode: string) => {
-    // simple placeholder: urban zips slightly higher, default 1.0
-    if (!zipCode) return 1;
-    if (zipCode.startsWith("55")) return 1.0;
-    if (zipCode.startsWith("90") || zipCode.startsWith("94")) return 1.15;
-    return 1.05;
-  };
-
-  const computeEstimate = (fields: StructuredFields) => {
-    const res = generateEstimateFromStructured({
-      ...fields,
-      zip,
-      laborTier: fields.laborTier || 'standard',
-      materialGrade: fields.materialGrade || quality,
-    });
-
-    // Apply labor adjustment slider as a percent modifier to labor before totals
-    const laborMultiplier = 1 + laborAdj / 100;
-    const adjustedLabor = Math.round(res.totals.labor * laborMultiplier);
-    const adjustedMaterials = res.totals.materials;
-    const adjustedOverhead = Math.round((adjustedMaterials + adjustedLabor) * 0.08);
-    const adjustedProfit = Math.round((adjustedMaterials + adjustedLabor) * 0.12);
-    const adjustedGrand = adjustedMaterials + adjustedLabor + adjustedOverhead + adjustedProfit;
-
-    return {
-      low: Math.round(adjustedGrand * 0.9),
-      avg: adjustedGrand,
-      high: Math.round(adjustedGrand * 1.15),
-      breakdown: { materials: adjustedMaterials, labor: adjustedLabor },
-    };
-  };
-
-  const runPreview = async (override?: StructuredFields) => {
-    setLoading(true);
-    try {
-      const fields = override || structured || simpleParse(description);
-      const estimate = computeEstimate(fields);
-      setEstimateRange({ low: estimate.low, avg: estimate.avg, high: estimate.high });
-    } catch (e) {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // chat-like quick commands: allow users to type "estimate 2400 zip 55123" or similar
-  const [chatCmd, setChatCmd] = useState('');
-
-  const handleChatCommand = async () => {
-    if (!chatCmd.trim()) return;
-    const txt = chatCmd.toLowerCase();
-    // extract sqft
-    const sqftMatch = txt.match(/(\d{3,6})\s*(sqft|sq ft|square feet|square foot)/);
-    const zipMatch = txt.match(/\b(\d{5})\b/);
-    const windowsMatch = txt.match(/(\d+)\s*(windows|window)/);
-
-    if (sqftMatch) setSqft(sqftMatch[1]);
-    if (zipMatch) setZip(zipMatch[1]);
-    if (windowsMatch) setStructured((s) => ({ ...s, windowsCount: Number(windowsMatch[1]) }));
-
-    // run preview after applying parsed values
-    await runPreview();
-
-    // Emit structured CREATE_ESTIMATE into global builder state so Copilot and Builder UI can prefill
-    try {
-      const parsedFields = simpleParse(description);
-      const payload = {
-        scope: parsedFields.scope,
-        framingSqFt: sqftMatch ? Number(sqftMatch[1]) : parsedFields.framingSqFt,
-        windowsCount: windowsMatch ? Number(windowsMatch[1]) : parsedFields.windowsCount,
-        zip: zipMatch ? zipMatch[1] : zip,
-        materialGrade: parsedFields.materialGrade,
-        laborTier: parsedFields.laborTier,
-      };
-      dispatch({ type: 'CREATE_ESTIMATE', payload });
-    } catch (e) {
-      // ignore if dispatch fails in weird contexts
-    }
-
-    setChatCmd('');
-  };
-
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div className="rounded-2xl border border-white/10 bg-[#0f1720] p-4">
-        <p className="text-xs uppercase tracking-[0.14em] text-slate-300">Guided Inputs</p>
-        <h3 className="mt-2 text-lg font-semibold text-slate-100">Step-based estimator input</h3>
-
-        <div className="mt-3 grid grid-cols-1 gap-2">
-          <label className="text-xs text-slate-300">ZIP Code
-            <input value={zip} onChange={(e) => setZip(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-          </label>
-
-          <label className="text-xs text-slate-300">Project Type
-            <select value={projectType} onChange={(e) => setProjectType(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm">
-              <option value="roof-replacement">Roof replacement</option>
-              <option value="kitchen-gut">Kitchen remodel</option>
-              <option value="deck">Deck</option>
-              <option value="bathroom-remodel">Bathroom remodel</option>
-            </select>
-          </label>
-
-          <label className="text-xs text-slate-300">Project size (sq ft)
-            <input value={sqft} onChange={(e) => setSqft(e.target.value)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-          </label>
-
-          <label className="text-xs text-slate-300">Project description
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 min-h-28 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-          </label>
-
-          <div className="mt-2 flex gap-2">
-            <button onClick={() => void enhanceWithCopilot()} className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-900">✨ Enhance with Copilot</button>
-            <button onClick={() => void runPreview()} className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs">Get Instant Ballpark</button>
-          </div>
-
-          <div className="mt-3 text-xs text-slate-300">
-            <p className="font-semibold text-slate-100">Detected scope</p>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {(structured.scope.length ? structured.scope : simpleParse(description).scope).map((s) => (
-                <span key={s} className="rounded-full bg-white/5 px-3 py-1 text-xs">{s}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <label className="text-slate-300">Labor tier
-              <select value={structured.laborTier || "standard"} onChange={(e) => setStructured((c) => ({ ...c, laborTier: e.target.value as any }))} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-2 py-2 text-sm">
-                <option value="budget">Budget</option>
-                <option value="standard">Standard</option>
-                <option value="premium">Premium</option>
-              </select>
-            </label>
-
-            <label className="text-slate-300">Material quality
-              <select value={quality} onChange={(e) => setQuality(e.target.value as any)} className="mt-1 w-full rounded-lg border border-white/20 bg-black/30 px-2 py-2 text-sm">
-                <option value="low">Low</option>
-                <option value="mid">Mid</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-3 text-xs">
-            <p className="text-slate-300">Labor adjustment: {laborAdj}%</p>
-            <input type="range" min={-20} max={40} value={laborAdj} onChange={(e) => setLaborAdj(Number(e.target.value))} className="w-full" />
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-white/10 bg-[#0b1220] p-4">
-        <p className="text-xs uppercase tracking-[0.14em] text-slate-300">Live Estimate</p>
-        <h3 className="mt-2 text-lg font-semibold text-slate-100">Instant summary</h3>
-
-        <div className="mt-3">
-          {loading ? (
-            <p className="text-sm text-slate-400">Calculating...</p>
-          ) : !estimateRange ? (
-            <p className="text-sm text-slate-300">Run the estimator to see your low/average/high range.</p>
-          ) : (
-            <div className="space-y-3">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-                <p className="text-xs text-slate-400">Estimated total</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-200">${estimateRange.avg.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-slate-300">Range: ${estimateRange.low.toLocaleString()} — ${estimateRange.high.toLocaleString()}</p>
-              </div>
-
-              <div className="mt-3">
-                <p className="text-xs text-slate-400">Quick command</p>
-                <div className="mt-1 flex gap-2">
-                  <input value={chatCmd} onChange={(e) => setChatCmd(e.target.value)} placeholder="e.g. 2400 sqft zip 55123" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  <button onClick={() => void handleChatCommand()} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold">Run</button>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                <p className="text-xs text-slate-400">Breakdown</p>
-                <p className="mt-1">Materials & Labor split shown in totals above.</p>
-              </div>
-
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-                <p className="font-semibold">Why this estimate?</p>
-                <p className="mt-1">Based on ZIP: {zip} | Project size: {sqft} sq ft | Quality: {quality}</p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-900">Generate Proposal</button>
-                <button className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs">Export PDF</button>
-                <button className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs">Save to Project</button>
-                <button className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs">Send to Client</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
