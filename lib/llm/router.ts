@@ -109,9 +109,9 @@ async function callAi(req: LLMRequest): Promise<LLMResponse> {
   };
 }
 
-function localFallback(req: LLMRequest): LLMResponse {
+function localFallback(_req: LLMRequest): LLMResponse {
   return {
-    text: `[Local model] Received task "${req.task}". Configure AI_API_KEY for full AI responses.`,
+    text: '',
     provider: 'local',
     model: 'local-fallback',
   };
@@ -125,7 +125,7 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const prompt = (req.prompt || '').trim();
   if (!prompt) {
     return {
-      text: '[Local model] Empty prompt received. Please provide a request.',
+      text: '',
       provider: 'local',
       model: 'local-guardrail',
     };
@@ -153,8 +153,12 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
 
 /**
  * Convenience: route and return just the text string.
+ * Throws if the AI service is unavailable so callers can fall back gracefully.
  */
 export async function llm(prompt: string, task?: LLMTask, systemPrompt?: string): Promise<string> {
   const result = await routeLLM({ prompt, task: task ?? detectTask(prompt), systemPrompt });
+  if (result.provider === 'local') {
+    throw new Error('AI service unavailable');
+  }
   return result.text;
 }
