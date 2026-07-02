@@ -8,7 +8,6 @@ import {
 import { crmDb } from '@/src/crm/core/crmDb';
 import { ApiError } from '@/src/crm/core/api';
 import { enqueueWorkflowEvent } from '@/src/crm/core/queue';
-import { getOpenAiApiKey, getOpenAiModel } from '@/src/crm/core/env';
 import { toPrismaJson, toPrismaRequiredJson } from '@/src/crm/core/json';
 import type {
   BusinessCardScanInput,
@@ -77,46 +76,49 @@ function parseContactFromRawText(rawText: string): ParsedBusinessCard {
   };
 }
 
-async function parseBusinessCardWithOpenAi(imageDataUrl: string): Promise<ParsedBusinessCard> {
-  const apiKey = getOpenAiApiKey();
+async function parseBusinessCardWithAi(imageDataUrl: string): Promise<ParsedBusinessCard> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new ApiError(400, 'OPENAI_API_KEY is required for image-based business card parsing', 'OPENAI_KEY_REQUIRED');
+    throw new ApiError(400, 'ANTHROPIC_API_KEY is required for image-based business card parsing', 'AI_KEY_REQUIRED');
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const model = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
+
+  // Extract base64 data and media type from the data URL
+  const dataUrlMatch = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  const mediaType = (dataUrlMatch?.[1] ?? 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+  const imageData = dataUrlMatch?.[2] ?? imageDataUrl;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: getOpenAiModel(),
-      temperature: 0,
+      model,
+      max_tokens: 512,
+      system: 'Extract business card contact fields and return strict JSON with keys: firstName,lastName,fullName,company,title,email,phone,website.',
       messages: [
-        {
-          role: 'system',
-          content:
-            'Extract business card contact fields and return strict JSON with keys: firstName,lastName,fullName,company,title,email,phone,website.',
-        },
         {
           role: 'user',
           content: [
             {
-              type: 'text',
-              text: 'Parse this business card image and return only JSON.',
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: imageData,
+              },
             },
             {
-              type: 'image_url',
-              image_url: {
-                url: imageDataUrl,
-              },
+              type: 'text',
+              text: 'Parse this business card image and return only JSON.',
             },
           ],
         },
       ],
-      response_format: {
-        type: 'json_object',
-      },
     }),
   });
 
@@ -129,10 +131,10 @@ async function parseBusinessCardWithOpenAi(imageDataUrl: string): Promise<Parsed
   }
 
   const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
+    content?: Array<{ type?: string; text?: string }>;
   };
 
-  const rawContent = payload.choices?.[0]?.message?.content;
+  const rawContent = payload.content?.[0]?.text;
   if (!rawContent) {
     throw new ApiError(502, 'Business card OCR returned empty content', 'BUSINESS_CARD_EMPTY');
   }
@@ -153,7 +155,6 @@ async function parseBusinessCardWithOpenAi(imageDataUrl: string): Promise<Parsed
     website: safeString(parsed.website),
   };
 }
-
 export class LeadCaptureService {
   async createLead(input: CreateLeadInput) {
     const email = normalizeEmail(input.email);
@@ -523,7 +524,7 @@ export class LeadCaptureService {
 
   async scanBusinessCard(input: BusinessCardScanInput): Promise<ParsedBusinessCard> {
     if (input.imageDataUrl && input.imageDataUrl.startsWith('data:image/')) {
-      return parseBusinessCardWithOpenAi(input.imageDataUrl);
+      return parseBusinessCardWithAi(input.imageDataUrl);
     }
 
     if (input.rawText && input.rawText.trim().length > 0) {

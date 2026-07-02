@@ -80,7 +80,7 @@ const MAX_HISTORY_MESSAGES = 20;
 
 const CHAT_CAPABILITIES = {
   modes: ['assistant', 'bots', 'automation'],
-  providers: ['auto', 'openai', 'local'],
+  providers: ['auto', 'local'],
   tools: ['system-rollout', 'game-builder-v1', 'blog-engine', 'systems-catalog', 'cto-queue-enqueue'],
   integrations: ['crm-workflows', 'builder-blueprints', 'blog-content-ops', 'marketplace-planning', 'cto-task-queue'],
   maxBotsPerRequest: MAX_BOTS_PER_REQUEST,
@@ -144,8 +144,8 @@ function parseMode(value: unknown): ChatMode | null {
   return null;
 }
 
-function parseProvider(value: unknown): 'auto' | 'openai' | 'local' {
-  if (value === 'openai' || value === 'local' || value === 'auto') {
+function parseProvider(value: unknown): 'auto' | 'local' {
+  if (value === 'local' || value === 'auto') {
     return value;
   }
   return 'auto';
@@ -253,7 +253,7 @@ async function loadLearningSignals(limit = 8): Promise<string[]> {
 }
 
 async function buildTeamDecisionSummary(
-  provider: 'auto' | 'openai' | 'local',
+  provider: 'auto' | 'local',
   tone: ConversationTone,
   prompt: string,
   results: Array<{ agent: string; result: string }>

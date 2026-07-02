@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 type CouncilMode = 'graph' | 'parallel' | 'debate';
 type CouncilAgent = 'planner' | 'coder' | 'marketing' | 'bd';
-type Provider = 'auto' | 'openai' | 'local';
+type Provider = 'auto' | 'local';
 
 type CouncilRequest = {
   prompt?: unknown;
@@ -56,7 +56,7 @@ function parseTone(value: unknown): ConversationTone {
 }
 
 function parseProvider(value: unknown): Provider {
-  if (value === 'openai' || value === 'local' || value === 'auto') return value;
+  if (value === 'local' || value === 'auto') return value;
   return 'auto';
 }
 

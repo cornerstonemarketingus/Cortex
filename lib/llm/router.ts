@@ -1,7 +1,7 @@
 /**
  * LLM Router — Multi-model orchestration layer
  * Routes prompts to the best model based on task type, cost, and availability.
- * Providers: OpenAI (code/structured), Claude (reasoning/long-form), Local (fast/private)
+ * Provider: Claude (Anthropic), Local (fast/private)
  */
 
 export type LLMTask =
@@ -15,7 +15,7 @@ export type LLMTask =
   | 'seo'
   | 'fast';
 
-export type LLMProvider = 'openai' | 'claude' | 'local';
+export type LLMProvider = 'claude' | 'local';
 
 export interface LLMRequest {
   task: LLMTask;
@@ -36,14 +36,14 @@ export interface LLMResponse {
 const LLM_HTTP_TIMEOUT_MS = Number(process.env.LLM_HTTP_TIMEOUT_MS || 20_000);
 
 const MODEL_ROUTING: Record<LLMTask, LLMProvider> = {
-  code: 'openai',
-  builder: 'openai',
-  estimate: 'openai',
-  seo: 'openai',
+  code: 'claude',
+  builder: 'claude',
+  estimate: 'claude',
+  seo: 'claude',
   reasoning: 'claude',
   automation: 'claude',
-  voice: 'openai',
-  chat: 'openai',
+  voice: 'claude',
+  chat: 'claude',
   fast: 'local',
 };
 
@@ -61,56 +61,12 @@ function detectTask(prompt: string): LLMTask {
 export function selectProvider(task: LLMTask): LLMProvider {
   const override = process.env.LLM_PROVIDER_OVERRIDE as LLMProvider | undefined;
   if (override) return override;
-  return MODEL_ROUTING[task] ?? 'openai';
-}
-
-async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return localFallback(req);
-
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-  const messages: Array<{ role: string; content: string }> = [];
-
-  if (req.systemPrompt) messages.push({ role: 'system', content: req.systemPrompt });
-  messages.push({ role: 'user', content: req.prompt });
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), LLM_HTTP_TIMEOUT_MS);
-  let res: Response;
-  try {
-    res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages,
-        max_tokens: req.maxTokens ?? 2000,
-        temperature: req.temperature ?? 0.7,
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) return localFallback(req);
-
-  const data = await res.json() as {
-    choices?: Array<{ message?: { content?: string } }>;
-    usage?: { total_tokens?: number };
-  };
-  const text = data.choices?.[0]?.message?.content ?? '';
-  return {
-    text,
-    provider: 'openai',
-    model,
-    tokensUsed: data.usage?.total_tokens,
-  };
+  return MODEL_ROUTING[task] ?? 'claude';
 }
 
 async function callClaude(req: LLMRequest): Promise<LLMResponse> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return callOpenAI({ ...req, task: 'chat' }); // graceful fallback
+  if (!apiKey) return localFallback(req);
 
   const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
   const body: Record<string, unknown> = {
@@ -138,7 +94,7 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
     clearTimeout(timer);
   }
 
-  if (!res.ok) return callOpenAI(req);
+  if (!res.ok) return localFallback(req);
 
   const data = await res.json() as {
     content?: Array<{ text?: string }>;
@@ -149,13 +105,13 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
     text,
     provider: 'claude',
     model,
-    tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens,
+    tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
   };
 }
 
 function localFallback(req: LLMRequest): LLMResponse {
   return {
-    text: `[Local model] Received task "${req.task}". Configure OPENAI_API_KEY or ANTHROPIC_API_KEY for full AI responses.`,
+    text: `[Local model] Received task "${req.task}". Configure ANTHROPIC_API_KEY for full AI responses.`,
     provider: 'local',
     model: 'local-fallback',
   };
@@ -187,17 +143,9 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const task = safeReq.task ?? detectTask(safeReq.prompt);
   const provider = selectProvider(task);
 
-  // When the preferred provider is OpenAI but its key is absent, fall back to Claude
-  // before resorting to the local model, so that a configured ANTHROPIC_API_KEY is used.
-  const resolvedProvider: LLMProvider =
-    provider === 'openai' && !process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY
-      ? 'claude'
-      : provider;
-
   try {
-    if (resolvedProvider === 'claude') return await callClaude({ ...safeReq, task });
-    if (resolvedProvider === 'local') return localFallback({ ...safeReq, task });
-    return await callOpenAI({ ...safeReq, task });
+    if (provider === 'local') return localFallback({ ...safeReq, task });
+    return await callClaude({ ...safeReq, task });
   } catch {
     return localFallback({ ...safeReq, task });
   }

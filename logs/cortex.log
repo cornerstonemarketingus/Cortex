@@ -304,3 +304,34 @@
 {"ts": 1773809658.397, "event": "agent_start", "agent": "code", "config": {"openai_key_set": false, "anthropic_key_set": false, "has_any_key": false, "model": "gpt-4o-mini", "rate_limit_rpm": 60, "prompt_max_chars": 8000, "agent_timeout_s": 30, "max_retries": 3}}
 {"ts": 1773809658.397, "event": "warning", "msg": "No AI provider API key found \u2014 agents will return stub results"}
 {"ts": 1773809658.428, "event": "agent_run", "agent": "code", "task_len": 62, "duration_ms": 30.4, "status": "success", "result_len": 369}
+{"ts": 1783011090.192, "event": "agent_run", "agent": "nlp", "task_len": 2, "duration_ms": 8.6, "status": "success", "result_len": 47}
+{"ts": 1783011090.195, "event": "prompt_truncated", "agent": "nlp", "original_len": 10000, "limit": 8000}
+{"ts": 1783011090.196, "event": "prompt_truncated", "agent": "nlp", "original_len": 8500, "limit": 8000}
+{"ts": 1783011090.199, "event": "agent_run", "agent": "nlp", "task_len": 17, "duration_ms": 0.0, "status": "success", "result_len": 47}
+{"ts": 1783011090.2, "event": "agent_run", "agent": "nlp", "task_len": 9, "duration_ms": 0.0, "status": "success", "result_len": 47}
+{"ts": 1783011090.2, "event": "agent_run", "agent": "planning", "task_len": 14, "duration_ms": 0.0, "status": "success", "result_len": 274}
+{"ts": 1783011090.201, "event": "error", "component": "run_agent", "error": "Unknown canonical agent type: __nonexistent__", "agent": "__nonexistent__", "attempt": 1}
+{"ts": 1783011090.201, "event": "retry", "agent": "__nonexistent__", "attempt": 1, "backoff_s": 1}
+{"ts": 1783011091.202, "event": "error", "component": "run_agent", "error": "Unknown canonical agent type: __nonexistent__", "agent": "__nonexistent__", "attempt": 2}
+{"ts": 1783011091.202, "event": "retry", "agent": "__nonexistent__", "attempt": 2, "backoff_s": 2}
+{"ts": 1783011093.202, "event": "error", "component": "run_agent", "error": "Unknown canonical agent type: __nonexistent__", "agent": "__nonexistent__", "attempt": 3}
+{"ts": 1783011093.202, "event": "agent_run", "agent": "__nonexistent__", "task_len": 8, "duration_ms": 3001.0, "status": "error", "result_len": 0}
+{"ts": 1783011093.204, "event": "agent_run", "agent": "doc", "task_len": 19, "duration_ms": 0.0, "status": "success", "result_len": 40}
+{"ts": 1783011093.205, "event": "agent_run", "agent": "code", "task_len": 43, "duration_ms": 0.1, "status": "error", "result_len": 331}
+{"ts": 1783011093.205, "event": "agent_run", "agent": "code", "task_len": 28, "duration_ms": 0.0, "status": "success", "result_len": 350}
+{"ts": 1783011093.213, "event": "agent_run", "agent": "doc", "task_len": 4, "duration_ms": 0.0, "status": "success", "result_len": 12}
+{"ts": 1783011093.219, "event": "error", "component": "run_agent", "error": "simulated failure", "agent": "nlp", "attempt": 1}
+{"ts": 1783011093.219, "event": "retry", "agent": "nlp", "attempt": 1, "backoff_s": 1}
+{"ts": 1783011093.22, "event": "error", "component": "run_agent", "error": "simulated failure", "agent": "nlp", "attempt": 2}
+{"ts": 1783011093.22, "event": "retry", "agent": "nlp", "attempt": 2, "backoff_s": 2}
+{"ts": 1783011093.22, "event": "error", "component": "run_agent", "error": "simulated failure", "agent": "nlp", "attempt": 3}
+{"ts": 1783011093.22, "event": "agent_run", "agent": "nlp", "task_len": 10, "duration_ms": 0.0, "status": "error", "result_len": 0}
+{"ts": 1783011093.221, "event": "error", "component": "run_agent", "error": "fail", "agent": "nlp", "attempt": 1}
+{"ts": 1783011093.221, "event": "retry", "agent": "nlp", "attempt": 1, "backoff_s": 1}
+{"ts": 1783011093.221, "event": "error", "component": "run_agent", "error": "fail", "agent": "nlp", "attempt": 2}
+{"ts": 1783011093.221, "event": "retry", "agent": "nlp", "attempt": 2, "backoff_s": 2}
+{"ts": 1783011093.221, "event": "error", "component": "run_agent", "error": "fail", "agent": "nlp", "attempt": 3}
+{"ts": 1783011093.222, "event": "agent_run", "agent": "nlp", "task_len": 12, "duration_ms": 0.0, "status": "error", "result_len": 0}
+{"ts": 1783011093.226, "event": "retry", "agent": "nlp", "attempt": 1, "backoff_s": 1}
+{"ts": 1783011093.226, "event": "retry", "agent": "nlp", "attempt": 2, "backoff_s": 2}
+{"ts": 1783011093.226, "event": "agent_run", "agent": "nlp", "task_len": 10, "duration_ms": 0.0, "status": "error", "result_len": 0}

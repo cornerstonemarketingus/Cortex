@@ -1,5 +1,5 @@
 import { ApiError } from './api';
-import { getOpenAiApiKey, getOpenAiModel, getCrmRateLimitRpm } from './env';
+import { getCrmRateLimitRpm } from './env';
 
 export type AiRole = 'system' | 'user' | 'assistant';
 
@@ -10,7 +10,7 @@ export type AiMessage = {
 
 export type ConversationTone = 'friendly' | 'sales' | 'support';
 
-const OPENAI_BASE_URL = 'https://api.openai.com/v1/chat/completions';
+const CLAUDE_BASE_URL = 'https://api.anthropic.com/v1/messages';
 
 class FixedWindowRateLimiter {
   private readonly requestsPerWindow: number;
@@ -66,7 +66,7 @@ export async function callOpenAiChat(
   tone: ConversationTone,
   maxRetries = 3
 ): Promise<string> {
-  const apiKey = getOpenAiApiKey();
+  const apiKey = process.env.ANTHROPIC_API_KEY;
 
   // Fallback keeps workflows operational in local/dev when key is missing.
   if (!apiKey) {
@@ -74,16 +74,15 @@ export async function callOpenAiChat(
     return `Auto-reply (${tone}): Received "${userText}". A team member will follow up shortly.`;
   }
 
-  const requestMessages: AiMessage[] = [
-    {
-      role: 'system',
-      content: getTonePrompt(tone),
-    },
-    ...messages,
-  ];
+  const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
+
+  const systemMessage = getTonePrompt(tone);
+  const claudeMessages = messages
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
   let attempt = 0;
-  let lastError = 'Unknown OpenAI error';
+  let lastError = 'Unknown AI error';
 
   while (attempt < maxRetries) {
     attempt += 1;
@@ -91,41 +90,43 @@ export async function callOpenAiChat(
     await limiter.acquire();
 
     try {
-      const response = await fetch(OPENAI_BASE_URL, {
+      const response = await fetch(CLAUDE_BASE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: getOpenAiModel(),
-          temperature: 0.4,
-          messages: requestMessages,
+          model,
+          system: systemMessage,
+          max_tokens: 1024,
+          messages: claudeMessages,
         }),
       });
 
       if (!response.ok) {
         const errorBody = await response.text();
-        lastError = `OpenAI ${response.status}: ${errorBody}`;
+        lastError = `Claude ${response.status}: ${errorBody}`;
 
         if (response.status >= 500 || response.status === 429) {
           await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 8000)));
           continue;
         }
 
-        throw new ApiError(502, 'OpenAI request failed', 'OPENAI_ERROR', {
+        throw new ApiError(502, 'AI request failed', 'AI_ERROR', {
           status: response.status,
           body: errorBody,
         });
       }
 
       const payload = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
+        content?: Array<{ type?: string; text?: string }>;
       };
 
-      const content = payload.choices?.[0]?.message?.content?.trim();
+      const content = payload.content?.[0]?.text?.trim();
       if (!content) {
-        throw new ApiError(502, 'OpenAI returned an empty response', 'OPENAI_EMPTY_RESPONSE');
+        throw new ApiError(502, 'AI returned an empty response', 'AI_EMPTY_RESPONSE');
       }
 
       return content;
@@ -141,7 +142,7 @@ export async function callOpenAiChat(
     }
   }
 
-  throw new ApiError(502, 'OpenAI request failed after retries', 'OPENAI_RETRY_EXHAUSTED', {
+  throw new ApiError(502, 'AI request failed after retries', 'AI_RETRY_EXHAUSTED', {
     lastError,
   });
 }

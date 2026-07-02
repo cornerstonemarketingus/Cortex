@@ -123,9 +123,6 @@ async function runInDocker({ agent, task, mode, dryRun, cwd, env }: AgentRunOpti
     const dockerVolumePath = normalizeDockerVolumePath(sourcePath);
     const envArgs: string[] = [];
 
-    if (process.env.OPENAI_API_KEY) {
-        envArgs.push('-e', `OPENAI_API_KEY=${process.env.OPENAI_API_KEY}`);
-    }
     if (process.env.ANTHROPIC_API_KEY) {
         envArgs.push('-e', `ANTHROPIC_API_KEY=${process.env.ANTHROPIC_API_KEY}`);
     }

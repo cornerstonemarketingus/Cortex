@@ -19,7 +19,7 @@ export type AutomationHealthSnapshot = {
   providers: {
     twilioConfigured: boolean;
     sendgridConfigured: boolean;
-    openAiConfigured: boolean;
+    aiConfigured: boolean;
   };
   queues: {
     workflow: QueueHealth;
@@ -198,7 +198,7 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
   const providers = {
     twilioConfigured: boolTwilioConfigured(),
     sendgridConfigured: boolSendgridConfigured(),
-    openAiConfigured: hasValue('OPENAI_API_KEY'),
+    aiConfigured: hasValue('ANTHROPIC_API_KEY'),
   };
 
   const alerts: string[] = [];
@@ -207,8 +207,8 @@ export async function getAutomationHealthSnapshot(): Promise<AutomationHealthSna
     alerts.push('CRM database is unreachable. Interaction metrics are unavailable; provision CRM_DATABASE_URL to enable full health monitoring.');
   }
 
-  if (!providers.openAiConfigured) {
-    alerts.push('OPENAI_API_KEY is missing. AI chat responder and AI drafting can fail.');
+  if (!providers.aiConfigured) {
+    alerts.push('ANTHROPIC_API_KEY is missing. AI chat responder and AI drafting can fail.');
   }
 
   if (!providers.twilioConfigured && !providers.sendgridConfigured) {
