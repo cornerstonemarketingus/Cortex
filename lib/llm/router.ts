@@ -64,72 +64,37 @@ export function selectProvider(task: LLMTask): LLMProvider {
   return MODEL_ROUTING[task] ?? 'primary';
 }
 
-type AiProvider = 'anthropic' | 'openai';
-
-function resolveAiCredentials(): { apiKey: string; apiUrl: string; model: string; provider: AiProvider } | null {
-  // Explicit generic vars take priority, then provider-specific vars.
-  const apiKey =
-    process.env.AI_API_KEY ||
-    process.env.ANTHROPIC_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    '';
-
+function resolveAiCredentials(): { apiKey: string; apiUrl: string; model: string } | null {
+  const apiKey = process.env.AI_API_KEY || '';
   if (!apiKey) return null;
 
-  // Determine which provider the key belongs to so we can set correct defaults.
-  const isOpenAi =
-    !process.env.AI_API_KEY && !process.env.ANTHROPIC_API_KEY && !!process.env.OPENAI_API_KEY;
-  const provider: AiProvider = isOpenAi ? 'openai' : 'anthropic';
+  const apiUrl = process.env.AI_API_URL || '';
+  const model = process.env.AI_MODEL || '';
+  if (!apiUrl || !model) return null;
 
-  const defaultUrl = isOpenAi
-    ? 'https://api.openai.com/v1/chat/completions'
-    : 'https://api.anthropic.com/v1/messages';
-
-  const defaultModel = isOpenAi ? 'gpt-4o' : 'claude-3-5-sonnet-20241022';
-
-  return {
-    apiKey,
-    apiUrl: process.env.AI_API_URL || defaultUrl,
-    model: process.env.AI_MODEL || defaultModel,
-    provider,
-  };
+  return { apiKey, apiUrl, model };
 }
 
 async function callAi(req: LLMRequest): Promise<LLMResponse> {
   const creds = resolveAiCredentials();
   if (!creds) return localFallback(req);
 
-  const { apiKey, apiUrl, model, provider } = creds;
+  const { apiKey, apiUrl, model } = creds;
 
-  let body: Record<string, unknown>;
-  let headers: Record<string, string>;
+  const messages: Array<{ role: string; content: string }> = [];
+  if (req.systemPrompt) messages.push({ role: 'system', content: req.systemPrompt });
+  messages.push({ role: 'user', content: req.prompt });
 
-  if (provider === 'openai') {
-    const messages: Array<{ role: string; content: string }> = [];
-    if (req.systemPrompt) messages.push({ role: 'system', content: req.systemPrompt });
-    messages.push({ role: 'user', content: req.prompt });
-    body = {
-      model,
-      max_tokens: req.maxTokens ?? 4096,
-      messages,
-    };
-    headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey,
-    };
-  } else {
-    body = {
-      model,
-      max_tokens: req.maxTokens ?? 4096,
-      messages: [{ role: 'user', content: req.prompt }],
-    };
-    if (req.systemPrompt) body.system = req.systemPrompt;
-    headers = {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    };
-  }
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: req.maxTokens ?? 4096,
+    messages,
+  };
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + apiKey,
+  };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_HTTP_TIMEOUT_MS);
@@ -176,7 +141,7 @@ async function callAi(req: LLMRequest): Promise<LLMResponse> {
 }
 
 function localFallback(req: LLMRequest): LLMResponse {
-  console.warn(`[LLM Router] Falling back to local for task "${req.task}". Configure AI_API_KEY (or OPENAI_API_KEY / ANTHROPIC_API_KEY) and AI_API_URL for full AI responses.`);
+  console.warn(`[LLM Router] Falling back to local for task "${req.task}". Configure AI_API_KEY, AI_API_URL, and AI_MODEL for full AI responses.`);
   return {
     text: '',
     provider: 'local',

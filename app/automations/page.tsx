@@ -42,7 +42,7 @@ type StatusResponse = {
     providers: {
       twilioConfigured: boolean;
       sendgridConfigured: boolean;
-      openAiConfigured: boolean;
+      aiConfigured: boolean;
     };
     queues: {
       workflow: { reachable: boolean; waiting: number; active: number; failed: number };
