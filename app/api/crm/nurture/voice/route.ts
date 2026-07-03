@@ -11,7 +11,7 @@ import {
   withApiHandler,
 } from '@/src/crm/core/http';
 import { toPrismaJson } from '@/src/crm/core/json';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 import { LeadCaptureService } from '@/src/crm/modules/capture';
 
 export const runtime = 'nodejs';
@@ -31,7 +31,7 @@ type VoiceBody = {
 };
 
 async function summarizeTranscript(transcript: string, objective?: string): Promise<string> {
-  return callOpenAiChat(
+  return callAiChat(
     [
       {
         role: 'user',
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
         return jsonResponse({ error: 'Lead not found' }, 404);
       }
 
-      const script = await callOpenAiChat(
+      const script = await callAiChat(
         [
           {
             role: 'user',

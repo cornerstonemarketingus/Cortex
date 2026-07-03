@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { callOpenAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/openai';
+import { callAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/ai';
 import { buildRoleResponse, sanitizePrompt } from '@/lib/chatBots';
 
 export const runtime = 'nodejs';
 
 type CouncilMode = 'graph' | 'parallel' | 'debate';
 type CouncilAgent = 'planner' | 'coder' | 'marketing' | 'bd';
-type Provider = 'auto' | 'openai' | 'local';
+type Provider = 'auto' | 'local';
 
 type CouncilRequest = {
   prompt?: unknown;
@@ -56,7 +56,7 @@ function parseTone(value: unknown): ConversationTone {
 }
 
 function parseProvider(value: unknown): Provider {
-  if (value === 'openai' || value === 'local' || value === 'auto') return value;
+  if (value === 'local' || value === 'auto') return value;
   return 'auto';
 }
 
@@ -103,7 +103,7 @@ async function runAgent(
       ].filter(Boolean).join('\n\n'),
     },
   ];
-  return callOpenAiChat(messages, tone);
+  return callAiChat(messages, tone);
 }
 
 async function synthesizeDecision(
@@ -128,7 +128,7 @@ async function synthesizeDecision(
     ].join('\n');
   }
 
-  return callOpenAiChat(
+  return callAiChat(
     [
       {
         role: 'user',

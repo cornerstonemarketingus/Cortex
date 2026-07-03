@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'node:crypto';
-import { callOpenAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/openai';
+import { callAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/ai';
 
 export const BLOG_REGIONS = [
   'global',
@@ -675,7 +675,7 @@ async function generateArticleMarkdown(
   ];
 
   try {
-    const generated = await callOpenAiChat(messages, input.tone);
+    const generated = await callAiChat(messages, input.tone);
     if (!generated || generated.trim().length < 320 || /^auto-reply/i.test(generated.trim())) {
       return buildFallbackArticle(input, seoTitle, outline);
     }

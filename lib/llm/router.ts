@@ -1,7 +1,7 @@
 /**
  * LLM Router — Multi-model orchestration layer
  * Routes prompts to the best model based on task type, cost, and availability.
- * Providers: OpenAI (code/structured), Claude (reasoning/long-form), Local (fast/private)
+ * Provider: Primary AI, Local (fast/private)
  */
 
 export type LLMTask =
@@ -15,7 +15,7 @@ export type LLMTask =
   | 'seo'
   | 'fast';
 
-export type LLMProvider = 'openai' | 'claude' | 'local';
+export type LLMProvider = 'primary' | 'local';
 
 export interface LLMRequest {
   task: LLMTask;
@@ -36,14 +36,14 @@ export interface LLMResponse {
 const LLM_HTTP_TIMEOUT_MS = Number(process.env.LLM_HTTP_TIMEOUT_MS || 20_000);
 
 const MODEL_ROUTING: Record<LLMTask, LLMProvider> = {
-  code: 'openai',
-  builder: 'openai',
-  estimate: 'openai',
-  seo: 'openai',
-  reasoning: 'claude',
-  automation: 'claude',
-  voice: 'openai',
-  chat: 'openai',
+  code: 'primary',
+  builder: 'primary',
+  estimate: 'primary',
+  seo: 'primary',
+  reasoning: 'primary',
+  automation: 'primary',
+  voice: 'primary',
+  chat: 'primary',
   fast: 'local',
 };
 
@@ -61,32 +61,49 @@ function detectTask(prompt: string): LLMTask {
 export function selectProvider(task: LLMTask): LLMProvider {
   const override = process.env.LLM_PROVIDER_OVERRIDE as LLMProvider | undefined;
   if (override) return override;
-  return MODEL_ROUTING[task] ?? 'openai';
+  return MODEL_ROUTING[task] ?? 'primary';
 }
 
-async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return localFallback(req);
+function resolveAiCredentials(): { apiKey: string; apiUrl: string; model: string } | null {
+  const apiKey = process.env.AI_API_KEY || '';
+  if (!apiKey) return null;
 
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const apiUrl = process.env.AI_API_URL || '';
+  const model = process.env.AI_MODEL || '';
+  if (!apiUrl || !model) return null;
+
+  return { apiKey, apiUrl, model };
+}
+
+async function callAi(req: LLMRequest): Promise<LLMResponse> {
+  const creds = resolveAiCredentials();
+  if (!creds) return localFallback(req);
+
+  const { apiKey, apiUrl, model } = creds;
+
   const messages: Array<{ role: string; content: string }> = [];
-
   if (req.systemPrompt) messages.push({ role: 'system', content: req.systemPrompt });
   messages.push({ role: 'user', content: req.prompt });
+
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: req.maxTokens ?? 4096,
+    messages,
+  };
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + apiKey,
+  };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_HTTP_TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch('https://api.openai.com/v1/chat/completions', {
+    res = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages,
-        max_tokens: req.maxTokens ?? 2000,
-        temperature: req.temperature ?? 0.7,
-      }),
+      headers,
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
   } finally {
@@ -96,82 +113,37 @@ async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
   if (!res.ok) return localFallback(req);
 
   const data = await res.json() as {
-    choices?: Array<{ message?: { content?: string } }>;
-    usage?: { total_tokens?: number };
-  };
-  const text = data.choices?.[0]?.message?.content ?? '';
-  return {
-    text,
-    provider: 'openai',
-    model,
-    tokensUsed: data.usage?.total_tokens,
-  };
-}
-
-async function callClaude(req: LLMRequest): Promise<LLMResponse> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return callOpenAI({ ...req, task: 'chat' }); // graceful fallback
-
-  const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
-  const body: Record<string, unknown> = {
-    model,
-    max_tokens: req.maxTokens ?? 4096,
-    messages: [{ role: 'user', content: req.prompt }],
-  };
-  if (req.systemPrompt) body.system = req.systemPrompt;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), LLM_HTTP_TIMEOUT_MS);
-  let res: Response;
-  try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) return callOpenAI(req);
-
-  const data = await res.json() as {
     content?: Array<{ text?: string }>;
-    usage?: { input_tokens?: number; output_tokens?: number };
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+    };
   };
-  const text = data.content?.[0]?.text ?? '';
+
+  const text =
+    data.content?.[0]?.text ??
+    data.choices?.[0]?.message?.content ??
+    '';
+
+  const tokensUsed =
+    (data.usage?.input_tokens ?? data.usage?.prompt_tokens ?? 0) +
+    (data.usage?.output_tokens ?? data.usage?.completion_tokens ?? 0);
+
   return {
     text,
-    provider: 'claude',
+    provider: 'primary',
     model,
-    tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens,
+    tokensUsed,
   };
 }
 
 function localFallback(req: LLMRequest): LLMResponse {
-  if (req.task === 'estimate') {
-    // Parse estimate prompt for key details
-    const tradesMatch = req.prompt.match(/Trades: (.*?)\\./i) || req.prompt.match(/trades?:? (.*?)\\./i);
-    const trades = tradesMatch ? tradesMatch[1].trim() : 'project trades';
-    const totalMatch = req.prompt.match(/Total: \\$(\\d+(?:,\\d{3})*)/i);
-    const total = totalMatch ? totalMatch[1] : '$XX,XXX';
-    const sqftMatch = req.prompt.match(/Square footage: (\\d+)/i);
-    const sqft = sqftMatch ? sqftMatch[1] : 'X,XXX';
-    
-    return {
-      text: `Professional construction estimate summary:\\n\\n**Total Project Cost: ${total}**\\n**Scope: ${sqft} sqft, ${trades}**\\n\\nThis bid includes complete material, labor, overhead (12%), tax (7%), and profit (18%). Timeline: 2-4 weeks typical. Valid 30 days. Questions? Call for detailed takeoff.`,
-      provider: 'local',
-      model: 'estimator-local',
-    };
-  }
-  
+  console.warn(`[LLM Router] Falling back to local for task "${req.task}". Configure AI_API_KEY, AI_API_URL, and AI_MODEL for full AI responses.`);
   return {
-    text: `[Local model] Received task "${req.task}". Configure OPENAI_API_KEY or ANTHROPIC_API_KEY for full AI responses.`,
+    text: '',
     provider: 'local',
     model: 'local-fallback',
   };
@@ -185,7 +157,7 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const prompt = (req.prompt || '').trim();
   if (!prompt) {
     return {
-      text: '[Local model] Empty prompt received. Please provide a request.',
+      text: '',
       provider: 'local',
       model: 'local-guardrail',
     };
@@ -204,9 +176,8 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const provider = selectProvider(task);
 
   try {
-    if (provider === 'claude') return await callClaude({ ...safeReq, task });
     if (provider === 'local') return localFallback({ ...safeReq, task });
-    return await callOpenAI({ ...safeReq, task });
+    return await callAi({ ...safeReq, task });
   } catch {
     return localFallback({ ...safeReq, task });
   }
@@ -214,8 +185,12 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
 
 /**
  * Convenience: route and return just the text string.
+ * Throws if the AI service is unavailable so callers can fall back gracefully.
  */
 export async function llm(prompt: string, task?: LLMTask, systemPrompt?: string): Promise<string> {
   const result = await routeLLM({ prompt, task: task ?? detectTask(prompt), systemPrompt });
+  if (result.provider === 'local') {
+    throw new Error('AI service unavailable');
+  }
   return result.text;
 }

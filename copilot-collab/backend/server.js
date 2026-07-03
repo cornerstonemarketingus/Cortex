@@ -5,38 +5,33 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-// GPT-4 Turbo call
-async function callGPT(code) {
+// AI call
+async function callAi(code) {
+  const apiKey = process.env.AI_API_KEY;
+  const apiUrl = process.env.AI_API_URL ?? '';
+  const model = process.env.AI_MODEL ?? '';
   const res = await axios.post(
-    'https://api.openai.com/v1/chat/completions',
+    apiUrl,
     {
-      model: 'gpt-4o-turbo',
+      model,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: code }],
     },
-    { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` } }
-  );
-  return res.data.choices[0].message.content;
-}
-
-// Claude 3 call
-async function callClaude(code) {
-  const res = await axios.post(
-    'https://api.anthropic.com/v1/complete',
     {
-      model: 'claude-3',
-      prompt: code,
-      max_tokens: 2000,
-    },
-    { headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY } }
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+    }
   );
-  return res.data.completion;
+  return res.data.content?.[0]?.text ?? '';
 }
 
 // Suggest endpoint
 app.post('/suggest', async (req, res) => {
   const code = req.body.code || '';
-  const [gpt, claude] = await Promise.all([callGPT(code), callClaude(code)]);
-  res.json({ gpt, claude });
+  const result = await callAi(code);
+  res.json({ result });
 });
 
 app.listen(3001, () => console.log('Backend running on http://localhost:3001'));

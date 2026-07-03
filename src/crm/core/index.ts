@@ -4,6 +4,6 @@ export * from './crmDb';
 export * from './env';
 export * from './http';
 export * from './json';
-export * from './openai';
+export * from './ai';
 export * from './queue';
 export * from './realtime';

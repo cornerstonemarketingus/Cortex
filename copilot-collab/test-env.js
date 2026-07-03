@@ -1,2 +1,2 @@
 require('dotenv').config();
-console.log(process.env.OPENAI_API_KEY);
+console.log('AI_API_KEY set:', !!process.env.AI_API_KEY);

@@ -351,7 +351,7 @@ function buildAiLayer(industry: string): AiLayerPlan {
       'AI chat concierge for lead routing and appointment scheduling',
     ],
     apiIntegrations: [
-      'OpenAI or equivalent LLM provider for generation and summarization',
+      'AI provider for generation and summarization',
       'Voice agent provider for inbound and outbound scripts',
       'Webhook gateway for third-party automation triggers',
       'Calendar API integrations for booking sync and reminders',

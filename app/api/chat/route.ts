@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { toApiError } from '@/src/crm/core/api';
 import { parseBoolean } from '@/src/crm/core/http';
-import { callOpenAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/openai';
+import { callAiChat, type AiMessage, type ConversationTone } from '@/src/crm/core/ai';
 import { buildRolloutTasks, listSystemModules, type RolloutScope } from '@/src/crm/modules/platform';
 import { createGameBuilderPlan } from '@/src/game-builder/v1';
 import { createBlogPost } from '@/src/content/blog-engine';
@@ -80,7 +80,7 @@ const MAX_HISTORY_MESSAGES = 20;
 
 const CHAT_CAPABILITIES = {
   modes: ['assistant', 'bots', 'automation'],
-  providers: ['auto', 'openai', 'local'],
+  providers: ['auto', 'local'],
   tools: ['system-rollout', 'game-builder-v1', 'blog-engine', 'systems-catalog', 'cto-queue-enqueue'],
   integrations: ['crm-workflows', 'builder-blueprints', 'blog-content-ops', 'marketplace-planning', 'cto-task-queue'],
   maxBotsPerRequest: MAX_BOTS_PER_REQUEST,
@@ -144,8 +144,8 @@ function parseMode(value: unknown): ChatMode | null {
   return null;
 }
 
-function parseProvider(value: unknown): 'auto' | 'openai' | 'local' {
-  if (value === 'openai' || value === 'local' || value === 'auto') {
+function parseProvider(value: unknown): 'auto' | 'local' {
+  if (value === 'local' || value === 'auto') {
     return value;
   }
   return 'auto';
@@ -253,7 +253,7 @@ async function loadLearningSignals(limit = 8): Promise<string[]> {
 }
 
 async function buildTeamDecisionSummary(
-  provider: 'auto' | 'openai' | 'local',
+  provider: 'auto' | 'local',
   tone: ConversationTone,
   prompt: string,
   results: Array<{ agent: string; result: string }>
@@ -263,7 +263,7 @@ async function buildTeamDecisionSummary(
 
   if (provider !== 'local') {
     try {
-      return await callOpenAiChat(
+      return await callAiChat(
         [
           {
             role: 'user',
@@ -593,7 +593,7 @@ export async function POST(request: Request) {
       const useLocal = provider === 'local';
       const resultText = useLocal
         ? buildRoleResponse('AI Visionary', effectivePrompt)
-        : await callOpenAiChat(aiMessages, tone);
+        : await callAiChat(aiMessages, tone);
 
       results.push({
         agent: useLocal ? 'Cortex Local Assistant' : 'Cortex Assistant',

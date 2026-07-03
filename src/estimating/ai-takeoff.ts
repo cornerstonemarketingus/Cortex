@@ -431,7 +431,8 @@ function parseAreaFromText(text: string): number | null {
 }
 
 function parseRoofingSquares(text: string): number | null {
-  const match = text.match(/(\d+(?:\.\d+)?)\s*(roofing\s*)?squares?\b/i);
+  // Negative lookahead prevents "N square feet" from being mis-parsed as N roofing squares.
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:roofing\s*)?squares?\b(?!\s*f(?:eet|t)\b)/i);
   if (!match) return null;
   const value = Number(match[1]);
   if (!Number.isFinite(value) || value <= 0) return null;

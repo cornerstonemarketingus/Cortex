@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callOpenAiChat } from '@/src/crm/core/openai';
+import { callAiChat } from '@/src/crm/core/ai';
 
 type Body = {
   sectionType?: string;
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const businessName = (body.businessName || 'Contractor Business').trim();
     const services = Array.isArray(body.services) ? body.services.slice(0, 8) : [];
 
-    const regenerated = await callOpenAiChat(
+    const regenerated = await callAiChat(
       [
         {
           role: 'user',

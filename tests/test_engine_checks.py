@@ -51,12 +51,12 @@ class TestCoreEngineConfig(unittest.TestCase):
 
     def test_get_api_key_returns_none_when_missing(self):
         from cortex_config import get_api_key
-        old = os.environ.pop("OPENAI_API_KEY", None)
+        old = os.environ.pop("AI_API_KEY", None)
         try:
-            self.assertIsNone(get_api_key("openai"))
+            self.assertIsNone(get_api_key("ai"))
         finally:
             if old is not None:
-                os.environ["OPENAI_API_KEY"] = old
+                os.environ["AI_API_KEY"] = old
 
     def test_cortex_env_overrides_apply(self):
         import importlib
@@ -79,20 +79,20 @@ class TestCoreEngineConfig(unittest.TestCase):
     def test_api_key_not_logged(self):
         """check_env must never include the actual key value."""
         from cortex_config import check_env
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-secret-123"}):
+        with patch.dict(os.environ, {"AI_API_KEY": "sk-ant-secret-123"}):
             cfg = check_env()
-        self.assertNotIn("sk-secret-123", json.dumps(cfg))
+        self.assertNotIn("sk-ant-secret-123", json.dumps(cfg))
 
     def test_api_key_presence_reported(self):
         from cortex_config import check_env, get_api_key
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
+        with patch.dict(os.environ, {"AI_API_KEY": "sk-ant-test"}):
             cfg = check_env()
-            self.assertTrue(cfg["openai_key_set"])
-            self.assertEqual(get_api_key("openai"), "sk-test")
+            self.assertTrue(cfg["ai_key_set"])
+            self.assertEqual(get_api_key("ai"), "sk-ant-test")
 
     def test_missing_key_reported(self):
         from cortex_config import check_env
-        env = {k: "" for k in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}
+        env = {k: "" for k in ["AI_API_KEY"]}
         with patch.dict(os.environ, env, clear=False):
             # Temporarily remove from env
             old = {k: os.environ.pop(k, None) for k in env}
@@ -395,8 +395,7 @@ class TestMonitoring(unittest.TestCase):
 
     def test_health_checks_api_key_presence(self):
         source = (_ROOT / "app/api/health/route.ts").read_text()
-        self.assertIn("OPENAI_API_KEY", source)
-        self.assertIn("ANTHROPIC_API_KEY", source)
+        self.assertIn("AI_API_KEY", source)
 
     def test_health_contract_keys_present(self):
         source = (_ROOT / "app/api/health/route.ts").read_text()
