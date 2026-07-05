@@ -2,11 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import ThinkingIndicator from '@/components/copilot/ThinkingIndicator';
 import EstimateResultCard from '@/components/copilot/EstimateResultCard';
-import PageBuilderResultCard from '@/components/copilot/PageBuilderResultCard';
 import ProposalResultCard from '@/components/copilot/ProposalResultCard';
-import AppPreviewCard from '@/components/copilot/AppPreviewCard';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Mode = 'estimator' | 'builder';
@@ -30,11 +27,6 @@ interface PagePayload {
   sections: Array<{ id: string; type: string; props: Record<string, unknown> }>;
 }
 
-interface AutomationPayload {
-  workflow: Record<string, unknown> | null;
-  description: string;
-}
-
 interface ProposalPayload {
   clientName?: string;
   contractorName?: string;
@@ -56,91 +48,47 @@ interface ProposalPayload {
   timeline?: Array<{ tradeName: string; startDay: number; durationDays: number }>;
 }
 
-interface AppPayload {
-  code: string;
-  appTitle: string;
-  appType: string;
-  input: string;
-}
-
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
-  thinking?: string[];
   actionType?: string;
   estimatePayload?: EstimatePayload;
   pagePayload?: PagePayload;
-  automationPayload?: AutomationPayload;
   proposalPayload?: ProposalPayload;
-  appPayload?: AppPayload;
 }
 
-// ── Mode configs ───────────────────────────────────────────────────────────
-const MODE_CONFIG: Record<Mode, {
-  label: string;
-  icon: string;
-  placeholder: string;
-  suggestions: string[];
-  accent: string;
-}> = {
-  estimator: {
-    label: 'Estimator Mode',
-    icon: '📐',
-    placeholder: 'Describe your project… "Estimate residential framing for 2,400 sqft"',
-    suggestions: [
-      'Estimate residential framing for 2,400 sqft',
-      'Quote drywall finishing for 1,800 sqft',
-      'Estimate hardwood flooring for 1,200 sqft',
-      'Roof replacement for 2,200 sqft in 55123',
-      'Plumbing rough-in for 1,600 sqft home',
-      'Generate a proposal for my roofing estimate',
-    ],
-    accent: '#C69C6D',
-  },
-  builder: {
-    label: 'Builder Mode',
-    icon: '🏗️',
-    placeholder: 'Describe what to build… "Create a landing page for my roofing company"',
-    suggestions: [
-      'Build a landing page for my roofing company',
-      'Create a plumbing services website',
-      'Generate a contractor CRM dashboard',
-      'Build an HVAC company landing page',
-      'Create an estimator app for my team',
-      'Build a lead tracking dashboard',
-    ],
-    accent: '#60a5fa',
-  },
-};
+// ── Suggestion sets ────────────────────────────────────────────────────────
+const ESTIMATOR_SUGGESTIONS = [
+  'Asphalt shingle roofing for 2,400 sqft',
+  'Residential framing for 3,200 sqft',
+  'Drywall and finishing for 1,800 sqft',
+  'Hardwood flooring for 1,200 sqft',
+  'Electrical rough-in for 2,000 sqft',
+  'Plumbing rough-in for 1,600 sqft',
+];
 
-// ── Automation display ─────────────────────────────────────────────────────
-function AutomationResultCard({ payload }: { payload: AutomationPayload }) {
-  const wf = payload.workflow as Record<string, unknown> | null;
+const BUILDER_SUGGESTIONS = [
+  'Build a landing page for my roofing company',
+  'Create a plumbing services website',
+  'Generate a contractor CRM dashboard',
+  'Build an HVAC company landing page',
+];
+
+// ── Spinner ────────────────────────────────────────────────────────────────
+function Spinner() {
   return (
-    <div className="mt-3 rounded-xl border border-emerald-500/30 bg-[#0d1826] overflow-hidden w-full max-w-lg">
-      <div className="flex items-center justify-between px-4 py-3 bg-emerald-950/40 border-b border-emerald-500/20">
-        <div>
-          <p className="text-xs text-emerald-400 uppercase tracking-widest font-semibold">Automation</p>
-          <p className="text-sm font-semibold text-white mt-0.5">
-            {wf ? String(wf.name ?? 'New Workflow') : 'Workflow Created'}
-          </p>
-        </div>
-        <span className="text-2xl">⚡</span>
-      </div>
-      <div className="px-4 py-3 text-xs text-slate-400">
-        <p>{payload.description}</p>
-        {wf && (wf.actions as unknown[])?.length && (
-          <p className="mt-1 text-emerald-400/70">
-            {(wf.actions as unknown[]).length} action{(wf.actions as unknown[]).length !== 1 ? 's' : ''} configured
-          </p>
-        )}
-      </div>
-      <div className="px-4 pb-3">
-        <Link href="/automations" className="block text-center rounded-lg py-2 text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/80 transition">
-          Manage Automations
-        </Link>
-      </div>
+    <div className="flex items-center gap-2 py-1">
+      <span className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full animate-bounce"
+            style={{ background: '#C69C6D', animationDelay: `${i * 120}ms`, animationDuration: '900ms' }}
+          />
+        ))}
+      </span>
+      <span className="text-xs" style={{ color: '#6B7A8F' }}>Working on it…</span>
     </div>
   );
 }
@@ -151,18 +99,30 @@ export default function CopilotPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
-  const [thinkingActive, setThinkingActive] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const cfg = MODE_CONFIG[mode];
+  const isEmpty = messages.length === 0;
+  const suggestions = mode === 'estimator' ? ESTIMATOR_SUGGESTIONS : BUILDER_SUGGESTIONS;
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, thinkingSteps, scrollToBottom]);
+  useEffect(() => { scrollToBottom(); }, [messages, isLoading, scrollToBottom]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 128)}px`;
+  }, [input]);
+
+  function prefillRevision(text: string) {
+    setInput(text);
+    inputRef.current?.focus();
+  }
 
   async function send(text?: string) {
     const prompt = (text ?? input).trim();
@@ -172,8 +132,6 @@ export default function CopilotPage() {
     const userMsg: Message = { id: `u-${Date.now()}`, role: 'user', text: prompt };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setThinkingSteps(['Analyzing your request…']);
-    setThinkingActive(true);
 
     try {
       const res = await fetch('/api/copilot', {
@@ -184,23 +142,17 @@ export default function CopilotPage() {
 
       const data = await res.json() as {
         text?: string;
-        thinking?: string[];
         action?: { type: string; payload?: Record<string, unknown> };
         error?: string;
       };
 
-      const thinking: string[] = data.thinking ?? ['Processing…'];
-      const responseText = data.text ?? data.error ?? 'Something went wrong.';
+      const responseText = data.text ?? '';
       const action = data.action ?? { type: 'NOOP' };
-
-      setThinkingSteps(thinking);
-      setThinkingActive(false);
 
       const assistantMsg: Message = {
         id: `a-${Date.now()}`,
         role: 'assistant',
         text: responseText,
-        thinking,
         actionType: action.type,
       };
 
@@ -210,187 +162,193 @@ export default function CopilotPage() {
       if (action.type === 'CREATE_PAGE' && action.payload) {
         assistantMsg.pagePayload = action.payload as unknown as PagePayload;
       }
-      if (action.type === 'CREATE_AUTOMATION' && action.payload) {
-        assistantMsg.automationPayload = action.payload as unknown as AutomationPayload;
-      }
       if (action.type === 'GENERATE_PROPOSAL' && action.payload) {
         assistantMsg.proposalPayload = action.payload as unknown as ProposalPayload;
-      }
-      if (action.type === 'GENERATE_APP' && action.payload) {
-        assistantMsg.appPayload = action.payload as unknown as AppPayload;
       }
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
-      setThinkingActive(false);
       setMessages((prev) => [
         ...prev,
-        { id: `err-${Date.now()}`, role: 'system', text: '⚠️ Connection error — please try again.' },
+        { id: `err-${Date.now()}`, role: 'system', text: 'Connection error — please try again.' },
       ]);
     } finally {
       setIsLoading(false);
-      setThinkingSteps([]);
-      inputRef.current?.focus();
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }
 
-  const isEmpty = messages.length === 0;
-
   return (
     <div
-      className="relative flex flex-col h-screen overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at 50% 0%, #0f1f38 0%, #080c14 55%, #050709 100%)' }}
+      className="flex flex-col h-screen overflow-hidden"
+      style={{ background: '#060c15' }}
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: 'linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
-
-      {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
-        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Back</span>
-        </Link>
-
-        {/* Mode toggle */}
-        <div className="flex items-center gap-1 rounded-xl bg-white/[0.05] border border-white/[0.08] p-1">
-          {(Object.keys(MODE_CONFIG) as Mode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => { setMode(m); setMessages([]); setInput(''); }}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                mode === m ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              <span>{MODE_CONFIG[m].icon}</span>
-              <span className="hidden sm:inline">{MODE_CONFIG[m].label}</span>
-            </button>
-          ))}
+      {/* ── Header ── */}
+      <header
+        className="flex-shrink-0 flex items-center justify-between px-5 h-14"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(6,12,21,0.92)', backdropFilter: 'blur(12px)' }}
+      >
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2 group" aria-label="Back to home">
+            <svg className="w-4 h-4" style={{ color: '#4A5568' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <span className="text-sm font-semibold text-white">TeamBuilder Copilot</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/automations" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Automations</Link>
-          <Link href="/estimate" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Estimates</Link>
-          <Link href="/json-builder" className="text-xs text-slate-500 hover:text-slate-300 transition hidden sm:block">Builder</Link>
+        <div className="flex items-center gap-2">
+          {/* Mode toggle */}
+          <div
+            className="flex items-center rounded-lg p-0.5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            {(['estimator', 'builder'] as Mode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setMessages([]); setInput(''); }}
+                className="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
+                style={mode === m
+                  ? { background: 'rgba(255,255,255,0.09)', color: '#E2E8F0' }
+                  : { color: '#4A5568' }}
+              >
+                {m === 'estimator' ? 'Estimator' : 'Builder'}
+              </button>
+            ))}
+          </div>
+
+          {!isEmpty && (
+            <button
+              onClick={() => { setMessages([]); setInput(''); }}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#4A5568' }}
+            >
+              New
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Messages */}
-      <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto max-w-2xl space-y-6">
-          {isEmpty && !isLoading && (
-            <div className="flex flex-col items-center justify-center pt-12 pb-8 text-center select-none">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 shadow-xl text-3xl">
-                {cfg.icon}
+      {/* ── Messages ── */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-2xl px-4 py-8">
+
+          {/* Empty state */}
+          {isEmpty && (
+            <div className="flex flex-col items-center text-center pt-10 pb-8 select-none">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl"
+                style={{ background: 'rgba(198,156,109,0.12)', border: '1px solid rgba(198,156,109,0.2)' }}
+              >
+                {mode === 'estimator' ? '📐' : '🏗️'}
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-xl font-semibold text-white mb-2">
                 {mode === 'estimator' ? 'What are we estimating?' : 'What should I build?'}
               </h1>
-              <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
+              <p className="text-sm max-w-xs leading-relaxed" style={{ color: '#6B7A8F' }}>
                 {mode === 'estimator'
-                  ? "Describe your project and I'll generate a trade-based estimate with materials, labor, and timeline."
-                  : "Describe what you want — a landing page, CRM, or any tool. I'll generate it instantly."}
+                  ? 'Describe your project and get a detailed trade estimate with materials, labor, and cost breakdown.'
+                  : 'Describe what you want — a landing page, dashboard, or any contractor tool.'}
               </p>
-            </div>
-          )}
 
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.role === 'user' ? (
-                <div
-                  className="max-w-xl rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white"
-                  style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #1a3350 100%)', border: '1px solid rgba(198,156,109,0.2)' }}
-                >
-                  {msg.text}
-                </div>
-              ) : msg.role === 'system' ? (
-                <div className="text-xs text-red-400/80 bg-red-950/30 rounded-lg px-3 py-2 border border-red-500/20">
-                  {msg.text}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1 max-w-xl w-full">
-                  {msg.thinking && msg.thinking.length > 0 && (
-                    <ThinkingIndicator steps={msg.thinking} isActive={false} />
-                  )}
-                  <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-slate-100 bg-white/[0.05] border border-white/[0.08]">
-                    {msg.text}
-                  </div>
-                  {msg.estimatePayload && (
-                    <EstimateResultCard
-                      breakdown={{
-                        ...msg.estimatePayload.breakdown,
-                        templateName: msg.estimatePayload.templateName,
-                        sqft: msg.estimatePayload.sqft,
-                      }}
-                    />
-                  )}
-                  {msg.pagePayload && (
-                    <PageBuilderResultCard pageTitle={msg.pagePayload.pageTitle} sections={msg.pagePayload.sections} />
-                  )}
-                  {msg.automationPayload && <AutomationResultCard payload={msg.automationPayload} />}
-                  {msg.proposalPayload && <ProposalResultCard proposalData={msg.proposalPayload} />}
-                  {msg.appPayload && (
-                    <AppPreviewCard code={msg.appPayload.code} appTitle={msg.appPayload.appTitle} appType={msg.appPayload.appType} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {isLoading && thinkingSteps.length > 0 && (
-            <div className="flex justify-start">
-              <div className="max-w-xl w-full rounded-2xl rounded-tl-sm px-4 py-3 bg-white/[0.04] border border-white/[0.07]">
-                <ThinkingIndicator steps={thinkingSteps} isActive={thinkingActive} />
+              {/* Suggestion chips */}
+              <div className="flex flex-wrap justify-center gap-2 mt-8 max-w-md">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => void send(s)}
+                    className="text-xs px-3 py-2 rounded-full transition"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      color: '#8B9CB5',
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Message feed */}
+          <div className="space-y-6">
+            {messages.map((msg) => (
+              <div key={msg.id}>
+                {msg.role === 'user' ? (
+                  <div className="flex justify-end">
+                    <div
+                      className="max-w-sm rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white"
+                      style={{ background: 'linear-gradient(135deg, #1a3456 0%, #15294a 100%)', border: '1px solid rgba(59,130,246,0.15)' }}
+                    >
+                      {msg.text}
+                    </div>
+                  </div>
+                ) : msg.role === 'system' ? (
+                  <div className="flex justify-center">
+                    <div
+                      className="text-xs px-3 py-2 rounded-lg"
+                      style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: '#F87171' }}
+                    >
+                      {msg.text}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {/* AI text */}
+                    {msg.text && (
+                      <p className="text-sm leading-relaxed" style={{ color: '#B0BEC8' }}>
+                        {msg.text}
+                      </p>
+                    )}
+
+                    {/* Estimate card */}
+                    {msg.estimatePayload && (
+                      <EstimateResultCard
+                        breakdown={{
+                          ...msg.estimatePayload.breakdown,
+                          templateName: msg.estimatePayload.templateName,
+                          sqft: msg.estimatePayload.sqft,
+                        }}
+                        onRevise={prefillRevision}
+                      />
+                    )}
+
+                    {/* Page built card */}
+                    {msg.pagePayload && (
+                      <PageBuiltCard pageTitle={msg.pagePayload.pageTitle} sectionCount={msg.pagePayload.sections.length} sections={msg.pagePayload.sections} />
+                    )}
+
+                    {/* Proposal card */}
+                    {msg.proposalPayload && <ProposalResultCard proposalData={msg.proposalPayload} />}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Loading */}
+            {isLoading && (
+              <div className="flex justify-start">
+                <Spinner />
+              </div>
+            )}
+          </div>
+
           <div ref={bottomRef} />
         </div>
       </main>
 
-      {/* Bottom input */}
-      <div className="relative z-10 border-t border-white/[0.06] bg-[#080c14]/80 backdrop-blur-xl px-4 py-4">
+      {/* ── Input bar ── */}
+      <div
+        className="flex-shrink-0 px-4 pb-5 pt-3"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(6,12,21,0.96)', backdropFilter: 'blur(12px)' }}
+      >
         <div className="mx-auto max-w-2xl">
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full border"
-              style={{ color: cfg.accent, borderColor: `${cfg.accent}40`, background: `${cfg.accent}10` }}
-            >
-              {cfg.icon} {cfg.label}
-            </span>
-            {!isEmpty && (
-              <button
-                onClick={() => { setMessages([]); setInput(''); }}
-                className="text-[10px] text-slate-500 hover:text-slate-300 transition ml-auto"
-              >
-                New conversation
-              </button>
-            )}
-          </div>
-
-          {isEmpty && !isLoading && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {cfg.suggestions.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => void send(s)}
-                  className="text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.1] text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.09] transition"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div
-            className="flex items-end gap-3 rounded-2xl border bg-white/[0.05] px-4 py-3 transition focus-within:border-opacity-60"
-            style={{ borderColor: `${cfg.accent}30` }}
+            className="flex items-end gap-3 rounded-2xl px-4 py-3 transition-all"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(198,156,109,0.3)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
           >
             <textarea
               ref={inputRef}
@@ -399,40 +357,75 @@ export default function CopilotPage() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
               }}
-              placeholder={cfg.placeholder}
+              placeholder={mode === 'estimator'
+                ? 'Describe a project to estimate… e.g. "Roofing for 2,400 sqft"'
+                : 'Describe what to build…'}
               rows={1}
-              className="flex-1 resize-none bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none leading-relaxed max-h-32 overflow-y-auto"
-              style={{ fieldSizing: 'content' } as React.CSSProperties}
+              className="flex-1 resize-none bg-transparent text-sm leading-relaxed focus:outline-none"
+              style={{ color: '#E2E8F0', caretColor: '#C69C6D', maxHeight: '128px', overflow: 'auto' }}
             />
             <button
               onClick={() => void send()}
               disabled={isLoading || !input.trim()}
-              className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-30"
+              className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-25"
               style={{
                 background: input.trim() && !isLoading
-                  ? `linear-gradient(135deg, #1E3A5F, ${cfg.accent})`
+                  ? 'linear-gradient(135deg, #1E3A5F, #C69C6D)'
                   : 'rgba(255,255,255,0.06)',
               }}
               aria-label="Send"
             >
               {isLoading ? (
-                <svg className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               )}
             </button>
           </div>
 
-          <p className="mt-2 text-center text-[10px] text-slate-600">
-            TeamBuilderCopilot — AI construction workspace for contractors
+          <p className="mt-2 text-center text-[10px]" style={{ color: '#2D3748' }}>
+            TeamBuilder Copilot · AI-powered construction estimates
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+// ── Page built mini-card ───────────────────────────────────────────────────
+function PageBuiltCard({ pageTitle, sectionCount, sections }: { pageTitle: string; sectionCount: number; sections: Array<{ id: string; type: string; props: Record<string, unknown> }> }) {
+  function openInBuilder() {
+    const encoded = btoa(JSON.stringify(sections));
+    window.location.href = `/json-builder?s=${encoded}`;
+  }
+  return (
+    <div
+      className="rounded-2xl overflow-hidden w-full max-w-xl"
+      style={{ background: '#0e1929', border: '1px solid rgba(59,130,246,0.15)' }}
+    >
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(59,130,246,0.1)' }}>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#60A5FA' }}>Page Built</p>
+          <p className="text-sm font-semibold text-white">{pageTitle}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7A8F' }}>{sectionCount} sections</p>
+        </div>
+        <span className="text-2xl">🌐</span>
+      </div>
+      <div className="px-5 py-4 flex gap-2">
+        <button
+          onClick={openInBuilder}
+          className="flex-1 rounded-lg py-2 text-xs font-semibold text-center transition"
+          style={{ background: 'rgba(30,58,95,0.6)', border: '1px solid rgba(59,130,246,0.2)', color: '#93C5FD' }}
+        >
+          Open in Builder
+        </button>
+      </div>
+    </div>
+  );
+}
+

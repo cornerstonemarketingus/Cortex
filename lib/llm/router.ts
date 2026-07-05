@@ -149,31 +149,15 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
     text,
     provider: 'claude',
     model,
-    tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens,
+    tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
   };
 }
 
 function localFallback(req: LLMRequest): LLMResponse {
-  if (req.task === 'estimate') {
-    // Parse estimate prompt for key details
-    const tradesMatch = req.prompt.match(/Trades: (.*?)\\./i) || req.prompt.match(/trades?:? (.*?)\\./i);
-    const trades = tradesMatch ? tradesMatch[1].trim() : 'project trades';
-    const totalMatch = req.prompt.match(/Total: \\$(\\d+(?:,\\d{3})*)/i);
-    const total = totalMatch ? totalMatch[1] : '$XX,XXX';
-    const sqftMatch = req.prompt.match(/Square footage: (\\d+)/i);
-    const sqft = sqftMatch ? sqftMatch[1] : 'X,XXX';
-    
-    return {
-      text: `Professional construction estimate summary:\\n\\n**Total Project Cost: ${total}**\\n**Scope: ${sqft} sqft, ${trades}**\\n\\nThis bid includes complete material, labor, overhead (12%), tax (7%), and profit (18%). Timeline: 2-4 weeks typical. Valid 30 days. Questions? Call for detailed takeoff.`,
-      provider: 'local',
-      model: 'estimator-local',
-    };
-  }
-  
   return {
-    text: `[Local model] Received task "${req.task}". Configure OPENAI_API_KEY or ANTHROPIC_API_KEY for full AI responses.`,
+    text: '',
     provider: 'local',
-    model: 'local-fallback',
+    model: 'local',
   };
 }
 

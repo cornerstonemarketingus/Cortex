@@ -7,12 +7,7 @@ type Message = {
   id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
-  estimate?: typeof engine.calculateEstimate extends (arg: any) => infer R ? R : never;
-};
-
-type ChatApiResponse = {
-  responses?: string[];
-  error?: string;
+  estimate?: typeof engine.calculateEstimate extends (arg: EstimateInput) => infer R ? R : never;
 };
 
 const STORAGE_KEY = 'cortex.estimator.chat';
@@ -122,24 +117,19 @@ Try saying something like:
 
       const breakdown = engine.calculateEstimate(estimateInput);
 
-      // Get AI response
-      const aiResponse = await fetch('/api/chat', {
+      // Call the copilot API which handles estimate generation deterministically
+      const aiResponse = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'assistant',
-          provider: 'auto',
-          tone: 'professional',
-          systemPrompt:
-            'You are Estimator Copilot. Given project details and calculated estimate, provide concise, helpful analysis. Keep responses brief and actionable. Format dollars with $ sign.',
-          message: `Project: ${text}\n\nCalculated estimate total: $${breakdown.total.toFixed(2)}\nMaterials: $${breakdown.materialsTotal.toFixed(2)}\nLabor: $${breakdown.laborTotal.toFixed(2)}\nOverhead: $${breakdown.overheadAmount.toFixed(2)}\nTax: $${breakdown.taxAmount.toFixed(2)}\nProfit: $${breakdown.profitAmount.toFixed(2)}`,
-        }),
+        body: JSON.stringify({ input: text, mode: 'estimator' }),
       });
 
-      const parsed = (await aiResponse.json().catch(() => ({}))) as ChatApiResponse;
-      const responseText = Array.isArray(parsed.responses)
-        ? parsed.responses.join('\n')
-        : parsed.error || `Estimate: $${breakdown.total.toFixed(2)}`;
+      const parsed = await aiResponse.json().catch(() => ({})) as {
+        text?: string;
+        action?: { type: string; payload?: Record<string, unknown> };
+        error?: string;
+      };
+      const responseText = parsed.text || parsed.error || `Estimate ready — total $${breakdown.total.toFixed(2)}`;
 
       setMessages((current) => [
         ...current,

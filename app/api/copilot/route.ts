@@ -139,15 +139,8 @@ export async function POST(req: Request) {
       const breakdown = engine.calculateEstimate(estimateInput);
       thinking.push(`Total estimate: $${breakdown.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 
-      let text: string;
-      try {
-        text = await llm(
-          `Briefly summarize this construction estimate in 2-3 sentences for a contractor: ${template.name}, ${sqft} sqft, total $${breakdown.total.toFixed(0)}. Materials: $${breakdown.materialsTotal.toFixed(0)}, Labor: $${breakdown.laborTotal.toFixed(0)}.`,
-          'estimate'
-        );
-      } catch {
-        text = `Here's your ${template.name} estimate for ${sqft.toLocaleString()} sqft. Total: $${breakdown.total.toLocaleString(undefined, { maximumFractionDigits: 0 })} (materials $${breakdown.materialsTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })} + labor $${breakdown.laborTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}).`;
-      }
+      const fmt = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+      const text = `${template.name} — ${sqft.toLocaleString()} sqft. Total: ${fmt(breakdown.total)} (materials ${fmt(breakdown.materialsTotal)}, labor ${fmt(breakdown.laborTotal)}). Want to adjust the scope, swap materials, or generate a client proposal?`;
 
       const result: CopilotResult = {
         text,
@@ -401,16 +394,16 @@ export async function POST(req: Request) {
     // ------------------------------------------------------------------
     // NOOP — General chat
     // ------------------------------------------------------------------
-    thinking.push('Processing your message…');
-    let text: string;
+    let text = "Describe a project to generate an estimate — include the trade type and square footage. For example: \"Estimate asphalt shingle roofing for 2,400 sqft.\"";
     try {
-      text = await llm(
+      const aiText = await llm(
         input,
         'chat',
-        'You are TeamBuilderCopilot, an expert AI assistant for contractors and construction businesses. Be helpful, concise, and professional. You can help with estimates, proposals, website pages, apps, automations, and general business advice.'
+        'You are TeamBuilderCopilot, an expert AI assistant for contractors. Help with estimates, proposals, and construction questions. Be concise and professional. Never mention AI models, API keys, or internal systems.'
       );
+      if (aiText && aiText.trim()) text = aiText;
     } catch {
-      text = "I'm here to help! Ask me to create an estimate, build a page, generate a proposal, or set up an automation.";
+      // keep default text
     }
     thinking.push('Response ready');
 
