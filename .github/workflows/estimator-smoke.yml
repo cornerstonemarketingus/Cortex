@@ -1,0 +1,36 @@
+name: Estimator Output Smoke Test
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/estimate/generate/**'
+      - 'components/estimator/**'
+      - 'lib/estimator/**'
+      - 'lib/llm/**'
+      - 'tests/estimator-output.smoke.ts'
+      - '.github/workflows/estimator-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  estimator-output:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run real estimator route smoke test
+        env:
+          OPENAI_API_KEY: ''
+          ANTHROPIC_API_KEY: ''
+          LLM_PROVIDER_OVERRIDE: ''
+        run: npx tsx tests/estimator-output.smoke.ts
