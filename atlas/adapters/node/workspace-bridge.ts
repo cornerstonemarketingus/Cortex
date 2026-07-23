@@ -221,6 +221,11 @@ export class NodeAtlasWorkspaceBridge implements AtlasWorkspaceBridge {
           };
         }
       }
+
+      return errorResponse(
+        request.id,
+        new Error("Atlas bridge received an unsupported command."),
+      );
     } catch (error) {
       return errorResponse(request.id, error);
     }
