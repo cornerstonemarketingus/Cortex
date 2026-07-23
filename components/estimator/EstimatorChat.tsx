@@ -10,12 +10,22 @@ type Message = {
   estimate?: typeof engine.calculateEstimate extends (arg: any) => infer R ? R : never;
 };
 
-type ChatApiResponse = {
-  responses?: string[];
+type EstimateApiResponse = {
+  summary?: string;
+  grandTotal?: number;
   error?: string;
 };
 
 const STORAGE_KEY = 'cortex.estimator.chat';
+const UNSAFE_FALLBACK_PATTERN = /configure\s+(?:openai|anthropic)_api_key|received task\s+["']?estimate|\[local model\]/i;
+
+function buildSafeSummary(text: string | undefined, total: number): string {
+  const cleaned = text?.trim();
+  if (!cleaned || UNSAFE_FALLBACK_PATTERN.test(cleaned)) {
+    return `Estimate prepared. The projected total is $${total.toFixed(2)}. Review the scope and site conditions before issuing a final contract price.`;
+  }
+  return cleaned;
+}
 
 export default function EstimatorChat() {
   const [input, setInput] = useState('');
@@ -65,11 +75,11 @@ Try saying something like:
   }, [messages]);
 
   const extractProjectData = (text: string) => {
-    const sqftMatch = text.match(/(\d+)\s*(?:sqft|square\s*feet|sf)/i);
-    const zipMatch = text.match(/(\d{5})/);
+    const sqftMatch = text.match(/(\d[\d,]*)\s*(?:sqft|square\s*feet|sf)/i);
+    const zipMatch = text.match(/\b(\d{5})\b/);
 
     return {
-      sqft: sqftMatch ? parseInt(sqftMatch[1], 10) : 1000,
+      sqft: sqftMatch ? parseInt(sqftMatch[1].replace(/,/g, ''), 10) : 1000,
       zip: zipMatch ? zipMatch[1] : '55123',
       description: text,
     };
@@ -94,7 +104,6 @@ Try saying something like:
     try {
       const projectData = extractProjectData(text);
 
-      // Build estimate from engine
       const estimateInput: EstimateInput = {
         materials: [
           {
@@ -122,24 +131,20 @@ Try saying something like:
 
       const breakdown = engine.calculateEstimate(estimateInput);
 
-      // Get AI response
-      const aiResponse = await fetch('/api/chat', {
+      const estimateResponse = await fetch('/api/estimate/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mode: 'assistant',
-          provider: 'auto',
-          tone: 'professional',
-          systemPrompt:
-            'You are Estimator Copilot. Given project details and calculated estimate, provide concise, helpful analysis. Keep responses brief and actionable. Format dollars with $ sign.',
-          message: `Project: ${text}\n\nCalculated estimate total: $${breakdown.total.toFixed(2)}\nMaterials: $${breakdown.materialsTotal.toFixed(2)}\nLabor: $${breakdown.laborTotal.toFixed(2)}\nOverhead: $${breakdown.overheadAmount.toFixed(2)}\nTax: $${breakdown.taxAmount.toFixed(2)}\nProfit: $${breakdown.profitAmount.toFixed(2)}`,
+          input: text,
+          sqft: projectData.sqft,
+          zipCode: projectData.zip,
         }),
       });
 
-      const parsed = (await aiResponse.json().catch(() => ({}))) as ChatApiResponse;
-      const responseText = Array.isArray(parsed.responses)
-        ? parsed.responses.join('\n')
-        : parsed.error || `Estimate: $${breakdown.total.toFixed(2)}`;
+      const parsed = (await estimateResponse.json().catch(() => ({}))) as EstimateApiResponse;
+      const responseText = estimateResponse.ok
+        ? buildSafeSummary(parsed.summary, parsed.grandTotal ?? breakdown.total)
+        : buildSafeSummary(undefined, breakdown.total);
 
       setMessages((current) => [
         ...current,
@@ -158,7 +163,7 @@ Try saying something like:
         {
           id: `error-${Date.now()}`,
           role: 'system',
-          text: `Error: ${message}`,
+          text: 'The estimate could not be completed. Please try again.',
         },
       ]);
     } finally {
@@ -168,7 +173,6 @@ Try saying something like:
 
   return (
     <div className="min-h-screen bg-[#0b0d12] text-slate-100 flex flex-col">
-      {/* Chat messages */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div ref={listRef} className="mx-auto max-w-3xl space-y-4">
           {messages.map((msg) => (
@@ -211,7 +215,6 @@ Try saying something like:
         </div>
       </div>
 
-      {/* Input section */}
       <div className="border-t border-white/10 bg-[#0b0d12]/95 backdrop-blur px-4 py-4 md:px-6">
         <div className="mx-auto max-w-3xl">
           {error && <p className="mb-2 text-xs text-red-300">{error}</p>}
