@@ -1,0 +1,54 @@
+name: Atlas Phase 1
+
+on:
+  pull_request:
+    paths:
+      - "atlas/**"
+      - "docs/atlas/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/atlas-phase-1.yml"
+  push:
+    branches:
+      - "agent/atlas-phase-1-workspace"
+    paths:
+      - "atlas/**"
+      - "docs/atlas/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/atlas-phase-1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-phase-1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  atlas-tests:
+    name: Atlas tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Atlas tests
+        run: npm run test:atlas
+
+      - name: Type-check Atlas
+        run: npx tsc --noEmit --pretty false
