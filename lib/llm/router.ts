@@ -99,7 +99,7 @@ async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
     choices?: Array<{ message?: { content?: string } }>;
     usage?: { total_tokens?: number };
   };
-  const text = data.choices?.[0]?.message?.content ?? '';
+  const text = data.choices?.[0]?.message?.content?.trim() || localFallback(req).text;
   return {
     text,
     provider: 'openai',
@@ -110,7 +110,7 @@ async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
 
 async function callClaude(req: LLMRequest): Promise<LLMResponse> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return callOpenAI({ ...req, task: 'chat' }); // graceful fallback
+  if (!apiKey) return callOpenAI({ ...req, task: 'chat' });
 
   const model = process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022';
   const body: Record<string, unknown> = {
@@ -144,7 +144,7 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
     content?: Array<{ text?: string }>;
     usage?: { input_tokens?: number; output_tokens?: number };
   };
-  const text = data.content?.[0]?.text ?? '';
+  const text = data.content?.[0]?.text?.trim() || localFallback(req).text;
   return {
     text,
     provider: 'claude',
@@ -155,23 +155,22 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
 
 function localFallback(req: LLMRequest): LLMResponse {
   if (req.task === 'estimate') {
-    // Parse estimate prompt for key details
-    const tradesMatch = req.prompt.match(/Trades: (.*?)\\./i) || req.prompt.match(/trades?:? (.*?)\\./i);
+    const tradesMatch = req.prompt.match(/Trades: (.*?)\./i) || req.prompt.match(/trades?:? (.*?)\./i);
     const trades = tradesMatch ? tradesMatch[1].trim() : 'project trades';
-    const totalMatch = req.prompt.match(/Total: \\$(\\d+(?:,\\d{3})*)/i);
-    const total = totalMatch ? totalMatch[1] : '$XX,XXX';
-    const sqftMatch = req.prompt.match(/Square footage: (\\d+)/i);
-    const sqft = sqftMatch ? sqftMatch[1] : 'X,XXX';
-    
+    const totalMatch = req.prompt.match(/Total: \$([\d,]+(?:\.\d{1,2})?)/i);
+    const total = totalMatch ? `$${totalMatch[1]}` : 'the calculated total';
+    const sqftMatch = req.prompt.match(/Square footage: ([\d,]+)/i);
+    const sqft = sqftMatch ? `${sqftMatch[1]} sqft` : 'the provided project size';
+
     return {
-      text: `Professional construction estimate summary:\\n\\n**Total Project Cost: ${total}**\\n**Scope: ${sqft} sqft, ${trades}**\\n\\nThis bid includes complete material, labor, overhead (12%), tax (7%), and profit (18%). Timeline: 2-4 weeks typical. Valid 30 days. Questions? Call for detailed takeoff.`,
+      text: `Professional construction estimate prepared for ${trades}. The projected cost is ${total} for ${sqft}, including materials, labor, overhead, tax, and profit. Review site conditions and final scope before issuing a contract price.`,
       provider: 'local',
       model: 'estimator-local',
     };
   }
-  
+
   return {
-    text: `[Local model] Received task "${req.task}". Configure OPENAI_API_KEY or ANTHROPIC_API_KEY for full AI responses.`,
+    text: 'The assistant is temporarily unavailable. Please try again shortly.',
     provider: 'local',
     model: 'local-fallback',
   };
@@ -185,7 +184,7 @@ export async function routeLLM(req: LLMRequest): Promise<LLMResponse> {
   const prompt = (req.prompt || '').trim();
   if (!prompt) {
     return {
-      text: '[Local model] Empty prompt received. Please provide a request.',
+      text: 'Please provide a request so I can help.',
       provider: 'local',
       model: 'local-guardrail',
     };
