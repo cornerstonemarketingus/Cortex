@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
 import { POST } from '@/app/api/estimate/generate/route';
 
 const UNSAFE_OUTPUT = /configure\s+(?:openai|anthropic)_api_key|received task\s+["']?estimate|\[local model\]/i;
@@ -50,5 +51,11 @@ const roofing = await runCase('roof estimate without API keys', {
 
 assert.equal(roofing.sqft, 2000, 'Roof square footage parsing failed');
 assert.match(roofing.summary ?? '', /Asphalt Shingle Roofing/i, 'Expected roofing trade in summary');
+
+await writeFile(
+  'estimator-smoke-output.json',
+  JSON.stringify({ generatedAt: new Date().toISOString(), framing, roofing }, null, 2),
+  'utf8'
+);
 
 console.log('\nEstimator smoke test passed: real route output is safe and usable without hosted model credentials.');
