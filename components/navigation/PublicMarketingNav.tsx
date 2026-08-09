@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 type MarketingNavItem = {
@@ -13,26 +13,37 @@ const primaryItems: MarketingNavItem[] = [
   { href: '/', label: 'Home' },
   { href: '/signup', label: 'Start' },
   { href: '/estimate', label: 'Estimates' },
+  { href: '/estimate/takeoff', label: 'Plan Takeoff' },
   { href: '/bid-board', label: 'Bid Board' },
   { href: '/workspace', label: 'Workspace' },
   { href: '/automations', label: 'Automations' },
   { href: '/website-builder', label: 'Page Builder' },
 ];
 
-function isActive(pathname: string, href: string): boolean {
+function matchesRoute(pathname: string, href: string): boolean {
   if (href === '/') {
     return pathname === '/';
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Only the most specific matching nav item is marked active (so /estimate/takeoff doesn't also light up /estimate). */
+function getActiveHref(pathname: string): string | null {
+  const matches = primaryItems.filter((item) => matchesRoute(pathname, item.href));
+  if (matches.length === 0) return null;
+  return matches.reduce((longest, item) => (item.href.length > longest.href.length ? item : longest)).href;
+}
+
 export default function PublicMarketingNav() {
   const pathname = usePathname();
+  const activeHref = getActiveHref(pathname);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
-  useEffect(() => {
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b0d12]/95 backdrop-blur-xl">
@@ -49,7 +60,7 @@ export default function PublicMarketingNav() {
 
         <nav className="hidden items-center gap-1.5 xl:flex">
           {primaryItems.map((item) => {
-            const active = isActive(pathname, item.href);
+            const active = item.href === activeHref;
             return (
               <Link
                 key={item.href}
@@ -90,7 +101,7 @@ export default function PublicMarketingNav() {
         <div id="public-marketing-mobile-menu" className="border-t border-white/10 bg-[#0b0d12] xl:hidden">
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-4 py-3 md:px-10">
             {primaryItems.map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = item.href === activeHref;
               return (
                 <Link
                   key={`${item.href}-${item.label}`}

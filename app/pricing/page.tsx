@@ -214,12 +214,12 @@ export default function PricingPage() {
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">1. Upload Your Plans</p>
               <p className="mt-2 text-sm text-slate-200">Drop your plans and run AI takeoff instantly.</p>
-              <a href="/estimate" className="mt-3 inline-flex rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Browse Files</a>
+              <a href="/estimate/takeoff" className="mt-3 inline-flex rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Browse Files</a>
             </div>
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">2. Add Project Details</p>
               <p className="mt-2 text-sm text-slate-200">Project category auto-detect + zip code for regional pricing.</p>
-              <a href="/estimate" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Run AI Takeoff</a>
+              <a href="/estimate/takeoff" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Run AI Takeoff</a>
             </div>
           </div>
         </section>

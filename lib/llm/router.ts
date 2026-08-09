@@ -149,7 +149,7 @@ async function callClaude(req: LLMRequest): Promise<LLMResponse> {
     text,
     provider: 'claude',
     model,
-    tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens,
+    tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
   };
 }
 

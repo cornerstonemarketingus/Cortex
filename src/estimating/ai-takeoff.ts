@@ -17,11 +17,31 @@ export type UploadedPlanFile = {
   size: number;
 };
 
+export type AiDetectedLineItem = {
+  item: string;
+  quantity: number;
+  unit: string;
+};
+
+export type AiPlanFindings = {
+  /** True when at least one uploaded plan image was successfully read by AI vision. */
+  analyzed: boolean;
+  /** Plain-language notes describing what the AI saw in each analyzed plan. */
+  scopeNotes: string[];
+  /** Quantity takeoff items read directly off the plan drawings, with rough placeholder pricing. */
+  items: Array<AiDetectedLineItem & { estimatedUnitCost: number; estimatedTotalCost: number }>;
+  estimatedSubtotal: number;
+};
+
 export type TakeoffInput = {
   files: UploadedPlanFile[];
   description?: string;
   projectCategory?: string;
   zipCode?: string;
+  /** Scope notes produced by AI vision analysis of uploaded plan images. */
+  aiScopeNotes?: string[];
+  /** Quantity/line items read directly off plan images by AI vision analysis. */
+  aiDetectedItems?: AiDetectedLineItem[];
 };
 
 export type BidInput = {
@@ -97,6 +117,7 @@ export type EstimateResult = {
   };
   assumptions: string[];
   proposalMarkdown: string;
+  aiPlanFindings: AiPlanFindings | null;
 };
 
 type Geometry = {
@@ -785,6 +806,7 @@ function finalizeEstimate(
     },
     assumptions: [...template.assumptions],
     proposalMarkdown: '',
+    aiPlanFindings: null,
   };
 
   const guardrail = applyCostPerSqFtGuardrail({
@@ -812,6 +834,40 @@ function finalizeEstimate(
   return result;
 }
 
+/** Rough generic placeholder pricing by unit, used only for AI-detected items so they render as real dollar line items. Not a substitute for the calibrated category engine below. */
+function roughUnitCost(unit: string): number {
+  const normalized = unit.toLowerCase();
+  if (normalized.includes('sq')) return 9;
+  if (normalized.includes('linear') || normalized === 'lf' || normalized.includes('ft')) return 6;
+  if (normalized.includes('ea') || normalized.includes('each') || normalized.includes('fixture') || normalized.includes('unit')) return 175;
+  if (normalized.includes('allowance') || normalized.includes('set')) return 450;
+  return 50;
+}
+
+function buildAiPlanFindings(input: TakeoffInput): AiPlanFindings | null {
+  const scopeNotes = (input.aiScopeNotes || []).filter((note) => note.trim().length > 0);
+  const detectedItems = input.aiDetectedItems || [];
+
+  if (scopeNotes.length === 0 && detectedItems.length === 0) return null;
+
+  const items = detectedItems.slice(0, 40).map((line) => {
+    const estimatedUnitCost = roughUnitCost(line.unit);
+    return {
+      ...line,
+      quantity: roundMoney(line.quantity),
+      estimatedUnitCost,
+      estimatedTotalCost: roundMoney(line.quantity * estimatedUnitCost),
+    };
+  });
+
+  return {
+    analyzed: true,
+    scopeNotes,
+    items,
+    estimatedSubtotal: roundMoney(items.reduce((sum, line) => sum + line.estimatedTotalCost, 0)),
+  };
+}
+
 export function getProjectCategoryOptions() {
   return PROJECT_CATEGORIES.map((category) => ({
     id: category,
@@ -821,7 +877,11 @@ export function getProjectCategoryOptions() {
 
 export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
   const description = input.description?.trim() || '';
-  const textSignal = [description, ...input.files.map((file) => file.name)].join(' ').trim();
+  const aiScopeText = (input.aiScopeNotes || []).join(' ');
+  const aiItemsText = (input.aiDetectedItems || []).map((item) => `${item.item} ${item.unit}`).join(' ');
+  const textSignal = [description, ...input.files.map((file) => file.name), aiScopeText, aiItemsText]
+    .join(' ')
+    .trim();
 
   const explicitCategory = normalizeCategory(input.projectCategory);
   const categoryFromFiles = detectCategoryFromFiles(input.files);
@@ -851,7 +911,8 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
     baseConfidence * 0.55 +
       signals.scopeCompleteness * 0.2 +
       signals.geometryConfidence * 0.15 +
-      signals.categoryConfidence * 0.1,
+      signals.categoryConfidence * 0.1 +
+      (aiScopeText ? 0.05 : 0),
     0.5,
     0.99
   );
@@ -860,13 +921,20 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
     ? `Uploaded ${input.files.length} plan file(s): ${input.files.map((file) => file.name).join(', ')}`
     : 'No plan files uploaded';
 
+  const aiVisionSummary = aiScopeText
+    ? `AI vision read ${(input.aiScopeNotes || []).length} plan image(s): ${aiScopeText}`
+    : null;
+
   const summary = [
     fileSummary,
+    aiVisionSummary,
     description ? `Notes: ${description}` : 'No additional project notes supplied.',
     `Detected area basis: ${geometry.areaSqFt.toFixed(1)} sq ft`,
-  ].join(' ');
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join(' ');
 
-  return finalizeEstimate(
+  const result = finalizeEstimate(
     'plan-takeoff',
     detectedCategory,
     confidence,
@@ -876,6 +944,8 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
     geometry,
     signals
   );
+  result.aiPlanFindings = buildAiPlanFindings(input);
+  return result;
 }
 
 export function createBidEstimate(input: BidInput): EstimateResult {

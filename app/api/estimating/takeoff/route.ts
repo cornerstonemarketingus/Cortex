@@ -1,6 +1,7 @@
 import { ApiError } from '@/src/crm/core/api';
 import { jsonResponse, parseOptionalString, withApiHandler } from '@/src/crm/core/http';
 import { createTakeoffEstimate, getProjectCategoryOptions, type UploadedPlanFile } from '@/src/estimating/ai-takeoff';
+import { analyzePlanImages, isVisionAnalyzableImage, type PlanVisionLineItem } from '@/lib/llm/vision';
 import { NextRequest } from 'next/server';
 import {
   consumeEstimateReaderCredits,
@@ -8,6 +9,8 @@ import {
 } from '@/src/billing/subscription.service';
 
 export const runtime = 'nodejs';
+
+const MAX_VISION_IMAGES_PER_REQUEST = 4;
 
 type JsonBody = {
   files?: Array<{ name?: unknown; type?: unknown; size?: unknown }>;
@@ -44,9 +47,8 @@ async function parseInput(request: Request) {
 
   if (contentType.includes('multipart/form-data')) {
     const formData = await request.formData();
-    const files = formData
-      .getAll('files')
-      .filter((item): item is File => item instanceof File)
+    const rawFiles = formData.getAll('files').filter((item): item is File => item instanceof File);
+    const files = rawFiles
       .map((file) => ({
         name: file.name,
         type: file.type || 'application/octet-stream',
@@ -56,6 +58,7 @@ async function parseInput(request: Request) {
 
     return {
       files,
+      rawFiles: rawFiles.slice(0, 20),
       description: parseOptionalString(formData.get('description')),
       projectCategory: parseOptionalString(formData.get('projectCategory')),
       zipCode: parseOptionalString(formData.get('zipCode')),
@@ -70,10 +73,43 @@ async function parseInput(request: Request) {
 
   return {
     files: normalizeFileMetadata(body.files),
+    rawFiles: [] as File[],
     description: parseOptionalString(body.description),
     projectCategory: parseOptionalString(body.projectCategory),
     zipCode: parseOptionalString(body.zipCode),
     subscriberEmail: parseOptionalString(body.subscriberEmail),
+  };
+}
+
+async function runPlanVisionAnalysis(rawFiles: File[]): Promise<{
+  scopeNotes: string[];
+  detectedItems: PlanVisionLineItem[];
+}> {
+  if (!process.env.ANTHROPIC_API_KEY || rawFiles.length === 0) {
+    return { scopeNotes: [], detectedItems: [] };
+  }
+
+  const analyzable = rawFiles.filter((file) => isVisionAnalyzableImage(file.type, file.size)).slice(0, MAX_VISION_IMAGES_PER_REQUEST);
+  if (analyzable.length === 0) {
+    return { scopeNotes: [], detectedItems: [] };
+  }
+
+  const images = await Promise.all(
+    analyzable.map(async (file) => {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      return {
+        base64: buffer.toString('base64'),
+        mediaType: file.type,
+        fileName: file.name,
+      };
+    })
+  );
+
+  const analyses = await analyzePlanImages(images);
+
+  return {
+    scopeNotes: analyses.map((analysis) => analysis.scopeSummary),
+    detectedItems: analyses.flatMap((analysis) => analysis.lineItems),
   };
 }
 
@@ -85,6 +121,11 @@ export async function GET() {
       engine: {
         version: 'estimator-v1.3',
         strategy: 'category + geometry + regional + complexity + risk ensemble',
+      },
+      aiVision: {
+        enabled: Boolean(process.env.ANTHROPIC_API_KEY),
+        supportedTypes: ['PNG', 'JPG', 'WEBP'],
+        notes: 'PDF plans currently contribute file-name and description signal only; upload PNG/JPG/WEBP images of plan pages for full AI visual takeoff.',
       },
       notes: 'Upload plans or send file metadata and run AI takeoff to get an itemized estimate (active paid subscription + subscriberEmail required).',
     });
@@ -126,7 +167,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const estimate = createTakeoffEstimate(input);
+    const vision = await runPlanVisionAnalysis(input.rawFiles);
+
+    const estimate = createTakeoffEstimate({
+      files: input.files,
+      description: input.description,
+      projectCategory: input.projectCategory,
+      zipCode: input.zipCode,
+      aiScopeNotes: vision.scopeNotes,
+      aiDetectedItems: vision.detectedItems,
+    });
 
     return jsonResponse(
       {

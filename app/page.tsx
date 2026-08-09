@@ -34,9 +34,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 4 Core Features ── */}
+      {/* ── Core Features ── */}
       <section className="mx-auto max-w-5xl px-6 pb-16">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
           {/* Estimating */}
           <Link
@@ -51,6 +51,22 @@ export default function HomePage() {
             </p>
             <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-[#C69C6D] group-hover:gap-2 transition-all">
               Start an estimate <span>→</span>
+            </div>
+          </Link>
+
+          {/* AI Plan Takeoff */}
+          <Link
+            href="/estimate/takeoff"
+            className="group relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-gradient-to-br from-[#08201a] to-[#0d1826] p-6 hover:border-emerald-300/50 transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-900/50 flex items-center justify-center text-xl mb-4">📐</div>
+            <p className="text-xs uppercase tracking-widest text-emerald-300 font-semibold mb-1">New</p>
+            <h2 className="text-lg font-bold text-white mb-2">AI Plan Takeoff</h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Upload floor plans, blueprints, or job-site photos and AI reads the drawing to build a full quantity takeoff — line items, quantities, and costs.
+            </p>
+            <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-emerald-300 group-hover:gap-2 transition-all">
+              Upload plans <span>→</span>
             </div>
           </Link>
 

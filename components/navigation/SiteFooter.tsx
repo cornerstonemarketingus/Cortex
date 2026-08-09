@@ -16,6 +16,7 @@ export default function SiteFooter() {
           <div className="mt-2 flex flex-col gap-1 text-sm text-slate-300">
             <Link href="/pricing" className="hover:text-white">Home</Link>
             <Link href="/estimate" className="hover:text-white">Estimates</Link>
+            <Link href="/estimate/takeoff" className="hover:text-white">Plan Takeoff</Link>
             <Link href="/automations" className="hover:text-white">Automations</Link>
             <Link href="/builder" className="hover:text-white">Page Builder</Link>
           </div>
