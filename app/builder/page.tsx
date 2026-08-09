@@ -442,7 +442,7 @@ export default function BuilderEntryPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#07133c] via-[#10245f] to-[#0a1538] text-white">
+    <main className="min-h-screen bg-[#070b10] text-white">
       <CortexTopTabs />
       <div className="mx-auto max-w-6xl p-6 md:p-10">
         <header className="mb-8">

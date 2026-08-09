@@ -39,7 +39,7 @@ const clusters: Cluster[] = [
 
 export default function ResourcesBlogPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#211713] via-[#2e221d] to-[#161110] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">

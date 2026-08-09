@@ -194,7 +194,7 @@ export default function AppBuilderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0b1220] via-[#111827] to-[#020617] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">

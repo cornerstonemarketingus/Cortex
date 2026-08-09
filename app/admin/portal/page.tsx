@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function AdminPortalPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#071638] via-[#0a2a63] to-[#081739] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
         <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Admin Portal</p>

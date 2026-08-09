@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getPreferredProductHost } from '@/lib/subdomains';
+import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 
 const hierarchy = [
   {
@@ -61,7 +62,8 @@ export default function EnginePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#041338] via-[#0a245f] to-[#061433] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
+      <PublicMarketingNav />
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
         <header className="rounded-3xl border border-blue-300/30 bg-blue-500/10 p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-blue-200">System Architecture</p>

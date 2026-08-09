@@ -117,7 +117,7 @@ export default function HomeownerEstimatePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#05143c] via-[#102c72] to-[#071638] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <CortexTopTabs />
 
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">

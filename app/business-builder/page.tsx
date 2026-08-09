@@ -345,7 +345,7 @@ export default function BusinessBuilderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#031336] via-[#0a2668] to-[#07162f] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <CortexTopTabs />
 
       <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">

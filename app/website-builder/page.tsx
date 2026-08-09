@@ -19,7 +19,7 @@ export default function WebsiteBuilderPage() {
   }, [promptParam]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#2c1205] via-[#4a1d0a] to-[#140704] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">

@@ -2,7 +2,7 @@ import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#041238] via-[#0a255f] to-[#07163a] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-4xl px-6 py-12 md:px-10">

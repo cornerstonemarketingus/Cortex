@@ -43,7 +43,7 @@ export default function DataDeletionPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#081436] via-[#0b2458] to-[#081736] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
       <div className="mx-auto max-w-4xl px-6 py-10 md:px-10">
         <header className="rounded-3xl border border-rose-300/35 bg-rose-500/10 p-6">

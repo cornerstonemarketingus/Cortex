@@ -92,7 +92,7 @@ const sections: Array<{ title: string; body: string[] }> = [
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#07143a] via-[#0d2a66] to-[#081736] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
       <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
         <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">

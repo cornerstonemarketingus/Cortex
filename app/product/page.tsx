@@ -118,7 +118,7 @@ export default function ProductPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#1f1613] via-[#2b1f1a] to-[#171313] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">

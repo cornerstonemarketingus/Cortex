@@ -364,7 +364,7 @@ export default function CortexUnifiedWorkspacePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#07143a] via-[#0d2a66] to-[#081736] text-slate-100">
+    <main className="min-h-screen bg-[#070b10] text-slate-100">
       <PublicMarketingNav />
 
       {showVaultEntrance ? (

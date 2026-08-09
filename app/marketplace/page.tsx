@@ -178,7 +178,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#04122f] via-[#081f52] to-[#061330] text-white">
+    <main className="min-h-screen bg-[#070b10] text-white">
       <CortexTopTabs />
 
       <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
