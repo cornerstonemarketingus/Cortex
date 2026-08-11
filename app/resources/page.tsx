@@ -1,20 +1,25 @@
 import Link from 'next/link';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
 
 const resourceCards = [
   {
+    icon: '📚',
     title: 'Guides',
     description: 'Playbooks for estimating, lead generation, and CRM automation.',
     href: '/resources/blog',
     cta: 'Open Guides',
   },
   {
+    icon: '🔎',
     title: 'SEO Clusters',
     description: 'Contractor, homeowner, and SaaS content clusters linked to the estimator funnel.',
     href: '/resources/blog',
     cta: 'Browse Clusters',
   },
   {
+    icon: '🧮',
     title: 'Cost Calculator',
     description: 'Public lead-magnet estimator with location-aware low/avg/high ballpark pricing.',
     href: '/estimate',
@@ -24,33 +29,31 @@ const resourceCards = [
 
 export default function ResourcesPage() {
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        kicker="Resources"
+        title="SEO content that produces pipeline"
+        subtitle="Customer-intent guides for Minnesota and nationwide local-service markets, routed straight into the estimator and CRM automation demos."
+      />
 
-      <div className="mx-auto max-w-6xl px-6 py-12 md:px-10">
-        <header className="rounded-3xl border border-orange-300/30 bg-orange-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-orange-200">Resources</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">SEO Content That Produces Pipeline</h1>
-          <p className="mt-3 max-w-3xl text-sm text-orange-100/90">
-            Publish customer-intent guides for Minnesota and nationwide local-service markets, then route traffic into estimator and CRM automation demos.
-          </p>
-        </header>
-
-        <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="mx-auto max-w-5xl px-6 pb-16">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {resourceCards.map((card) => (
-            <article key={card.title} className="rounded-2xl border border-white/15 bg-black/25 p-5">
-              <h2 className="text-xl font-semibold">{card.title}</h2>
-              <p className="mt-2 text-sm text-slate-300">{card.description}</p>
-              <Link
-                href={card.href}
-                className="mt-4 inline-flex rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30"
-              >
-                {card.cta}
-              </Link>
-            </article>
+            <Link key={card.title} href={card.href} className="group">
+              <Card hover className="h-full">
+                <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/60 flex items-center justify-center text-xl mb-4">
+                  {card.icon}
+                </div>
+                <h2 className="text-lg font-bold text-white mb-2">{card.title}</h2>
+                <p className="text-sm text-slate-400 leading-relaxed">{card.description}</p>
+                <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-[#C69C6D] group-hover:gap-2 transition-all">
+                  {card.cta} <span>→</span>
+                </div>
+              </Card>
+            </Link>
           ))}
-        </section>
-      </div>
-    </main>
+        </div>
+      </section>
+    </PageShell>
   );
 }

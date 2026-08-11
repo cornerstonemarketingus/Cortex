@@ -1,4 +1,7 @@
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 import BuilderCopilotPanel from '@/components/copilot/BuilderCopilotPanel';
 import EstimatorTool from '@/components/estimator/EstimatorTool';
 
@@ -24,13 +27,7 @@ const packageCards: PackageCard[] = [
     price: '$79',
     unit: '/mo',
     valueLine: 'Launch your first revenue loop',
-    points: [
-      '150 monthly tokens',
-      'AI estimate builder',
-      'Lead capture website',
-      'CRM starter pipeline',
-      '1 user',
-    ],
+    points: ['150 monthly tokens', 'AI estimate builder', 'Lead capture website', 'CRM starter pipeline', '1 user'],
     cta: 'Launch Starter',
   },
   {
@@ -38,13 +35,7 @@ const packageCards: PackageCard[] = [
     price: '$149',
     unit: '/mo',
     valueLine: 'Built for teams closing weekly',
-    points: [
-      '400 monthly tokens',
-      'Advanced estimator + takeoff',
-      'Automation workflows',
-      'Proposal + payment links',
-      '3 users',
-    ],
+    points: ['400 monthly tokens', 'Advanced estimator + takeoff', 'Automation workflows', 'Proposal + payment links', '3 users'],
     cta: 'Launch Growth',
     featured: true,
   },
@@ -80,6 +71,14 @@ const packageCards: PackageCard[] = [
   },
 ] as const;
 
+const proFeatures = [
+  { title: 'AI Proposal Generator', body: 'Type a plain-English scope and get a client-ready proposal.' },
+  { title: 'E-Signatures', body: 'Clients sign on phone and your team is notified instantly.' },
+  { title: 'Job Profit Calculator', body: 'Validate real margin before you send the bid.' },
+  { title: 'Change Order Generator', body: 'Create and sign formal change orders in minutes.' },
+  { title: 'Lead Capture Page', body: 'Share once, collect leads automatically.' },
+] as const;
+
 const reviews = [
   {
     author: 'Jason Miller',
@@ -108,32 +107,54 @@ const reviews = [
   },
 ] as const;
 
+const planTakeoffTags = ['Floor Plans', 'Blueprints', 'Sketches', 'Site Plans', 'Hand Drawings'];
+
+const tokenPacks = [
+  { id: 'boost-500', name: 'Boost 500', price: '$49', tokens: '500 tokens' },
+  { id: 'pro-1500', name: 'Pro 1500', price: '$129', tokens: '1,500 tokens' },
+  { id: 'scale-5000', name: 'Scale 5000', price: '$349', tokens: '5,000 tokens' },
+] as const;
+
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#0f172a_0%,#111827_42%,#020617_100%)] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        kicker="Construction SaaS Revenue System"
+        title="Get more construction jobs without chasing leads"
+        subtitle="Builder Copilot builds your website, creates estimates, and runs follow-up automatically so your team stays in close mode."
+      />
 
-      <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Construction SaaS Revenue System</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Get more construction jobs without chasing leads</h1>
-          <p className="mt-3 max-w-4xl text-sm text-cyan-100/90 md:text-base">
-            Builder Copilot builds your website, creates estimates, and runs follow-up automatically so your team stays in close mode.
-          </p>
-        </header>
+      <div className="mx-auto max-w-5xl px-6 pb-16 space-y-12">
+        {/* ROI proof */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {roiProof.map((item) => (
+            <Card key={item.label}>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">{item.label}</p>
+              <p className="mt-2 text-2xl font-bold text-white">{item.value}</p>
+              <p className="mt-1 text-xs text-slate-400">{item.note}</p>
+            </Card>
+          ))}
+        </div>
 
-        <EstimatorTool />
+        {/* Estimator tool */}
+        <section>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold mb-3">Try It Free</p>
+          <EstimatorTool />
+        </section>
 
-        <section className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
-          <article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Base44 Style Quick Start</p>
-            <h2 className="mt-2 text-xl font-semibold">Estimator + Page Builder in one flow</h2>
-            <p className="mt-2 text-sm text-slate-200">Launch an estimate workflow, then use copilot to generate conversion pages and automation logic without switching tools.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <a href="/estimate" className="rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Open Estimator</a>
-              <a href="/builder" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20">Open Page Builder</a>
+        {/* Quick start */}
+        <section className="grid grid-cols-1 gap-5 lg:grid-cols-[380px_1fr] lg:items-start">
+          <Card>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Quick Start</p>
+            <h2 className="mt-2 text-xl font-bold text-white">Estimator + Page Builder in one flow</h2>
+            <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+              Launch an estimate workflow, then use copilot to generate conversion pages and automation logic without switching tools.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button href="/estimate">Open Estimator</Button>
+              <Button href="/builder" variant="secondary">Open Page Builder</Button>
             </div>
-          </article>
+          </Card>
 
           <BuilderCopilotPanel
             title="Builder Copilot Assistant"
@@ -144,136 +165,151 @@ export default function PricingPage() {
           />
         </section>
 
-        <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {roiProof.map((item) => (
-            <article key={item.label} className="rounded-2xl border border-white/20 bg-black/30 p-4">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200">{item.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-stone-100">{item.value}</p>
-              <p className="mt-1 text-xs text-stone-300">{item.note}</p>
-            </article>
-          ))}
-        </section>
-
-        <section id="packages" className="mt-6 rounded-3xl border border-cyan-300/30 bg-white/5 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Packages</p>
-          <h2 className="mt-2 text-3xl font-semibold text-cyan-100">All paid plans start at $79 and scale to enterprise operating systems.</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {/* Packages */}
+        <section id="packages">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Packages</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">All paid plans start at $79 and scale to enterprise operating systems.</h2>
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-4">
             {packageCards.map((pkg) => (
-              <article
-                key={pkg.name}
-                className={`rounded-2xl border p-4 ${pkg.featured ? 'border-cyan-300/50 bg-cyan-500/12 shadow-xl shadow-cyan-950/25' : 'border-white/20 bg-black/25'}`}
-              >
-                <p className="text-sm font-semibold text-stone-100">{pkg.name}</p>
-                <p className="mt-2 text-3xl font-semibold text-cyan-100">{pkg.price}<span className="text-sm font-medium text-cyan-200">{pkg.unit}</span></p>
-                <p className="mt-1 text-xs text-stone-300">{pkg.valueLine}</p>
-                <div className="mt-3 space-y-1">
+              <Card key={pkg.name} className={pkg.featured ? 'border-[#C69C6D]/50 bg-[#1a1508]/40' : undefined}>
+                <p className="text-sm font-semibold text-white">{pkg.name}</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {pkg.price}
+                  <span className="text-sm font-medium text-slate-400">{pkg.unit}</span>
+                </p>
+                <p className="mt-1 text-xs text-slate-400">{pkg.valueLine}</p>
+                <div className="mt-4 space-y-1.5">
                   {pkg.points.map((point) => (
-                    <p key={point} className="text-xs text-stone-200">- {point}</p>
+                    <p key={point} className="text-xs text-slate-300">
+                      · {point}
+                    </p>
                   ))}
                 </div>
-                <a href="/signup?next=/workspace" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">
-                  {pkg.cta}
-                </a>
-              </article>
+                <div className="mt-5">
+                  <Button href="/signup?next=/workspace" variant={pkg.featured ? 'primary' : 'secondary'} className="w-full">
+                    {pkg.cta}
+                  </Button>
+                </div>
+              </Card>
             ))}
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Token Packs</p>
-          <h2 className="mt-2 text-2xl font-semibold text-amber-100">Pay for everything with tokens when you need extra capacity</h2>
-          <p className="mt-2 text-sm text-amber-50/90">Tokens are consumed by estimator runs, copilot operations, automation executions, and preview generation.</p>
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            {[
-              { id: 'boost-500', name: 'Boost 500', price: '$49', tokens: '500 tokens' },
-              { id: 'pro-1500', name: 'Pro 1500', price: '$129', tokens: '1,500 tokens' },
-              { id: 'scale-5000', name: 'Scale 5000', price: '$349', tokens: '5,000 tokens' },
-            ].map((pack) => (
-              <article key={pack.id} className="rounded-xl border border-white/20 bg-black/25 p-4">
-                <p className="text-sm font-semibold text-amber-100">{pack.name}</p>
-                <p className="mt-1 text-xl font-semibold text-white">{pack.price}</p>
-                <p className="text-xs text-slate-300">{pack.tokens}</p>
-                <a href={`/subscription?buyTokens=${encodeURIComponent(pack.id)}`} className="mt-3 inline-flex rounded-lg border border-amber-300/35 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30">
+        {/* Token packs */}
+        <section>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Token Packs</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Pay for everything with tokens when you need extra capacity</h2>
+          <p className="mt-2 text-sm text-slate-400">Tokens are consumed by estimator runs, copilot operations, automation executions, and preview generation.</p>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {tokenPacks.map((pack) => (
+              <Card key={pack.id}>
+                <p className="text-sm font-semibold text-white">{pack.name}</p>
+                <p className="mt-1 text-xl font-bold text-white">{pack.price}</p>
+                <p className="text-xs text-slate-400">{pack.tokens}</p>
+                <Button href={`/subscription?buyTokens=${encodeURIComponent(pack.id)}`} variant="secondary" className="mt-4 w-full">
                   Buy Token Pack
-                </a>
-              </article>
+                </Button>
+              </Card>
             ))}
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-white/20 bg-black/25 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Plan Takeoff</p>
-          <h2 className="mt-2 text-2xl font-semibold">Upload blueprints or floor plans and get an instant itemized estimate.</h2>
-          <p className="mt-2 text-sm text-slate-300">Supports floor plans, blueprints, sketches, site plans, and hand drawings in PNG, JPG, WEBP, or PDF.</p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-200">
-            {['Floor Plans', 'Blueprints', 'Sketches', 'Site Plans', 'Hand Drawings'].map((item) => (
-              <span key={item} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{item}</span>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">1. Upload Your Plans</p>
-              <p className="mt-2 text-sm text-slate-200">Drop your plans and run AI takeoff instantly.</p>
-              <a href="/estimate/takeoff" className="mt-3 inline-flex rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200">Browse Files</a>
+        {/* Plan takeoff */}
+        <section>
+          <Card>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Plan Takeoff</p>
+            <h2 className="mt-2 text-xl font-bold text-white">Upload blueprints or floor plans and get an instant itemized estimate.</h2>
+            <p className="mt-2 text-sm text-slate-400">Supports floor plans, blueprints, sketches, site plans, and hand drawings in PNG, JPG, WEBP, or PDF.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {planTakeoffTags.map((item) => (
+                <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
+                  {item}
+                </span>
+              ))}
             </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">2. Add Project Details</p>
-              <p className="mt-2 text-sm text-slate-200">Project category auto-detect + zip code for regional pricing.</p>
-              <a href="/estimate/takeoff" className="mt-3 inline-flex rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">Run AI Takeoff</a>
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-[#C69C6D] font-semibold">1. Upload Your Plans</p>
+                <p className="mt-2 text-sm text-slate-300">Drop your plans and run AI takeoff instantly.</p>
+                <Button href="/estimate/takeoff" className="mt-3">
+                  Browse Files
+                </Button>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-[#C69C6D] font-semibold">2. Add Project Details</p>
+                <p className="mt-2 text-sm text-slate-300">Project category auto-detect + zip code for regional pricing.</p>
+                <Button href="/estimate/takeoff" variant="secondary" className="mt-3">
+                  Run AI Takeoff
+                </Button>
+              </div>
             </div>
-          </div>
+          </Card>
         </section>
 
-        <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">
-          <article className="rounded-3xl border border-emerald-300/30 bg-emerald-500/10 p-5 lg:col-span-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Why Contractors Love Pro</p>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5 text-sm">
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">AI Proposal Generator: type a plain-English scope and get a client-ready proposal.</div>
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">E-Signatures: clients sign on phone and your team is notified instantly.</div>
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Job Profit Calculator: validate real margin before you send the bid.</div>
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Change Order Generator: create and sign formal change orders in minutes.</div>
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">Lead Capture Page: share once, collect leads automatically.</div>
-            </div>
-          </article>
-
-          <article className="rounded-3xl border border-white/20 bg-black/25 p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Local Presence</p>
-            <h2 className="mt-2 text-2xl font-semibold text-cyan-100">Map + Reputation Signal</h2>
-            <p className="mt-2 text-sm text-slate-300">Embed this into the offer page to reinforce local trust and improve conversion quality.</p>
-            <div className="mt-3 overflow-hidden rounded-2xl border border-white/15">
-              <iframe
-                title="Miller Custom Framing Map"
-                src="https://maps.google.com/maps?q=Miller%20Custom%20Framing&t=&z=13&ie=UTF8&iwloc=&output=embed"
-                className="h-72 w-full border-0"
-                loading="lazy"
-              />
-            </div>
-          </article>
-
-          <article className="rounded-3xl border border-white/20 bg-black/25 p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Client Reviews</p>
-            <h2 className="mt-2 text-2xl font-semibold text-amber-100">What Contractors Are Saying</h2>
-            <div className="mt-3 space-y-3">
-              {reviews.map((review) => (
-                <div key={review.author} className="rounded-xl border border-white/15 bg-white/5 p-3">
-                  <p className="text-sm text-slate-200">{review.copy}</p>
-                  <p className="mt-2 text-xs text-cyan-100">{review.author} - {review.business}</p>
+        {/* Why contractors love pro */}
+        <section>
+          <Card>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Why Contractors Love Pro</p>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+              {proFeatures.map((feature) => (
+                <div key={feature.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-sm font-semibold text-white">{feature.title}</p>
+                  <p className="mt-1 text-xs text-slate-400">{feature.body}</p>
                 </div>
               ))}
             </div>
-          </article>
+          </Card>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Demo + Trial</p>
-          <h2 className="mt-2 text-3xl font-semibold text-amber-100">Try instantly, then launch your real business.</h2>
-          <p className="mt-2 text-sm text-amber-50/90">Demo mode loads a pre-built business with sample leads and estimate data. Trial mode saves your system with your business data.</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <a href="/signup" className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15">Try Demo</a>
-            <a href="/signup?next=/workspace" className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-200">Launch My Business</a>
-          </div>
+        {/* Local presence + reviews */}
+        <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <Card>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Local Presence</p>
+            <h2 className="mt-2 text-xl font-bold text-white">Map + Reputation Signal</h2>
+            <p className="mt-2 text-sm text-slate-400">Embed this into the offer page to reinforce local trust and improve conversion quality.</p>
+            <div className="mt-4 overflow-hidden rounded-xl border border-white/10">
+              <iframe
+                title="Miller Custom Framing Map"
+                src="https://maps.google.com/maps?q=Miller%20Custom%20Framing&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                className="h-64 w-full border-0"
+                loading="lazy"
+              />
+            </div>
+          </Card>
+
+          <Card>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Client Reviews</p>
+            <h2 className="mt-2 text-xl font-bold text-white">What Contractors Are Saying</h2>
+            <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+              {reviews.map((review) => (
+                <div key={review.author} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-sm text-slate-300 leading-relaxed">{review.copy}</p>
+                  <p className="mt-2 text-xs font-semibold text-[#C69C6D]">
+                    {review.author} · {review.business}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+
+        {/* Demo / trial CTA */}
+        <section>
+          <Card className="text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Demo + Trial</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Try instantly, then launch your real business.</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
+              Demo mode loads a pre-built business with sample leads and estimate data. Trial mode saves your system with your business data.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <Button href="/signup" variant="secondary">
+                Try Demo
+              </Button>
+              <Button href="/signup?next=/workspace">Launch My Business</Button>
+            </div>
+          </Card>
         </section>
       </div>
-    </main>
+    </PageShell>
   );
 }

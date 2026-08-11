@@ -1,5 +1,7 @@
-import Link from 'next/link';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 type Cluster = {
   title: string;
@@ -39,54 +41,43 @@ const clusters: Cluster[] = [
 
 export default function ResourcesBlogPage() {
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        kicker="Resources / Blog"
+        title="Customer-intent clusters that drive revenue"
+        subtitle="Every article is mapped to one of three outcomes: estimate request, automation consult, or business-growth onboarding."
+      />
 
-      <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
-        <header className="rounded-3xl border border-orange-300/30 bg-orange-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-orange-200">Resources / Blog</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Customer-Intent Clusters That Drive Revenue</h1>
-          <p className="mt-3 max-w-3xl text-sm text-orange-100/90">
-            Every article is mapped to one of three outcomes: estimate request, automation consult, or business-growth onboarding.
-          </p>
-        </header>
-
-        <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-6 pb-8">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {clusters.map((cluster) => (
-            <article key={cluster.title} className="rounded-2xl border border-white/15 bg-black/25 p-5">
-              <h2 className="text-xl font-semibold text-amber-100">{cluster.title}</h2>
-              <p className="mt-2 text-sm text-slate-300">{cluster.summary}</p>
-              <ul className="mt-3 space-y-2 text-xs text-slate-200">
+            <Card key={cluster.title}>
+              <h2 className="text-lg font-bold text-white">{cluster.title}</h2>
+              <p className="mt-2 text-sm text-slate-400 leading-relaxed">{cluster.summary}</p>
+              <ul className="mt-4 space-y-2">
                 {cluster.posts.map((post) => (
-                  <li key={post.title} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                    <p className="font-semibold">{post.title}</p>
-                    <p className="mt-1 text-slate-400">Keyword: {post.keyword}</p>
+                  <li key={post.title} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                    <p className="text-xs font-semibold text-slate-200">{post.title}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Keyword: {post.keyword}</p>
                   </li>
                 ))}
               </ul>
-            </article>
+            </Card>
           ))}
-        </section>
+        </div>
+      </section>
 
-        <section className="mt-6 rounded-2xl border border-orange-300/30 bg-orange-500/10 p-5">
-          <h2 className="text-xl font-semibold text-orange-100">Conversion Funnel</h2>
-          <p className="mt-2 text-sm text-orange-50/90">Move blog traffic into estimator actions and CRM automation setup without extra navigation friction.</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link
-              href="/estimate"
-              className="rounded-lg bg-orange-400 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-orange-300"
-            >
-              Try Cost Calculator
-            </Link>
-            <Link
-              href="/construction-solutions"
-              className="rounded-lg border border-amber-300/40 bg-amber-500/20 px-4 py-2 text-xs font-semibold hover:bg-amber-500/30"
-            >
-              Book Contractor Demo
-            </Link>
+      <section className="mx-auto max-w-6xl px-6 pb-16">
+        <Card>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Conversion Funnel</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Turn blog traffic into pipeline</h2>
+          <p className="mt-2 text-sm text-slate-400">Move blog traffic into estimator actions and CRM automation setup without extra navigation friction.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button href="/estimate">Try Cost Calculator</Button>
+            <Button href="/construction-solutions" variant="secondary">Book Contractor Demo</Button>
           </div>
-        </section>
-      </div>
-    </main>
+        </Card>
+      </section>
+    </PageShell>
   );
 }
