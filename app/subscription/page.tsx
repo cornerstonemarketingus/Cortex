@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 type UsageResponse = {
   usage?: {
@@ -105,42 +108,36 @@ export default function SubscriptionDashboardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Billing"
+        title="Token + subscription usage dashboard"
+        subtitle="Check active status and remaining tokens before launching estimate runs, copilot commands, and automations."
+      />
 
-      <div className="mx-auto max-w-4xl px-6 py-10 md:px-10">
-        <section className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Billing</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Token + Subscription Usage Dashboard</h1>
-          <p className="mt-3 text-sm text-cyan-100/90">
-            Check active status and remaining tokens before launching estimate runs, copilot commands, and automations.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-2 md:flex-row">
+      <div className="mx-auto max-w-4xl px-6 pb-16 space-y-5">
+        <Card>
+          <div className="flex flex-col gap-2 md:flex-row">
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@yourcompany.com"
-              className="w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
             />
-            <button
-              type="button"
-              onClick={() => void loadUsage()}
-              disabled={loading}
-              className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
-            >
+            <Button type="button" onClick={() => void loadUsage()} disabled={loading} className="disabled:opacity-60 whitespace-nowrap">
               {loading ? 'Loading...' : 'Check Usage'}
-            </button>
+            </Button>
           </div>
 
-          <div className="mt-2 max-w-sm">
-            <label className="text-xs text-cyan-100/90 block">
+          <div className="mt-3 max-w-sm">
+            <label className="text-xs text-slate-400 block">
               Tenant ID
               <input
                 value={tenantId}
                 onChange={(event) => setTenantId(event.target.value || 'cortex-default')}
-                className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </label>
           </div>
@@ -148,7 +145,7 @@ export default function SubscriptionDashboardPage() {
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
 
           {usage ? (
-            <div className="mt-4 rounded-2xl border border-white/20 bg-black/30 p-4 text-sm">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
               <p>Status: {usage.active ? 'Active' : 'Inactive'}</p>
               <p className="mt-1">Tier: {usage.tier || 'none'}</p>
               <p className="mt-1">
@@ -158,7 +155,7 @@ export default function SubscriptionDashboardPage() {
               <p className="mt-1">Billing period end: {usage.periodEndIso || 'n/a'}</p>
 
               {!usage.active ? (
-                <p className="mt-3 text-amber-200">
+                <p className="mt-3 text-[#f0dcb8]">
                   No active paid subscription. Continue at{' '}
                   <Link href={`/signup?next=/subscription&email=${encodeURIComponent(email.trim())}`} className="underline">
                     /signup
@@ -170,11 +167,11 @@ export default function SubscriptionDashboardPage() {
           ) : null}
 
           {entitlements ? (
-            <div className="mt-4 rounded-2xl border border-white/20 bg-black/30 p-4 text-sm">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
               <p>Tenant: {entitlements.tenantId}</p>
               <p className="mt-1">Teammates limit: {entitlements.teammatesLimit}</p>
-              <p className="mt-2 text-cyan-100">Premium features</p>
-              <ul className="mt-1 space-y-1 text-xs text-slate-200">
+              <p className="mt-2 text-[#C69C6D] font-semibold">Premium features</p>
+              <ul className="mt-1 space-y-1 text-xs text-slate-400">
                 <li>- Builder Premium: {entitlements.featureFlags['builder-premium'] ? 'enabled' : 'locked'}</li>
                 <li>- Blueprint AI v1: {entitlements.featureFlags['blueprint-ai-v1'] ? 'enabled' : 'locked'}</li>
                 <li>- Local Data Intelligence: {entitlements.featureFlags['local-data-intelligence'] ? 'enabled' : 'locked'}</li>
@@ -182,18 +179,24 @@ export default function SubscriptionDashboardPage() {
               </ul>
             </div>
           ) : null}
+        </Card>
 
-          <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 text-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-amber-200">Token Top-Up</p>
-            <p className="mt-1 text-xs text-amber-50/90">Purchase additional tokens for estimator, automations, and copilot execution.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => void launchTokenCheckout('boost-500')} disabled={tokenCheckoutLoading} className="rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30 disabled:opacity-60">Buy 500</button>
-              <button type="button" onClick={() => void launchTokenCheckout('pro-1500')} disabled={tokenCheckoutLoading} className="rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30 disabled:opacity-60">Buy 1500</button>
-              <button type="button" onClick={() => void launchTokenCheckout('scale-5000')} disabled={tokenCheckoutLoading} className="rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30 disabled:opacity-60">Buy 5000</button>
-            </div>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Token Top-Up</p>
+          <p className="mt-1 text-xs text-slate-400">Purchase additional tokens for estimator, automations, and copilot execution.</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <Button type="button" variant="secondary" onClick={() => void launchTokenCheckout('boost-500')} disabled={tokenCheckoutLoading} className="disabled:opacity-60">
+              Buy 500
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void launchTokenCheckout('pro-1500')} disabled={tokenCheckoutLoading} className="disabled:opacity-60">
+              Buy 1500
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void launchTokenCheckout('scale-5000')} disabled={tokenCheckoutLoading} className="disabled:opacity-60">
+              Buy 5000
+            </Button>
           </div>
-        </section>
+        </Card>
       </div>
-    </main>
+    </PageShell>
   );
 }

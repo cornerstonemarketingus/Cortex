@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 type LeadResponse = {
   lead?: {
@@ -56,31 +59,48 @@ export default function LaunchPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#030712] text-slate-100">
-      <PublicMarketingNav />
-      <div className="mx-auto max-w-4xl px-6 py-14 md:px-10">
-        <header className="rounded-3xl border border-white/20 bg-white/5 p-7">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Launch</p>
-          <h1 className="mt-2 text-4xl font-semibold">Get Your Estimate and Automation Setup</h1>
-          <p className="mt-3 text-sm text-slate-300">
-            One page. One form. Captures lead, starts CRM flow, and primes automation response.
-          </p>
-        </header>
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Launch"
+        title="Get your estimate and automation setup"
+        subtitle="One page. One form. Captures lead, starts CRM flow, and primes automation response."
+      />
 
-        <section className="mt-6 rounded-2xl border border-white/20 bg-white/5 p-5">
+      <div className="mx-auto max-w-4xl px-6 pb-16">
+        <Card>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className="rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm" />
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm" />
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm md:col-span-2" />
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
+            />
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
+            />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone"
+              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none md:col-span-2"
+            />
           </div>
-          <textarea value={scope} onChange={(e) => setScope(e.target.value)} className="mt-3 min-h-24 w-full rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm" />
-          <button onClick={() => void submit()} disabled={loading} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:opacity-60">
+          <textarea
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            className="mt-3 min-h-24 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
+          />
+          <Button type="button" onClick={() => void submit()} disabled={loading} className="mt-4 disabled:opacity-60">
             {loading ? 'Submitting...' : 'Start Flow'}
-          </button>
+          </Button>
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
           {success ? <p className="mt-3 text-sm text-emerald-300">{success}</p> : null}
-        </section>
+        </Card>
       </div>
-    </main>
+    </PageShell>
   );
 }

@@ -1,4 +1,6 @@
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
 
 const sections: Array<{ title: string; body: string[] }> = [
   {
@@ -92,36 +94,33 @@ const sections: Array<{ title: string; body: string[] }> = [
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
-      <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Legal</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Terms of Service</h1>
-          <p className="mt-3 text-sm text-slate-300">Effective: March 1, 2026</p>
-          <p className="mt-2 text-sm text-cyan-50/90">IMPORTANT: By accessing or using ContractorPro, you agree to these Terms. If you do not agree, do not use this platform.</p>
-        </header>
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Legal"
+        title="Terms of Service"
+        subtitle="Effective: March 1, 2026 — by accessing or using ContractorPro, you agree to these Terms. If you do not agree, do not use this platform."
+      />
 
-        <section className="mt-6 space-y-4">
-          {sections.map((section) => (
-            <article key={section.title} className="rounded-2xl border border-white/15 bg-black/25 p-5">
-              <h2 className="text-lg font-semibold text-cyan-100">{section.title}</h2>
-              <div className="mt-2 space-y-2 text-sm text-slate-200">
-                {section.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            </article>
-          ))}
-        </section>
+      <div className="mx-auto max-w-5xl px-6 pb-16 space-y-4">
+        {sections.map((section) => (
+          <Card key={section.title}>
+            <h2 className="text-lg font-bold text-white">{section.title}</h2>
+            <div className="mt-2 space-y-2 text-sm text-slate-400 leading-relaxed">
+              {section.body.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          </Card>
+        ))}
 
-        <section className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.16em] text-amber-200">Mobile App and Storefront Compliance Note</p>
-          <p className="mt-2 text-sm text-amber-50/90">
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Mobile App and Storefront Compliance Note</p>
+          <p className="mt-2 text-sm text-slate-400">
             These Terms are intended to support ContractorPro web and mobile distribution. For app marketplace submissions, include this page in your in-app legal menu and website footer to improve review readiness.
           </p>
-        </section>
+        </Card>
       </div>
-    </main>
+    </PageShell>
   );
 }

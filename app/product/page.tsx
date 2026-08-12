@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 type MarketPricingResponse = {
   compiledEstimate?: {
@@ -26,18 +29,21 @@ type BidEstimateResponse = {
 
 const CONNECTED_MODULES = [
   {
+    icon: '🌐',
     title: 'Website + Landing Page Builder',
     detail: 'Generate SEO and GEO pages, render previews, then publish with domain setup.',
     href: '/website-builder',
     cta: 'Open Website Builder',
   },
   {
+    icon: '📱',
     title: 'App Builder',
     detail: 'Build and publish client-facing or internal business apps with launch checklists.',
     href: '/app-builder',
     cta: 'Open App Builder',
   },
   {
+    icon: '⚡',
     title: 'CRM + AI Automation System',
     detail: 'Connect voice receptionist, lead nurture, review loops, and sales pipeline movement.',
     href: '/cortex',
@@ -118,110 +124,100 @@ export default function ProductPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Features"
+        title="Estimator-first business growth platform"
+        subtitle="Start with pricing intelligence, then move directly into CRM automations, SEO/GEO content, and launch-ready website or app builds in one seamless flow."
+      />
 
-      <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
-        <header className="rounded-3xl border border-white/15 bg-white/5 p-7 md:p-8">
-          <p className="text-xs uppercase tracking-[0.22em] text-orange-200">Features</p>
-          <h1 className="mt-2 text-4xl font-semibold leading-tight md:text-5xl">Estimator-first business growth platform</h1>
-          <p className="mt-3 max-w-4xl text-sm text-slate-300 md:text-base">
-            Start with pricing intelligence, then move directly into CRM automations, SEO/GEO content, and launch-ready website or app builds in one seamless flow.
-          </p>
-        </header>
-
-        <section className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-500/10 p-5">
-          <h2 className="text-2xl font-semibold text-amber-100">Quick estimator</h2>
-          <p className="mt-2 text-sm text-slate-200">Run homeowner ballpark and contractor bid signals without leaving this page.</p>
+      <div className="mx-auto max-w-6xl px-6 pb-16 space-y-8">
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Quick Estimator</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Run a live pricing check</h2>
+          <p className="mt-2 text-sm text-slate-400">Run homeowner ballpark and contractor bid signals without leaving this page.</p>
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="text-xs text-amber-50">
+            <label className="text-xs text-slate-400">
               ZIP code
               <input
                 value={zipCode}
                 onChange={(event) => setZipCode(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </label>
-            <label className="text-xs text-amber-50">
+            <label className="text-xs text-slate-400">
               City
               <input
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </label>
           </div>
 
-          <label className="mt-3 block text-xs text-amber-50">
+          <label className="mt-3 block text-xs text-slate-400">
             Project category
             <input
               value={projectCategory}
               onChange={(event) => setProjectCategory(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
             />
           </label>
 
-          <label className="mt-3 block text-xs text-amber-50">
+          <label className="mt-3 block text-xs text-slate-400">
             Scope
             <textarea
               value={scope}
               onChange={(event) => setScope(event.target.value)}
-              className="mt-1 min-h-24 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+              className="mt-1 min-h-24 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
             />
           </label>
 
-          <button
-            type="button"
-            onClick={() => void runEstimator()}
-            disabled={loading}
-            className="mt-4 rounded-xl bg-orange-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-200 disabled:opacity-60"
-          >
+          <Button type="button" onClick={() => void runEstimator()} disabled={loading} className="mt-4 disabled:opacity-60">
             {loading ? 'Running estimator...' : 'Run Estimator'}
-          </button>
+          </Button>
 
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
 
           {ballparkLow !== null && ballparkHigh !== null ? (
-            <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-slate-200">
-              <p className="text-xs uppercase tracking-[0.14em] text-orange-100/80">Homeowner ballpark</p>
-              <p className="mt-1 text-lg font-semibold">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-200">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#C69C6D] font-semibold">Homeowner ballpark</p>
+              <p className="mt-1 text-lg font-semibold text-white">
                 {money(ballparkLow)} - {money(ballparkHigh)}
               </p>
             </div>
           ) : null}
 
           {bidTotal !== null ? (
-            <div className="mt-3 rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-slate-200">
-              <p className="text-xs uppercase tracking-[0.14em] text-orange-100/80">Contractor bid view</p>
+            <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-200">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#C69C6D] font-semibold">Contractor bid view</p>
               <p className="mt-1">Detailed estimate total: {money(bidTotal)}</p>
-              <p className="mt-1 text-xs text-slate-300">Estimated timeline: {timelineDays ?? 'n/a'} days</p>
+              <p className="mt-1 text-xs text-slate-400">Estimated timeline: {timelineDays ?? 'n/a'} days</p>
             </div>
           ) : null}
-        </section>
+        </Card>
 
-        <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5">
-          <h2 className="text-2xl font-semibold text-orange-100">Connected execution modules</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Estimator outcomes feed directly into build and automation workflows so your team can move from idea to launch without tool switching.
-          </p>
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Connected Execution Modules</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Estimator outcomes feed directly into build and automation workflows</h2>
+          <p className="mt-2 text-sm text-slate-400">So your team can move from idea to launch without tool switching.</p>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {CONNECTED_MODULES.map((module) => (
-              <article key={module.title} className="rounded-xl border border-white/15 bg-black/20 p-4">
-                <h3 className="text-lg font-semibold text-amber-100">{module.title}</h3>
-                <p className="mt-2 text-sm text-slate-300">{module.detail}</p>
-                <Link
-                  href={module.href}
-                  className="mt-4 inline-flex rounded-lg border border-amber-300/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold hover:bg-amber-500/30"
-                >
-                  {module.cta}
+              <Card key={module.title}>
+                <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/60 flex items-center justify-center text-xl mb-4">{module.icon}</div>
+                <h3 className="text-lg font-bold text-white">{module.title}</h3>
+                <p className="mt-2 text-sm text-slate-400">{module.detail}</p>
+                <Link href={module.href} className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#C69C6D]">
+                  {module.cta} <span>→</span>
                 </Link>
-              </article>
+              </Card>
             ))}
           </div>
-        </section>
+        </div>
       </div>
-    </main>
+    </PageShell>
   );
 }

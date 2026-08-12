@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 type BlogPost = {
   id?: string;
@@ -170,62 +173,74 @@ export default function BlogPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Builder Copilot Blog Engine"
+        title="AI writer for SEO traffic and conversion content"
+        subtitle="Generate high-converting articles for service + location intent, then route traffic into your estimator and CRM funnels."
+      />
 
-      <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-cyan-300/35 bg-cyan-500/12 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Builder Copilot Blog Engine</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">AI writer for SEO traffic and conversion content</h1>
-          <p className="mt-3 max-w-4xl text-sm text-cyan-100/90 md:text-base">
-            Generate high-converting articles for service + location intent, then route traffic into your estimator and CRM funnels.
-          </p>
-
-          <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">AI writer</p>
-            <textarea value={topic} onChange={(event) => setTopic(event.target.value)} className="mt-2 min-h-20 w-full rounded-xl border border-white/20 bg-black/35 px-3 py-2 text-sm" />
-            <button type="button" onClick={() => void generatePost()} disabled={loading} className="mt-3 rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60">
+      <div className="mx-auto max-w-6xl px-6 pb-16 space-y-8">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">AI Writer</p>
+            <textarea
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
+              className="mt-3 min-h-20 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
+            />
+            <Button type="button" onClick={() => void generatePost()} disabled={loading} className="mt-3 disabled:opacity-60">
               {loading ? 'Writing...' : 'Generate SEO Article'}
-            </button>
-          </div>
+            </Button>
+          </Card>
 
-          <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Weekly Publishing Scheduler</p>
-            <input value={scheduleTemplate} onChange={(event) => setScheduleTemplate(event.target.value)} className="mt-2 w-full rounded-xl border border-white/20 bg-black/35 px-3 py-2 text-sm" />
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Weekly Publishing Scheduler</p>
+            <input
+              value={scheduleTemplate}
+              onChange={(event) => setScheduleTemplate(event.target.value)}
+              className="mt-3 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
+            />
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => void createWeeklySchedule()} disabled={scheduleLoading} className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-xs font-semibold hover:bg-cyan-500/25 disabled:opacity-60">
+              <Button type="button" onClick={() => void createWeeklySchedule()} disabled={scheduleLoading} variant="secondary" className="disabled:opacity-60">
                 Create Weekly Schedule
-              </button>
-              <button type="button" onClick={() => void runSchedulerNow()} disabled={scheduleLoading} className="rounded-lg border border-amber-300/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold hover:bg-amber-500/25 disabled:opacity-60">
+              </Button>
+              <Button type="button" onClick={() => void runSchedulerNow()} disabled={scheduleLoading} variant="secondary" className="disabled:opacity-60">
                 Run Scheduler Now
-              </button>
+              </Button>
             </div>
-            <div className="mt-3 space-y-1 text-xs text-slate-300">
+            <div className="mt-3 space-y-1 text-xs text-slate-400">
               {schedules.length === 0 ? <p>No schedules configured.</p> : null}
               {schedules.map((schedule) => (
-                <p key={schedule.id}>{schedule.topicTemplate} - day {schedule.dayOfWeek}, hour {schedule.hourUtc}:00 UTC ({schedule.status})</p>
+                <p key={schedule.id}>
+                  {schedule.topicTemplate} - day {schedule.dayOfWeek}, hour {schedule.hourUtc}:00 UTC ({schedule.status})
+                </p>
               ))}
             </div>
-          </div>
-        </header>
+          </Card>
+        </div>
 
-        <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {posts.map((post, index) => (
-            <article key={post.id || post.seo?.slug || `${post.title || 'post'}-${index}`} className="rounded-2xl border border-white/15 bg-black/25 p-5">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">{post.region || 'us'} · {post.style || 'conversion'}</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-50">{post.seo?.title || post.title || 'Generated Article'}</h2>
-              <p className="mt-3 text-sm text-slate-300">{post.summary || 'AI-generated high-converting article draft.'}</p>
-              <p className="mt-3 text-xs text-cyan-100">Slug: {post.seo?.slug || 'draft'}</p>
-            </article>
-          ))}
-          {posts.length === 0 ? (
-            <article className="rounded-2xl border border-white/15 bg-black/25 p-5 text-sm text-slate-300">
-              No posts yet. Generate your first AI SEO article above.
-            </article>
-          ) : null}
-        </section>
-        {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold mb-4">Generated Articles</p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {posts.map((post, index) => (
+              <Card key={post.id || post.seo?.slug || `${post.title || 'post'}-${index}`}>
+                <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D]">
+                  {post.region || 'us'} · {post.style || 'conversion'}
+                </p>
+                <h2 className="mt-2 text-lg font-bold text-white">{post.seo?.title || post.title || 'Generated Article'}</h2>
+                <p className="mt-3 text-sm text-slate-400">{post.summary || 'AI-generated high-converting article draft.'}</p>
+                <p className="mt-3 text-xs text-slate-500">Slug: {post.seo?.slug || 'draft'}</p>
+              </Card>
+            ))}
+            {posts.length === 0 ? (
+              <Card className="text-sm text-slate-400">No posts yet. Generate your first AI SEO article above.</Card>
+            ) : null}
+          </div>
+          {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
+        </div>
       </div>
-    </main>
+    </PageShell>
   );
 }

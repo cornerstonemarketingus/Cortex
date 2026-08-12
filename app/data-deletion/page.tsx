@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 export default function DataDeletionPage() {
   const [email, setEmail] = useState('');
@@ -43,59 +46,54 @@ export default function DataDeletionPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070b10] text-slate-100">
-      <PublicMarketingNav />
-      <div className="mx-auto max-w-4xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-rose-300/35 bg-rose-500/10 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-rose-200">Compliance</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Data Deletion Request</h1>
-          <p className="mt-3 text-sm text-rose-50/90">Submit account and data deletion requests here for Builder Copilot web and mobile experiences.</p>
-        </header>
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Compliance"
+        title="Data deletion request"
+        subtitle="Submit account and data deletion requests here for Builder Copilot web and mobile experiences."
+      />
 
-        <section className="mt-6 rounded-2xl border border-white/15 bg-black/25 p-5">
-          <label className="block text-sm text-slate-200">
+      <div className="mx-auto max-w-4xl px-6 pb-16">
+        <Card>
+          <label className="block text-sm text-slate-300">
             Account email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               placeholder="you@company.com"
             />
           </label>
 
-          <label className="mt-3 block text-sm text-slate-200">
+          <label className="mt-4 block text-sm text-slate-300">
             Reason (optional)
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              className="mt-2 min-h-20 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2"
+              className="mt-2 min-h-20 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
             />
           </label>
 
-          <label className="mt-3 block text-sm text-slate-200">
+          <label className="mt-4 block text-sm text-slate-300">
             Type DELETE to confirm
             <input
               value={confirmText}
               onChange={(event) => setConfirmText(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               placeholder="DELETE"
             />
           </label>
 
-          <button
-            type="button"
-            onClick={() => void submitRequest()}
-            disabled={loading}
-            className="mt-4 rounded-lg bg-rose-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-200 disabled:opacity-60"
-          >
+          <Button type="button" onClick={() => void submitRequest()} disabled={loading} className="mt-5 disabled:opacity-60">
             {loading ? 'Submitting...' : 'Submit Deletion Request'}
-          </button>
+          </Button>
 
-          {message ? <p className="mt-3 text-sm text-emerald-200">{message}</p> : null}
-          {error ? <p className="mt-3 text-sm text-rose-200">{error}</p> : null}
-        </section>
+          {message ? <p className="mt-3 text-sm text-emerald-300">{message}</p> : null}
+          {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
+        </Card>
       </div>
-    </main>
+    </PageShell>
   );
 }

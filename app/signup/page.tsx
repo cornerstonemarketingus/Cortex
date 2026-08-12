@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import PublicMarketingNav from "@/components/navigation/PublicMarketingNav";
+import PageShell from "@/components/ui/PageShell";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 
 const intents = [
   {
@@ -207,104 +209,90 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1b00_0%,#1a0d03_45%,#0a0502_100%)] text-slate-100">
-      <PublicMarketingNav />
-
-      <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
-        <section className="rounded-3xl border border-amber-300/35 bg-amber-500/10 p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Builder Copilot Onboarding</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Tell us the outcome. We build the system live.</h1>
-          <p className="mt-3 max-w-3xl text-sm text-amber-50/90 md:text-base">
+    <PageShell>
+      <div className="mx-auto max-w-5xl px-6 py-10 md:px-10 space-y-5">
+        <Card>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold">Builder Copilot Onboarding</p>
+          <h1 className="mt-2 text-3xl font-bold text-white md:text-5xl">Tell us the outcome. We build the system live.</h1>
+          <p className="mt-3 max-w-3xl text-sm text-slate-400 md:text-base">
             Chat-controlled workspace powered by Builder Copilot technology. Website, estimator, CRM, and automations are generated from your intent.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDemoMode(true)}
-              className="rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-200"
-            >
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button type="button" onClick={() => setShowDemoMode(true)}>
               Try Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20"
-            >
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setStep(1)}>
               Launch My Business
-            </button>
+            </Button>
           </div>
-        </section>
+        </Card>
 
         {showDemoMode ? (
-          <section className="mt-5 rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Demo Mode (No Signup)</p>
-            <h2 className="mt-1 text-xl font-semibold">Pre-built construction business is loaded</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3 text-xs text-slate-200">
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">Website preview with hero, services, testimonials, and CTA.</div>
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">Sample estimate: Deck build range $18,400 - $24,900.</div>
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">CRM demo lane with 3 sample leads and follow-up automation.</div>
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Demo Mode (No Signup)</p>
+            <h2 className="mt-1 text-xl font-bold text-white">Pre-built construction business is loaded</h2>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3 text-xs text-slate-300">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">Website preview with hero, services, testimonials, and CTA.</div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">Sample estimate: Deck build range $18,400 - $24,900.</div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">CRM demo lane with 3 sample leads and follow-up automation.</div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-cyan-300/35 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Start Here (2-Minute Guided Demo)</p>
-              <div className="mt-2 space-y-1 text-xs text-slate-200">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#C69C6D] font-semibold">Start Here (2-Minute Guided Demo)</p>
+              <div className="mt-2 space-y-1 text-xs text-slate-300">
                 <p>1. Open the demo workspace.</p>
                 <p>2. Load a trade template from the left rail.</p>
-                <p>3. Click "Create estimate for a deck" from the guide rail.</p>
-                <p>4. Click "Turn on autopilot" and watch automations activate.</p>
+                <p>3. Click &ldquo;Create estimate for a deck&rdquo; from the guide rail.</p>
+                <p>4. Click &ldquo;Turn on autopilot&rdquo; and watch automations activate.</p>
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => router.push("/workspace?guide=demo")}
-                className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-4 py-2 text-xs font-semibold hover:bg-cyan-500/30"
-              >
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button type="button" onClick={() => router.push("/workspace?guide=demo")}>
                 Open Guided Demo Workspace
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   setShowDemoMode(false);
                   setStep(1);
                 }}
-                className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20"
               >
                 I Want Setup Questions Instead
-              </button>
+              </Button>
             </div>
-          </section>
+          </Card>
         ) : null}
 
         {step === 1 ? (
-          <section className="mt-5 rounded-2xl border border-white/20 bg-black/25 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-amber-200">Step 1</p>
-            <h2 className="mt-1 text-xl font-semibold">What do you want to do?</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Step 1</p>
+            <h2 className="mt-1 text-xl font-bold text-white">What do you want to do?</h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               {intents.map((intent) => (
                 <button
                   key={intent.id}
                   type="button"
                   onClick={() => startQuestions(intent.id)}
-                  className="rounded-xl border border-amber-300/35 bg-amber-500/12 p-4 text-left hover:bg-amber-500/18"
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-[#C69C6D]/40 hover:bg-white/[0.06]"
                 >
-                  <p className="text-sm font-semibold text-amber-100">{intent.label}</p>
-                  <p className="mt-2 text-xs text-slate-200">AI will ask 4-6 setup questions and build your workspace instantly.</p>
+                  <p className="text-sm font-semibold text-white">{intent.label}</p>
+                  <p className="mt-2 text-xs text-slate-400">AI will ask 4-6 setup questions and build your workspace instantly.</p>
                 </button>
               ))}
             </div>
-          </section>
+          </Card>
         ) : null}
 
         {step === 2 && selectedIntent ? (
-          <section className="mt-5 rounded-2xl border border-white/20 bg-black/25 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-amber-200">Step 2</p>
-            <h2 className="mt-1 text-xl font-semibold">{selectedIntent.label}: AI setup questions</h2>
-            <div className="mt-3 space-y-3">
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Step 2</p>
+            <h2 className="mt-1 text-xl font-bold text-white">{selectedIntent.label}: AI setup questions</h2>
+            <div className="mt-4 space-y-3">
               {selectedIntent.questions.map((question, index) => (
-                <label key={question} className="block text-xs text-slate-300">
+                <label key={question} className="block text-xs text-slate-400">
                   {question}
                   <input
                     value={answers[index] || ""}
@@ -315,83 +303,75 @@ export default function SignupPage() {
                         return next;
                       });
                     }}
-                    className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
                   />
                 </label>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={finishQuestions}
-              className="mt-4 rounded-lg bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-200"
-            >
+            <Button type="button" onClick={finishQuestions} className="mt-4">
               Generate My Result
-            </button>
-          </section>
+            </Button>
+          </Card>
         ) : null}
 
         {step === 3 ? (
-          <section className="mt-5 rounded-2xl border border-emerald-300/35 bg-emerald-500/10 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-emerald-200">Step 3</p>
-            <h2 className="mt-1 text-xl font-semibold">Your result is ready immediately</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3 text-xs text-slate-200">
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">
-                <p className="font-semibold text-emerald-100">Website Preview</p>
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Step 3</p>
+            <h2 className="mt-1 text-xl font-bold text-white">Your result is ready immediately</h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3 text-xs text-slate-300">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="font-semibold text-white">Website Preview</p>
                 <p className="mt-1">Hero, services, testimonials, and CTA generated for {businessName || "your business"}.</p>
               </div>
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">
-                <p className="font-semibold text-emerald-100">Estimate Example</p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="font-semibold text-white">Estimate Example</p>
                 <p className="mt-1">Live estimate sample with ZIP-aware pricing confidence and line-item assumptions.</p>
               </div>
-              <div className="rounded-xl border border-white/20 bg-black/25 p-3">
-                <p className="font-semibold text-emerald-100">CRM + Sample Lead</p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="font-semibold text-white">CRM + Sample Lead</p>
                 <p className="mt-1">Pipeline seeded with sample lead and follow-up automation sequence.</p>
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   setShowDemoMode(true);
                   router.push("/workspace");
                 }}
-                className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/20"
               >
                 Try Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(4)}
-                className="rounded-lg bg-emerald-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-200"
-              >
+              </Button>
+              <Button type="button" onClick={() => setStep(4)}>
                 Launch My Business
-              </button>
+              </Button>
             </div>
-          </section>
+          </Card>
         ) : null}
 
         {step === 4 ? (
-          <section className="mt-5 rounded-2xl border border-cyan-300/35 bg-cyan-500/10 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-200">Step 4 - Free Trial (Signup Required)</p>
-            <h2 className="mt-1 text-xl font-semibold">Save this setup and launch your real business workspace</h2>
+          <Card>
+            <p className="text-xs uppercase tracking-[0.16em] text-[#C69C6D] font-semibold">Step 4 &middot; Free Trial (Signup Required)</p>
+            <h2 className="mt-1 text-xl font-bold text-white">Save this setup and launch your real business workspace</h2>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <label className="text-xs text-slate-200">
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label className="text-xs text-slate-400">
                 Business email
                 <input
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
                 />
               </label>
 
-              <label className="text-xs text-slate-200">
+              <label className="text-xs text-slate-400">
                 Plan
                 <select
                   value={tier}
                   onChange={(event) => setTier(event.target.value as (typeof tiers)[number]["value"])}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
                 >
                   {tiers.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -405,75 +385,61 @@ export default function SignupPage() {
                 value={businessName}
                 onChange={(event) => setBusinessName(event.target.value)}
                 placeholder="Business name"
-                className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
               <input
                 value={websiteUrl}
                 onChange={(event) => setWebsiteUrl(event.target.value)}
                 placeholder="Website URL (optional)"
-                className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
               <input
                 value={businessPhone}
                 onChange={(event) => setBusinessPhone(event.target.value)}
                 placeholder="Business phone"
-                className="rounded-lg border border-white/20 bg-black/35 px-3 py-2 text-sm"
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => void submitTrial()}
-              disabled={loading || !email.trim()}
-              className="mt-4 rounded-lg bg-cyan-300 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
-            >
+            <Button type="button" onClick={() => void submitTrial()} disabled={loading || !email.trim()} className="mt-4 disabled:opacity-60">
               {loading ? "Redirecting..." : "Launch My Business"}
-            </button>
+            </Button>
 
             {error ? <p className="mt-2 text-xs text-red-300">{error}</p> : null}
 
             {billingUnavailable ? (
-              <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs text-amber-100">
+              <div className="mt-4 rounded-lg border border-[#C69C6D]/30 bg-[#C69C6D]/10 p-3 text-xs text-[#f0dcb8]">
                 Billing is not configured in this environment yet, so checkout is unavailable. You can continue in preview mode and complete setup later once Stripe is connected.
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => router.push('/workspace?guide=demo')}
-                    className="rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-200"
-                  >
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <Button type="button" onClick={() => router.push('/workspace?guide=demo')}>
                     Continue In Preview Workspace
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBillingUnavailable(false)}
-                    className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
-                  >
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setBillingUnavailable(false)}>
                     Dismiss
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
 
             {checkoutSuccess && status?.active ? (
-              <div className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/15 p-3 text-xs text-emerald-100">
+              <div className="mt-4 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-xs text-emerald-100">
                 Subscription active ({status.tier || "enterprise"}). Tokens remaining: {status.remainingCredits} / {status.includedCredits}.
-                <div className="mt-2">
-                  <button
+                <div className="mt-3">
+                  <Button
                     type="button"
-                    className="rounded-lg bg-emerald-300 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-200"
                     onClick={() => {
                       router.push(nextPath);
                       router.refresh();
                     }}
                   >
                     Continue To Workspace
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
-          </section>
+          </Card>
         ) : null}
       </div>
-    </main>
+    </PageShell>
   );
 }

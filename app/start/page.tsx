@@ -1,31 +1,46 @@
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
-import Link from 'next/link';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+
+const quickLinks = [
+  { href: '/estimate', label: 'New Estimate' },
+  { href: '/website-builder', label: 'Page Builder' },
+  { href: '/automations', label: 'Automations' },
+  { href: '/workspace', label: 'Open Workspace' },
+];
+
+const guidedFlow = [
+  'Template → Customize → Publish → Capture Leads',
+  'Preview → Publish → Capture',
+  'Automations → Follow-up → Nurture',
+];
 
 export default function StartPage() {
   return (
-    <main className="min-h-screen bg-[#071014] text-slate-100">
-      <PublicMarketingNav />
+    <PageShell>
+      <PageHero kicker="Quick Launcher" title="Pick a starting point to get moving fast" />
 
-      <div className="mx-auto max-w-5xl px-4 py-12 text-center">
-        <h1 className="text-3xl font-extrabold">Start — Quick Launcher</h1>
-        <p className="mt-2 text-slate-300">Pick a starting point to get moving fast.</p>
-
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-          <Link href="/estimate" className="rounded-lg bg-amber-300 p-4 font-semibold text-slate-900">New Estimate</Link>
-          <Link href="/website-builder" className="rounded-lg border border-white/10 p-4">Page Builder</Link>
-          <Link href="/automations" className="rounded-lg border border-white/10 p-4">Automations</Link>
-          <Link href="/workspace" className="rounded-lg border border-white/10 p-4">Open Workspace</Link>
+      <div className="mx-auto max-w-5xl px-6 pb-16">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+          {quickLinks.map((link, index) => (
+            <Button key={link.href} href={link.href} variant={index === 0 ? 'primary' : 'secondary'}>
+              {link.label}
+            </Button>
+          ))}
         </div>
 
-        <section className="mt-8 text-left">
-          <h2 className="text-xl font-semibold">Guided Flow</h2>
-          <ol className="mt-2 list-decimal space-y-1 text-sm text-slate-300">
-            <li>Template → Customize → Publish → Capture Leads</li>
-            <li>Preview → Publish → Capture</li>
-            <li>Automations → Follow-up → Nurture</li>
-          </ol>
-        </section>
+        <div className="mt-8">
+          <Card>
+            <h2 className="text-lg font-bold text-white">Guided Flow</h2>
+            <ol className="mt-3 list-decimal space-y-1.5 pl-4 text-sm text-slate-400">
+              {guidedFlow.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </Card>
+        </div>
       </div>
-    </main>
+    </PageShell>
   );
 }

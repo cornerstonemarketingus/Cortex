@@ -1,23 +1,39 @@
 import Link from 'next/link';
-import PublicMarketingNav from '@/components/navigation/PublicMarketingNav';
+import PageShell from '@/components/ui/PageShell';
+import PageHero from '@/components/ui/PageHero';
+import Card from '@/components/ui/Card';
+
+const links = [
+  { href: '/website-builder', label: 'Website Builder', icon: '🌐' },
+  { href: '/builder-copilot', label: 'Builder Copilot CRM', icon: '⚡' },
+  { href: '/app-builder', label: 'App Builder', icon: '📱' },
+];
 
 export default function SitesFunnelsPage() {
   return (
-    <main className="min-h-screen bg-[#030712] text-slate-100">
-      <PublicMarketingNav />
-      <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
-        <header className="rounded-3xl border border-white/20 bg-white/5 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Sites & Funnels</p>
-          <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Growth Surfaces</h1>
-          <p className="mt-3 text-sm text-slate-300">Build and launch your website and funnel flows with one-click handoff into lead automation.</p>
-        </header>
+    <PageShell>
+      <PageHero
+        align="left"
+        kicker="Sites & Funnels"
+        title="Growth surfaces"
+        subtitle="Build and launch your website and funnel flows with one-click handoff into lead automation."
+      />
 
-        <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Link href="/website-builder" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">Website Builder</Link>
-          <Link href="/builder-copilot" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">Builder Copilot CRM</Link>
-          <Link href="/app-builder" className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm hover:bg-white/10">App Builder</Link>
-        </section>
+      <div className="mx-auto max-w-6xl px-6 pb-16">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className="group">
+              <Card hover className="h-full">
+                <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/60 flex items-center justify-center text-xl mb-4">{link.icon}</div>
+                <p className="text-sm font-semibold text-white">{link.label}</p>
+                <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-[#C69C6D] group-hover:gap-2 transition-all">
+                  Open <span>→</span>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
-    </main>
+    </PageShell>
   );
 }
