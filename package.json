@@ -19,6 +19,7 @@
     "worker:crm": "tsx workers/crm.worker.ts",
     "stack:crm": "pwsh -ExecutionPolicy Bypass -File .\\scripts\\start_crm_stack.ps1",
     "lint": "eslint",
+    "test:atlas": "tsx --test atlas/tests/run.ts",
     "test:e2e:platform": "tsx tests/platform-flows.e2e.ts",
     "backtest:estimator": "tsx scripts/run_estimator_backtest.ts",
     "backtest:estimator:ps": "pwsh -ExecutionPolicy Bypass -File .\\scripts\\run_estimator_backtest.ps1",
