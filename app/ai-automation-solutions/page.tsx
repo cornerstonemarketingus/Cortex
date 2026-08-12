@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import CortexTopTabs from "@/components/navigation/CortexTopTabs";
+import PageHero from "@/components/ui/PageHero";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 
 type ChatResponse = {
   responses?: string[];
@@ -85,91 +88,88 @@ export default function AiAutomationSolutionsPage() {
     <main className="min-h-screen bg-[#070b10] text-slate-100">
       <CortexTopTabs />
 
-      <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
-        <header className="glass rise-in rounded-3xl p-7">
-          <p className="text-xs uppercase tracking-[0.22em] text-indigo-200">AI Automation Destination</p>
-          <h1 className="mt-2 text-4xl font-semibold md:text-5xl">AI Voicemail Receptionist + Chat</h1>
-          <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
-            This page is intentionally focused for client selling: generate receptionist voicemail scripts and run a live
-            AI chat experience in one clean interface.
-          </p>
-        </header>
+      <PageHero
+        align="left"
+        kicker="AI Automation Destination"
+        title="AI voicemail receptionist + chat"
+        subtitle="Generate receptionist voicemail scripts and run a live AI chat experience in one clean interface — built for client-facing demos."
+      />
 
-        <section className="mt-7 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr]">
-          <article className="rounded-2xl border border-indigo-300/35 bg-indigo-500/12 p-5">
-            <h2 className="text-xl font-semibold text-indigo-100">AI Voicemail Receptionist</h2>
+      <div className="mx-auto max-w-6xl px-6 pb-16 space-y-6">
+        <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <Card>
+            <h2 className="text-lg font-bold text-white">AI Voicemail Receptionist</h2>
 
-            <label className="mt-3 block text-xs text-indigo-50">
+            <label className="mt-4 block text-xs text-slate-400">
               Business type
               <input
                 value={businessType}
                 onChange={(event) => setBusinessType(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/25 bg-black/30 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </label>
 
-            <label className="mt-3 block text-xs text-indigo-50">
+            <label className="mt-3 block text-xs text-slate-400">
               Objective
               <input
                 value={objective}
                 onChange={(event) => setObjective(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/25 bg-black/30 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
               />
             </label>
 
-            <button
-              type="button"
-              onClick={() => void generateVoicemailScript()}
-              disabled={loadingScript}
-              className="mt-4 rounded-xl bg-indigo-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-indigo-200 disabled:opacity-60"
-            >
+            <Button type="button" onClick={() => void generateVoicemailScript()} disabled={loadingScript} className="mt-4 disabled:opacity-60">
               {loadingScript ? "Generating..." : "Generate Receptionist Script"}
-            </button>
+            </Button>
 
             {scriptError ? <p className="mt-3 text-sm text-red-300">{scriptError}</p> : null}
 
             {voicemailScript ? (
-              <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-white/15 bg-black/25 p-3 text-xs text-slate-200">
+              <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-300">
                 {voicemailScript}
               </pre>
             ) : null}
-          </article>
+          </Card>
 
-          <article className="rounded-2xl border border-cyan-300/35 bg-cyan-500/12 p-5">
-            <h2 className="text-xl font-semibold text-cyan-100">Live AI Chat Box</h2>
-            <p className="mt-2 text-sm text-slate-300">
+          <Card>
+            <h2 className="text-lg font-bold text-white">Live AI Chat Box</h2>
+            <p className="mt-2 text-sm text-slate-400">
               Use this for sales demos to show real-time objection handling and follow-up guidance.
             </p>
 
             <textarea
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
-              className="mt-3 min-h-24 w-full rounded-xl border border-white/25 bg-black/30 px-3 py-2 text-sm"
+              className="mt-3 min-h-24 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 focus:border-[#C69C6D]/50 focus:outline-none"
             />
 
-            <button
-              type="button"
-              onClick={() => void sendChat()}
-              disabled={loadingChat}
-              className="mt-3 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
-            >
+            <Button type="button" onClick={() => void sendChat()} disabled={loadingChat} className="mt-3 disabled:opacity-60">
               {loadingChat ? "Thinking..." : "Run AI Chat"}
-            </button>
+            </Button>
 
             {chatError ? <p className="mt-3 text-sm text-red-300">{chatError}</p> : null}
 
             {chatOutput ? (
-              <div className="mt-4 rounded-xl border border-white/15 bg-black/25 p-3 text-sm text-slate-200 whitespace-pre-wrap">
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-300 whitespace-pre-wrap">
                 {chatOutput}
               </div>
             ) : null}
-          </article>
+          </Card>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
-          Need full CRM pipeline and automation delivery? Continue to <Link href="/builder-copilot" className="text-amber-200 underline">Builder Copilot</Link>.
-          Need sites and apps to plug this into? Open <Link href="/website-builder" className="text-emerald-200 underline">Cortex Builder</Link>.
-        </section>
+        <Card>
+          <p className="text-sm text-slate-300">
+            Need full CRM pipeline and automation delivery? Continue to{' '}
+            <Link href="/builder-copilot" className="text-[#C69C6D] underline">
+              Builder Copilot
+            </Link>
+            . Need sites and apps to plug this into? Open{' '}
+            <Link href="/website-builder" className="text-[#C69C6D] underline">
+              Cortex Builder
+            </Link>
+            .
+          </p>
+        </Card>
       </div>
     </main>
   );
