@@ -271,7 +271,7 @@ tier, or credit allowance was touched.
 ## Testing
 
 ```bash
-npm run test:commercial     # 69 assertions across 7 suites
+npm run test:commercial     # 74 assertions across 7 suites
 npm run lint
 npm run build
 npx tsx tests/estimator-output.smoke.ts   # existing residential smoke test
@@ -287,6 +287,11 @@ Coverage includes: multi-page packages, vector drawings, scanned drawings,
 missing scales, invalid and corrupted PDFs, file-size limits, page-count limits,
 duplicate uploads, processing retries, and regression cover for the existing
 residential estimator.
+
+It also covers the defects found in review: phantom revisions parsed out of
+title-block headings ("REVISIONS", "ISSUED FOR BID"), plan annotations like
+"RM 101" parsed as sheet numbers, the full National CAD Standard designator
+set, and a cached re-submission still reporting `analyzed: true`.
 
 ---
 
