@@ -188,19 +188,17 @@ function buildTakeoffCsv(estimate: EstimateResult): string {
   return rows.join('\n');
 }
 
-const READINESS_LABELS: Array<[MeasurementSuitability, string]> = [
-  ['measurable', 'Geometry + scale'],
-  ['requires_scale_calibration', 'Needs calibration'],
-  ['requires_ocr', 'Needs OCR'],
-  ['not_measurable', 'Not measurable'],
-];
-
 const READINESS_SHORT: Record<MeasurementSuitability, string> = {
   measurable: 'Geometry + scale',
   requires_scale_calibration: 'Needs calibration',
   requires_ocr: 'Needs OCR',
   not_measurable: 'Not measurable',
 };
+
+/** Summary-tile order, labelled from the single source above. */
+const READINESS_LABELS = (Object.keys(READINESS_SHORT) as MeasurementSuitability[]).map(
+  (key) => [key, READINESS_SHORT[key]] as [MeasurementSuitability, string]
+);
 
 const BASIS_LABELS: Record<string, string> = {
   labeled_dimension: 'Read off a printed dimension',

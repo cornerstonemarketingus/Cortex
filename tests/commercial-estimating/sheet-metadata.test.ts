@@ -34,6 +34,28 @@ describe('sheet metadata: sheet numbers', () => {
     assert.equal(parseSheetNumber('ABC'), null);
     assert.equal(parseSheetNumber(''), null);
   });
+
+  it('rejects sheet-shaped plan annotations whose prefix is not a discipline', () => {
+    // These appear all over a floor plan and are structurally identical to a
+    // sheet number. Accepting them lets a room tag outrank the real sheet.
+    assert.equal(parseSheetNumber('RM 101'), null);
+    assert.equal(parseSheetNumber('NO. 12'), null);
+    assert.equal(parseSheetNumber('EQ 4'), null);
+  });
+
+  it('accepts the National CAD Standard discipline designators', () => {
+    for (const [sheet, discipline] of [
+      ['V101', 'Survey / Mapping'],
+      ['B201', 'Geotechnical'],
+      ['Z101', 'Contractor / Shop Drawings'],
+      ['O101', 'Operations'],
+      ['T101', 'Telecommunications'],
+    ] as const) {
+      const parsed = parseSheetNumber(sheet);
+      assert.equal(parsed?.sheetNumber, sheet, `${sheet} should parse as a sheet number`);
+      assert.equal(parsed?.discipline, discipline);
+    }
+  });
 });
 
 describe('sheet metadata: roles', () => {
@@ -96,6 +118,33 @@ describe('sheet metadata: revisions and matchlines', () => {
       revisions.map((entry) => entry.revision),
       ['2', 'C']
     );
+  });
+
+  it('does not read title-block headings as revisions', () => {
+    // "REVISIONS" and "ISSUED FOR BID" head the revision table on essentially
+    // every commercial sheet. Matching a loose token against them invented
+    // revisions "S" and "D" on nearly every page.
+    assert.deepEqual(extractRevisions([span('REVISIONS', 1000, 20)]), []);
+    assert.deepEqual(extractRevisions([span('ISSUED FOR BID', 1000, 20)]), []);
+    assert.deepEqual(extractRevisions([span('ISSUED FOR CONSTRUCTION', 1000, 20)]), []);
+    assert.deepEqual(extractRevisions([span('REVISION HISTORY', 1000, 20)]), []);
+  });
+
+  it('still reads the revision formats that appear on real title blocks', () => {
+    const cases: Array<[string, string]> = [
+      ['REV: C', 'C'],
+      ['REV 2', '2'],
+      ['REVISION NO. 4', '4'],
+      ['\u0394 3', '3'],
+      ['REV A1', 'A1'],
+      ['REV 12A', '12A'],
+    ];
+
+    for (const [text, expected] of cases) {
+      const revisions = extractRevisions([span(text, 1000, 20)]);
+      assert.equal(revisions.length, 1, `expected "${text}" to yield one revision`);
+      assert.equal(revisions[0].revision, expected);
+    }
   });
 
   it('extracts matchline references and the sheet they point at', () => {

@@ -114,9 +114,10 @@ export async function processPlanDocuments(
     concurrency: options.concurrency,
     maxPagesPerDocument: options.maxPagesPerDocument,
     includePreviews: options.includePreviews ?? false,
-    // Coordinates stay inside the process; the API returns summaries, not
-    // every path on a 300-sheet package.
-    includeRawGeometry: true,
+    // Only the per-page summaries are consumed below, so the full span/path
+    // arrays are dropped. Keeping them would pin hundreds of MB of point data
+    // in the extraction cache for data nothing reads.
+    includeRawGeometry: false,
     onProgress: options.onProgress,
     extractor: options.extractor,
   });

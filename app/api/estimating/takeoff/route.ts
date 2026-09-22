@@ -149,18 +149,19 @@ async function runPdfDocumentIntelligence(rawFiles: File[]): Promise<PlanDocumen
 
   if (pdfFiles.length === 0) return null;
 
-  const documents = await Promise.all(
-    pdfFiles.map(async (file) => ({
-      fileName: file.name,
-      mimeType: file.type || 'application/pdf',
-      bytes: new Uint8Array(await file.arrayBuffer()),
-    }))
-  );
-
   try {
+    const documents = await Promise.all(
+      pdfFiles.map(async (file) => ({
+        fileName: file.name,
+        mimeType: file.type || 'application/pdf',
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      }))
+    );
+
     return await processPlanDocuments({ documents });
   } catch {
-    // Never let a parser problem take down an estimate the user paid for.
+    // Never let a read or parser problem take down an estimate the user paid
+    // for — the deterministic estimate does not depend on the PDFs.
     return null;
   }
 }

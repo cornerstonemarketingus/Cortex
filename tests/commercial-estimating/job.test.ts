@@ -115,6 +115,28 @@ describe('processing jobs: duplicates and idempotency', () => {
     assert.equal(second.items[0].reusedFromCache, true);
     assert.equal(second.billablePagesProcessed, 0, 'a retried upload must not be billed twice');
     assert.equal(second.items[0].summary?.sheets.length, 2);
+    assert.equal(
+      second.pagesExtracted,
+      2,
+      'cached pages are still delivered to the caller and must count towards the job total'
+    );
+  });
+
+  it('still reports a cached re-submission as analyzed', async () => {
+    clearExtractionCache();
+    const plan = await buildVectorFloorPlanPdf();
+    const documents = [pdfInput('plan.pdf', plan)];
+
+    const first = await processPlanDocuments({ documents });
+    const second = await processPlanDocuments({ documents });
+
+    // `analyzed` gates the whole drawing register in the UI. A cache hit that
+    // reported analyzed=false hid sheets it had actually extracted.
+    assert.equal(first.analyzed, true);
+    assert.equal(second.analyzed, true, 'a cached re-submission must not report analyzed=false');
+    assert.equal(second.totals.pagesExtracted, first.totals.pagesExtracted);
+    assert.equal(second.sheets.length, first.sheets.length);
+    assert.equal(second.totals.billablePagesProcessed, 0);
   });
 });
 

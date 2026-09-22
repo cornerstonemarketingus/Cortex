@@ -246,6 +246,10 @@ export async function runDocumentProcessingJob(
           summary: summarizeExtraction(extraction),
           issues: [...extraction.errors],
         };
+        // A cache hit still delivers these pages to the caller, so they count
+        // towards the job's page total. Only `billablePagesProcessed` (which
+        // skips `reusedFromCache` items) excludes them.
+        pagesExtracted += extraction.pagesExtracted;
         documentsCompleted += 1;
         continue;
       }

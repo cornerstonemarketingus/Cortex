@@ -15,26 +15,37 @@ import type {
   TextSpan,
 } from './types';
 
+/**
+ * National CAD Standard discipline designators. `parseSheetNumber` only
+ * accepts a designator listed here, so this map doubles as the whitelist that
+ * keeps sheet-shaped plan annotations ("RM 101") from being read as sheets —
+ * which means a missing entry silently discards real sheets. Keep it complete.
+ */
 const DISCIPLINE_NAMES: Record<string, string> = {
   G: 'General',
-  T: 'Title / Index',
+  H: 'Hazardous Materials',
+  V: 'Survey / Mapping',
+  B: 'Geotechnical',
   C: 'Civil',
   L: 'Landscape',
   S: 'Structural',
   A: 'Architectural',
   I: 'Interiors',
-  ID: 'Interior Design',
   Q: 'Equipment',
   F: 'Fire Protection',
-  FP: 'Fire Protection',
   P: 'Plumbing',
   D: 'Process',
   M: 'Mechanical',
   E: 'Electrical',
   W: 'Distributed Energy',
-  X: 'Other Disciplines',
-  H: 'Hazardous Materials',
+  T: 'Telecommunications',
   R: 'Resource',
+  X: 'Other Disciplines',
+  Z: 'Contractor / Shop Drawings',
+  O: 'Operations',
+  // Common non-NCS designators seen in real commercial packages.
+  ID: 'Interior Design',
+  FP: 'Fire Protection',
   AV: 'Audio Visual',
   TS: 'Telecommunications',
 };
@@ -59,10 +70,18 @@ const SHEET_TITLE_KEYWORDS: Array<{ pattern: RegExp; role: SheetRole }> = [
   { pattern: /\bplan\b/i, role: 'plan' },
 ];
 
+/**
+ * A revision identifier is a number, a letter, or a letter/number pair — never
+ * an arbitrary three-character word. Keeping the token class tight is what
+ * stops the ubiquitous title-block headings "REVISIONS" and "ISSUED FOR BID"
+ * from being recorded as revisions "S" and "D".
+ */
+const REVISION_TOKEN = '(\\d{1,3}[A-Z]?|[A-Z]\\d{1,2}|[A-Z])';
+
 const REVISION_PATTERNS: RegExp[] = [
-  /\brev(?:ision)?\.?\s*(?:no\.?|#|:)?\s*([A-Z0-9]{1,3})\b/i,
-  /\bissue\s*(?:no\.?|#|:)?\s*([A-Z0-9]{1,3})\b/i,
-  /^[Δ∆]\s*([A-Z0-9]{1,3})$/,
+  new RegExp(`\\brev(?:ision)?s?\\b\\.?\\s*(?:no\\.?|#|:)?\\s*${REVISION_TOKEN}\\b`, 'i'),
+  new RegExp(`\\bissue(?:d|s)?\\b\\s*(?:no\\.?|#|:)?\\s*${REVISION_TOKEN}\\b`, 'i'),
+  new RegExp(`^[Δ∆]\\s*${REVISION_TOKEN}$`),
 ];
 
 const DATE_PATTERN = /\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}-\d{2}-\d{2})\b/;
@@ -87,9 +106,16 @@ export function parseSheetNumber(text: string): { sheetNumber: string; disciplin
   // A bare two-letter designator with no digits is not a sheet number.
   if (!/\d/.test(sequence)) return null;
 
+  // The designator has to be a real National CAD Standard discipline. Without
+  // this, plan annotations that happen to be sheet-shaped — room tags like
+  // "RM 101", a title-block label like "NO. 12" — parse as sheet numbers and
+  // can outrank the actual sheet number, which is picked by font size.
+  const discipline = DISCIPLINE_NAMES[designator];
+  if (!discipline) return null;
+
   return {
     sheetNumber: canonicalSheetNumber(designator, sequence),
-    discipline: DISCIPLINE_NAMES[designator] ?? null,
+    discipline,
   };
 }
 

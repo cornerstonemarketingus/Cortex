@@ -250,13 +250,41 @@ function extractGeometry(params: {
   let pending: PendingPath | null = null;
   const pageArea = pageWidthPt * pageHeightPt;
 
-  const finalize = (stroked: boolean, filled: boolean) => {
+  const finalize = (
+    stroked: boolean,
+    filled: boolean,
+    closesPath = false,
+    fillOnly = false
+  ) => {
     if (!pending) return;
     const current = pending;
     pending = null;
 
     const usable = current.subpaths.filter((subpath) => subpath.points.length >= 2);
     if (usable.length === 0) return;
+
+    // `s`, `b` and `b*` close the current subpath before painting it. pdf.js
+    // reports them as their own operators rather than appending a closePath,
+    // so the implicit closing segment has to be applied here or it is lost
+    // from both the measured length and the closed-shape classification.
+    if (closesPath) {
+      const last = usable[usable.length - 1];
+      usable[usable.length - 1] = { ...last, closed: true };
+    }
+
+    // `f` and `f*` implicitly close *every* open subpath before filling
+    // (PDF 32000-1 8.5.3.3), so a filled polygon drawn m/l/l/l is a closed
+    // region even though no close operator was issued. Only the fill-only
+    // operators get this: for `B`/`B*` the stroke still follows the path as
+    // drawn, so closing them here would add a segment the stroke never
+    // painted and over-measure its length.
+    if (fillOnly) {
+      for (let index = 0; index < usable.length; index += 1) {
+        if (!usable[index].closed) {
+          usable[index] = { ...usable[index], closed: true };
+        }
+      }
+    }
 
     if (paths.length >= maxPaths) {
       dropped += 1;
@@ -300,10 +328,18 @@ function extractGeometry(params: {
       continue;
     }
 
-    if (fn === ops.paintFormXObjectBegin && Array.isArray(args) && Array.isArray(args[0])) {
+    if (fn === ops.paintFormXObjectBegin) {
+      // pdf.js passes a null matrix when the form carries no /Matrix entry
+      // (it defaults to identity), so the push has to happen unconditionally —
+      // paintFormXObjectEnd always pops, and an unbalanced stack would apply a
+      // stale CTM to every path drawn after the form.
       ctmStack.push([...ctm] as Matrix);
       lineWidthStack.push(lineWidth);
-      ctm = multiplyMatrix((args[0] as number[]).slice(0, 6) as Matrix, ctm);
+
+      const formMatrix = Array.isArray(args) ? args[0] : null;
+      if (Array.isArray(formMatrix) && formMatrix.length >= 6) {
+        ctm = multiplyMatrix((formMatrix as number[]).slice(0, 6) as Matrix, ctm);
+      }
       continue;
     }
 
@@ -317,6 +353,16 @@ function extractGeometry(params: {
 
     if (fn === ops.setLineWidth && Array.isArray(args) && typeof args[0] === 'number') {
       lineWidth = args[0];
+      continue;
+    }
+
+    if (fn === ops.setGState && Array.isArray(args) && Array.isArray(args[0])) {
+      // pdf.js forwards ExtGState entries as [key, value] pairs; /LW sets the
+      // stroke width just as the `w` operator does.
+      for (const pair of args[0] as unknown[]) {
+        if (!Array.isArray(pair)) continue;
+        if (pair[0] === 'LW' && typeof pair[1] === 'number') lineWidth = pair[1];
+      }
       continue;
     }
 
@@ -402,17 +448,17 @@ function extractGeometry(params: {
     }
 
     if (fn === ops.stroke || fn === ops.closeStroke) {
-      finalize(true, false);
+      finalize(true, false, fn === ops.closeStroke);
       continue;
     }
 
     if (fn === ops.fill || fn === ops.eoFill) {
-      finalize(false, true);
+      finalize(false, true, false, true);
       continue;
     }
 
     if (fn === ops.fillStroke || fn === ops.eoFillStroke || fn === ops.closeFillStroke || fn === ops.closeEOFillStroke) {
-      finalize(true, true);
+      finalize(true, true, fn === ops.closeFillStroke || fn === ops.closeEOFillStroke);
       continue;
     }
 
@@ -577,8 +623,9 @@ export async function extractPdfDocument(options: ExtractPdfOptions): Promise<Do
     const pagesToProcess = Math.min(pageCount, maxPages);
 
     for (let pageNumber = 1; pageNumber <= pagesToProcess; pageNumber += 1) {
+      let page: PdfPageProxy | null = null;
       try {
-        const page = await withTimeout(
+        page = await withTimeout(
           pdf.getPage(pageNumber),
           limits.perPageTimeoutMs,
           `Loading page ${pageNumber} of ${options.fileName}`
@@ -591,10 +638,17 @@ export async function extractPdfDocument(options: ExtractPdfOptions): Promise<Do
         );
 
         pages.push(extracted);
-        page.cleanup();
         options.onProgress?.({ pageNumber, pagesExtracted: pages.length, pageCount });
       } catch (error) {
         warnings.push(`Page ${pageNumber} of ${options.fileName} could not be extracted: ${errorMessage(error)}`);
+      } finally {
+        // Release pdf.js's per-page state whether or not extraction succeeded;
+        // a 250-sheet package cannot afford to leak the pages that timed out.
+        try {
+          page?.cleanup();
+        } catch {
+          // A page that never loaded has nothing to clean up.
+        }
       }
     }
   } catch (error) {
