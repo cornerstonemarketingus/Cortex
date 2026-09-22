@@ -9,13 +9,67 @@ type CategoryOption = { id: string; label: string };
 
 type MaterialLine = { item: string; quantity: number; unit: string; unitCost: number; totalCost: number };
 type LaborLine = { trade: string; hours: number; hourlyRate: number; totalCost: number };
-type AiFindingItem = { item: string; quantity: number; unit: string; estimatedUnitCost: number; estimatedTotalCost: number };
+type AiFindingItem = {
+  item: string;
+  quantity: number;
+  unit: string;
+  estimatedUnitCost: number;
+  estimatedTotalCost: number;
+  basis?: 'labeled_dimension' | 'scale_inference' | 'visual_estimate';
+};
+
+type MeasurementSuitability =
+  | 'measurable'
+  | 'requires_scale_calibration'
+  | 'requires_ocr'
+  | 'not_measurable';
+
+type PlanSheetSummary = {
+  fileName: string;
+  pageNumber: number;
+  sheetNumber: string | null;
+  sheetTitle: string | null;
+  discipline: string | null;
+  role: string;
+  classification: string;
+  measurementSuitability: MeasurementSuitability;
+  scale: string | null;
+  scaleVerified: boolean;
+  revisions: string[];
+  matchlineTargets: string[];
+  vectorPathCount: number;
+};
+
+type PlanDocumentIntelligence = {
+  analyzed: boolean;
+  engine: string;
+  documents: Array<{
+    fileName: string;
+    status: string;
+    pageCount: number;
+    pagesExtracted: number;
+    issues: string[];
+  }>;
+  sheets: PlanSheetSummary[];
+  totals: {
+    documentsProcessed: number;
+    documentsFailed: number;
+    documentsRejected: number;
+    duplicatesSkipped: number;
+    pagesExtracted: number;
+  };
+  measurementReadiness: Record<MeasurementSuitability, number>;
+  disclaimer: string;
+  warnings: string[];
+};
 
 type AiPlanFindings = {
   analyzed: boolean;
   scopeNotes: string[];
   items: AiFindingItem[];
   estimatedSubtotal: number;
+  measurementBasis?: 'ai_inferred';
+  disclaimer?: string;
 };
 
 type EstimateResult = {
@@ -34,6 +88,7 @@ type EstimateResult = {
   assumptions: string[];
   proposalMarkdown: string;
   aiPlanFindings: AiPlanFindings | null;
+  planDocumentIntelligence: PlanDocumentIntelligence | null;
 };
 
 type TakeoffApiResponse = {
@@ -46,6 +101,7 @@ type TakeoffApiResponse = {
 type MetaResponse = {
   categories?: CategoryOption[];
   aiVision?: { enabled: boolean; supportedTypes: string[]; notes: string };
+  documentIntelligence?: { enabled: boolean; maxPagesPerDocument: number; notes: string };
 };
 
 type PendingFile = {
@@ -104,7 +160,20 @@ function buildTakeoffCsv(estimate: EstimateResult): string {
   if (estimate.aiPlanFindings?.analyzed) {
     estimate.aiPlanFindings.items.forEach((line) => {
       rows.push(
-        `AI-Detected (from plans),"${line.item.replace(/"/g, '""')}",${line.quantity},${line.unit},${line.estimatedUnitCost},${line.estimatedTotalCost}`
+        `AI-Inferred (NOT a verified measurement),"${line.item.replace(/"/g, '""')}",${line.quantity},${line.unit},${line.estimatedUnitCost},${line.estimatedTotalCost}`
+      );
+    });
+  }
+
+  const sheets = estimate.planDocumentIntelligence?.sheets ?? [];
+  if (sheets.length > 0) {
+    rows.push('');
+    rows.push('Drawing Register,Sheet,Title,Scale,Measurement Readiness');
+    sheets.forEach((sheet) => {
+      rows.push(
+        `Drawing Register,"${(sheet.sheetNumber ?? `p${sheet.pageNumber}`).replace(/"/g, '""')}","${(
+          sheet.sheetTitle ?? ''
+        ).replace(/"/g, '""')}","${(sheet.scale ?? '').replace(/"/g, '""')}",${sheet.measurementSuitability}`
       );
     });
   }
@@ -117,6 +186,33 @@ function buildTakeoffCsv(estimate: EstimateResult): string {
   rows.push(`Totals,Grand Total,,,,${estimate.totals.grandTotal}`);
 
   return rows.join('\n');
+}
+
+const READINESS_SHORT: Record<MeasurementSuitability, string> = {
+  measurable: 'Geometry + scale',
+  requires_scale_calibration: 'Needs calibration',
+  requires_ocr: 'Needs OCR',
+  not_measurable: 'Not measurable',
+};
+
+/** Summary-tile order, labelled from the single source above. */
+const READINESS_LABELS = (Object.keys(READINESS_SHORT) as MeasurementSuitability[]).map(
+  (key) => [key, READINESS_SHORT[key]] as [MeasurementSuitability, string]
+);
+
+const BASIS_LABELS: Record<string, string> = {
+  labeled_dimension: 'Read off a printed dimension',
+  scale_inference: 'Scaled off the drawing',
+  visual_estimate: 'Visual estimate',
+  unreported: 'Not reported',
+};
+
+function readinessClass(suitability: MeasurementSuitability): string {
+  const base = 'rounded px-1.5 py-0.5 text-[10px] font-medium';
+  if (suitability === 'measurable') return `${base} bg-emerald-500/15 text-emerald-300`;
+  if (suitability === 'requires_scale_calibration') return `${base} bg-amber-500/15 text-amber-300`;
+  if (suitability === 'requires_ocr') return `${base} bg-sky-500/15 text-sky-300`;
+  return `${base} bg-white/10 text-slate-400`;
 }
 
 export default function PlanTakeoffUploader() {
@@ -299,9 +395,10 @@ export default function PlanTakeoffUploader() {
           ) : null}
 
           <p className="mt-3 text-[11px] text-slate-500">
+            {'PDF drawing packages are parsed page by page — sheet numbers, titles, scales, revisions and vector geometry are read from the file itself. '}
             {aiVisionEnabled
-              ? 'AI vision reads PNG/JPG/WEBP plan images directly. PDFs contribute file-name and notes signal.'
-              : 'AI vision analysis is not yet enabled on this environment — the estimator will use file names and your notes.'}
+              ? 'PNG/JPG/WEBP plan images are additionally read by AI vision, which produces AI-inferred quantities rather than verified measurements.'
+              : 'AI vision analysis of plan images is not enabled on this environment.'}
           </p>
 
           <p className="mt-6 text-xs uppercase tracking-[0.2em] text-[#C69C6D] font-semibold mb-3">2. Project Details</p>
@@ -512,11 +609,80 @@ function TakeoffResults({ estimate }: { estimate: EstimateResult }) {
         </div>
       </Card>
 
+      {estimate.planDocumentIntelligence?.analyzed ? (
+        <Card>
+          <h3 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+            <span>{'📐'}</span> Drawings we read
+          </h3>
+          <p className="text-[11px] text-slate-400 mb-3">
+            {estimate.planDocumentIntelligence.totals.pagesExtracted} page(s) across{' '}
+            {estimate.planDocumentIntelligence.totals.documentsProcessed} document(s).{' '}
+            {estimate.planDocumentIntelligence.disclaimer}
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            {READINESS_LABELS.map(([key, label]) => (
+              <div key={key} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-lg font-semibold text-white">
+                  {estimate.planDocumentIntelligence?.measurementReadiness[key] ?? 0}
+                </p>
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="text-slate-400 uppercase tracking-wide text-[10px]">
+                <tr>
+                  <th className="py-1.5 pr-3">Sheet</th>
+                  <th className="py-1.5 pr-3">Title</th>
+                  <th className="py-1.5 pr-3">Scale</th>
+                  <th className="py-1.5 pr-3">Rev</th>
+                  <th className="py-1.5 pr-3">Matchlines</th>
+                  <th className="py-1.5">Readiness</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {estimate.planDocumentIntelligence.sheets.slice(0, 60).map((sheet) => (
+                  <tr key={`${sheet.fileName}-${sheet.pageNumber}`} className="border-t border-white/5">
+                    <td className="py-1.5 pr-3 font-medium text-white">
+                      {sheet.sheetNumber ?? `p.${sheet.pageNumber}`}
+                    </td>
+                    <td className="py-1.5 pr-3">{sheet.sheetTitle ?? '—'}</td>
+                    <td className="py-1.5 pr-3">{sheet.scale ?? 'not found'}</td>
+                    <td className="py-1.5 pr-3">{sheet.revisions.join(', ') || '—'}</td>
+                    <td className="py-1.5 pr-3">{sheet.matchlineTargets.join(', ') || '—'}</td>
+                    <td className="py-1.5">
+                      <span className={readinessClass(sheet.measurementSuitability)}>
+                        {READINESS_SHORT[sheet.measurementSuitability]}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {estimate.planDocumentIntelligence.warnings.length > 0 ? (
+            <ul className="mt-4 space-y-1 text-[11px] text-amber-300/90 list-disc list-inside">
+              {estimate.planDocumentIntelligence.warnings.slice(0, 8).map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          ) : null}
+        </Card>
+      ) : null}
+
       {estimate.aiPlanFindings?.analyzed ? (
         <Card>
           <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
             <span>{'✨'}</span> What the AI saw in your plans
           </h3>
+          <p className="text-[11px] text-amber-300/90 mb-3">
+            {estimate.aiPlanFindings.disclaimer ??
+              'These quantities were inferred by a vision model and are not verified measurements.'}
+          </p>
           <ul className="space-y-1.5 text-sm text-slate-300 list-disc list-inside">
             {estimate.aiPlanFindings.scopeNotes.map((note, index) => (
               <li key={index}>{note}</li>
@@ -526,15 +692,16 @@ function TakeoffResults({ estimate }: { estimate: EstimateResult }) {
           {estimate.aiPlanFindings.items.length > 0 ? (
             <div className="mt-4">
               <LineItemsTable
-                title="AI-detected quantities (rough placeholder pricing — verify against your supplier costs)"
-                columns={['Item', 'Quantity', 'Unit', 'Est. Cost']}
+                title="AI-inferred quantities — not verified measurements; placeholder pricing, not supplier pricing"
+                columns={['Item', 'Quantity', 'Unit', 'Basis', 'Est. Cost']}
                 rows={estimate.aiPlanFindings.items.map((line) => [
                   line.item,
                   formatNumber(line.quantity),
                   line.unit,
+                  BASIS_LABELS[line.basis ?? 'unreported'],
                   formatCurrency(line.estimatedTotalCost),
                 ])}
-                totalLabel="AI-detected subtotal"
+                totalLabel="AI-inferred subtotal"
                 total={formatCurrency(estimate.aiPlanFindings.estimatedSubtotal)}
               />
             </div>

@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
+import type { PlanDocumentIntelligence } from '@/src/commercial-estimating/takeoff/plan-documents';
+import {
+  planDocumentScopeSignal,
+  planDocumentSummaryLine,
+} from '@/src/commercial-estimating/takeoff/plan-documents';
+
 export const PROJECT_CATEGORIES = [
   'deck',
   'bathroom-remodel',
@@ -21,6 +27,12 @@ export type AiDetectedLineItem = {
   item: string;
   quantity: number;
   unit: string;
+  /**
+   * How the vision model arrived at the quantity: read off a printed
+   * dimension, scaled off a stated drawing scale, or estimated by eye.
+   * Absent when the model did not report one.
+   */
+  basis?: 'labeled_dimension' | 'scale_inference' | 'visual_estimate';
 };
 
 export type AiPlanFindings = {
@@ -31,6 +43,13 @@ export type AiPlanFindings = {
   /** Quantity takeoff items read directly off the plan drawings, with rough placeholder pricing. */
   items: Array<AiDetectedLineItem & { estimatedUnitCost: number; estimatedTotalCost: number }>;
   estimatedSubtotal: number;
+  /**
+   * These quantities were inferred by a vision model looking at a drawing.
+   * They are never verified geometric measurements and must be labelled as
+   * such everywhere they are shown or exported.
+   */
+  measurementBasis: 'ai_inferred';
+  disclaimer: string;
 };
 
 export type TakeoffInput = {
@@ -42,6 +61,8 @@ export type TakeoffInput = {
   aiScopeNotes?: string[];
   /** Quantity/line items read directly off plan images by AI vision analysis. */
   aiDetectedItems?: AiDetectedLineItem[];
+  /** Structured results from reading uploaded PDF drawing packages. */
+  planDocuments?: PlanDocumentIntelligence | null;
 };
 
 export type BidInput = {
@@ -118,6 +139,8 @@ export type EstimateResult = {
   assumptions: string[];
   proposalMarkdown: string;
   aiPlanFindings: AiPlanFindings | null;
+  /** What the PDF document-intelligence engine read out of the uploaded drawings. */
+  planDocumentIntelligence: PlanDocumentIntelligence | null;
 };
 
 type Geometry = {
@@ -807,6 +830,7 @@ function finalizeEstimate(
     assumptions: [...template.assumptions],
     proposalMarkdown: '',
     aiPlanFindings: null,
+    planDocumentIntelligence: null,
   };
 
   const guardrail = applyCostPerSqFtGuardrail({
@@ -865,6 +889,9 @@ function buildAiPlanFindings(input: TakeoffInput): AiPlanFindings | null {
     scopeNotes,
     items,
     estimatedSubtotal: roundMoney(items.reduce((sum, line) => sum + line.estimatedTotalCost, 0)),
+    measurementBasis: 'ai_inferred',
+    disclaimer:
+      'These quantities were inferred by a vision model reading the uploaded images. They are not verified geometric measurements and must be field-verified before they are bid.',
   };
 }
 
@@ -879,7 +906,17 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
   const description = input.description?.trim() || '';
   const aiScopeText = (input.aiScopeNotes || []).join(' ');
   const aiItemsText = (input.aiDetectedItems || []).map((item) => `${item.item} ${item.unit}`).join(' ');
-  const textSignal = [description, ...input.files.map((file) => file.name), aiScopeText, aiItemsText]
+  const planDocuments = input.planDocuments ?? null;
+  // Sheet titles and disciplines read out of the PDFs themselves, so uploads
+  // are no longer scored on their file names alone.
+  const documentScopeText = planDocumentScopeSignal(planDocuments);
+  const textSignal = [
+    description,
+    ...input.files.map((file) => file.name),
+    documentScopeText,
+    aiScopeText,
+    aiItemsText,
+  ]
     .join(' ')
     .trim();
 
@@ -925,8 +962,11 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
     ? `AI vision read ${(input.aiScopeNotes || []).length} plan image(s): ${aiScopeText}`
     : null;
 
+  const documentSummary = planDocumentSummaryLine(planDocuments);
+
   const summary = [
     fileSummary,
+    documentSummary,
     aiVisionSummary,
     description ? `Notes: ${description}` : 'No additional project notes supplied.',
     `Detected area basis: ${geometry.areaSqFt.toFixed(1)} sq ft`,
@@ -945,6 +985,7 @@ export function createTakeoffEstimate(input: TakeoffInput): EstimateResult {
     signals
   );
   result.aiPlanFindings = buildAiPlanFindings(input);
+  result.planDocumentIntelligence = planDocuments;
   return result;
 }
 

@@ -7,10 +7,28 @@ import {
   consumeEstimateReaderCredits,
   estimateReaderUsageUnits,
 } from '@/src/billing/subscription.service';
+import { documentLimits, isPdfUpload } from '@/src/commercial-estimating/document-processing/validation';
+import {
+  processPlanDocuments,
+  type PlanDocumentIntelligence,
+} from '@/src/commercial-estimating/takeoff/plan-documents';
 
 export const runtime = 'nodejs';
 
-const MAX_VISION_IMAGES_PER_REQUEST = 4;
+/**
+ * Image vision is still capped per request — it is a per-image model call.
+ * PDF page processing is NOT capped at four: it runs as a bounded, batched job
+ * (see `document-processing/job.ts`) so a real commercial package can be read.
+ */
+const DEFAULT_MAX_VISION_IMAGES_PER_REQUEST = 4;
+
+function maxVisionImagesPerRequest(): number {
+  const raw = process.env.TAKEOFF_MAX_VISION_IMAGES;
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0
+    ? Math.floor(parsed)
+    : DEFAULT_MAX_VISION_IMAGES_PER_REQUEST;
+}
 
 type JsonBody = {
   files?: Array<{ name?: unknown; type?: unknown; size?: unknown }>;
@@ -89,7 +107,9 @@ async function runPlanVisionAnalysis(rawFiles: File[]): Promise<{
     return { scopeNotes: [], detectedItems: [] };
   }
 
-  const analyzable = rawFiles.filter((file) => isVisionAnalyzableImage(file.type, file.size)).slice(0, MAX_VISION_IMAGES_PER_REQUEST);
+  const analyzable = rawFiles
+    .filter((file) => isVisionAnalyzableImage(file.type, file.size))
+    .slice(0, maxVisionImagesPerRequest());
   if (analyzable.length === 0) {
     return { scopeNotes: [], detectedItems: [] };
   }
@@ -113,6 +133,39 @@ async function runPlanVisionAnalysis(rawFiles: File[]): Promise<{
   };
 }
 
+/**
+ * Read the actual contents of every uploaded PDF.
+ *
+ * Runs after billing so metering is unchanged from the image-only behaviour:
+ * the same units are consumed for the same upload. Failures here degrade the
+ * response rather than failing the request — a drawing package that cannot be
+ * parsed still produces the deterministic estimate it always did.
+ */
+async function runPdfDocumentIntelligence(rawFiles: File[]): Promise<PlanDocumentIntelligence | null> {
+  const limits = documentLimits();
+  const pdfFiles = rawFiles
+    .filter((file) => isPdfUpload(file.type || '', file.name))
+    .slice(0, limits.maxDocumentsPerRequest);
+
+  if (pdfFiles.length === 0) return null;
+
+  try {
+    const documents = await Promise.all(
+      pdfFiles.map(async (file) => ({
+        fileName: file.name,
+        mimeType: file.type || 'application/pdf',
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      }))
+    );
+
+    return await processPlanDocuments({ documents });
+  } catch {
+    // Never let a read or parser problem take down an estimate the user paid
+    // for — the deterministic estimate does not depend on the PDFs.
+    return null;
+  }
+}
+
 export async function GET() {
   return withApiHandler(async () => {
     return jsonResponse({
@@ -125,7 +178,26 @@ export async function GET() {
       aiVision: {
         enabled: Boolean(process.env.ANTHROPIC_API_KEY),
         supportedTypes: ['PNG', 'JPG', 'WEBP'],
-        notes: 'PDF plans currently contribute file-name and description signal only; upload PNG/JPG/WEBP images of plan pages for full AI visual takeoff.',
+        maxImagesPerRequest: maxVisionImagesPerRequest(),
+        notes:
+          'AI vision reads uploaded plan images and produces AI-inferred quantities. These are never verified geometric measurements.',
+      },
+      documentIntelligence: {
+        enabled: true,
+        supportedTypes: ['PDF'],
+        maxPagesPerDocument: documentLimits().maxPagesPerDocument,
+        maxDocumentsPerRequest: documentLimits().maxDocumentsPerRequest,
+        extracts: [
+          'page dimensions and rotation',
+          'embedded text with source coordinates',
+          'vector geometry with the page transform applied',
+          'drawing sheet numbers and titles',
+          'drawing scale annotations',
+          'revision information',
+          'matchline references',
+        ],
+        notes:
+          'Uploaded PDFs are parsed for real: their pages, text, coordinates and vector geometry are read. Quantity takeoff from that geometry is the next milestone, so no PDF-derived quantity is reported yet.',
       },
       notes: 'Upload plans or send file metadata and run AI takeoff to get an itemized estimate (active paid subscription + subscriberEmail required).',
     });
@@ -167,7 +239,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const vision = await runPlanVisionAnalysis(input.rawFiles);
+    const [vision, planDocuments] = await Promise.all([
+      runPlanVisionAnalysis(input.rawFiles),
+      runPdfDocumentIntelligence(input.rawFiles),
+    ]);
 
     const estimate = createTakeoffEstimate({
       files: input.files,
@@ -176,6 +251,7 @@ export async function POST(request: NextRequest) {
       zipCode: input.zipCode,
       aiScopeNotes: vision.scopeNotes,
       aiDetectedItems: vision.detectedItems,
+      planDocuments,
     });
 
     return jsonResponse(
@@ -183,6 +259,7 @@ export async function POST(request: NextRequest) {
         estimate,
         categories: getProjectCategoryOptions(),
         usage,
+        documentIntelligence: planDocuments,
       },
       201
     );

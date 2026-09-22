@@ -43,6 +43,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Deployment runbook: `docs/deployment-production.md`
 - Domain + Google Workspace setup: `docs/domain-email-google-workspace.md`
 
+## Commercial Estimating
+
+- PDF Intelligence V1 (document processing architecture, API contract, limits, limitations): `docs/commercial-estimating/pdf-intelligence-v1.md`
+- Commercial estimating test suite: `npm run test:commercial`
+
 Quick start:
 
 ```bash
