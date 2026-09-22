@@ -1,6 +1,8 @@
 // next.config.ts is the canonical config — this file is intentionally minimal
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // pdf.js is a large CJS/ESM hybrid; keep it out of the server bundle.
+  serverExternalPackages: ['pdfjs-dist'],
   reactStrictMode: true,
   turbopack: {
     root: process.cwd(),

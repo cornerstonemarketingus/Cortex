@@ -14,10 +14,19 @@ const VISION_TIMEOUT_MS = Number(process.env.LLM_HTTP_TIMEOUT_MS || 25_000);
 const SUPPORTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
+/**
+ * How the model arrived at a quantity. Carried through to the UI so an
+ * estimator can see which numbers came off a labelled dimension and which are
+ * the model's eyeball. None of these is a verified geometric measurement.
+ */
+export type PlanVisionBasis = 'labeled_dimension' | 'scale_inference' | 'visual_estimate';
+
 export type PlanVisionLineItem = {
   item: string;
   quantity: number;
   unit: string;
+  /** Absent on responses from models that predate this field. */
+  basis?: PlanVisionBasis;
 };
 
 export type PlanVisionAnalysis = {
@@ -31,13 +40,15 @@ export function isVisionAnalyzableImage(mimeType: string, size: number): boolean
 }
 
 const SYSTEM_PROMPT = `You are a professional construction takeoff estimator reviewing an uploaded floor plan, blueprint, sketch, or job-site photo. \
-Identify what is shown and produce a quantity takeoff grounded only in what is visible or clearly inferable. \
+Identify what is shown and produce a quantity takeoff grounded only in what is visible. \
 Respond with ONLY a single JSON object, no markdown fences, no commentary, matching this shape exactly:
-{"scopeSummary": string, "detectedCategory": string | null, "lineItems": [{"item": string, "quantity": number, "unit": string}]}
+{"scopeSummary": string, "detectedCategory": string | null, "lineItems": [{"item": string, "quantity": number, "unit": string, "basis": string}]}
 Rules:
 - "detectedCategory" must be one of: deck, bathroom-remodel, kitchen-gut, roof-replacement, basement-finish, general-construction, or null if unclear.
-- "lineItems" should list 3-12 measurable takeoff items (areas in sq ft, lengths in linear ft, counts in "ea") with realistic quantities based on the drawing's scale, dimensions, and labels.
-- If dimensions aren't labeled, provide a reasonable visual estimate and say so in scopeSummary.
+- "lineItems" should list 3-12 measurable takeoff items (areas in sq ft, lengths in linear ft, counts in "ea").
+- "basis" must be exactly one of: "labeled_dimension" when the quantity comes from a dimension printed on the drawing, "scale_inference" when it was scaled off a stated drawing scale, or "visual_estimate" when neither was available and you are estimating by eye.
+- Do not present a visual estimate as if it were measured. If you cannot see enough to give a quantity for an item, omit the item rather than inventing a number.
+- State plainly in scopeSummary which quantities are visual estimates.
 - Never include prices — quantities and units only.`;
 
 function extractJson(text: string): string {
@@ -71,12 +82,26 @@ function parseAnalysis(raw: string): PlanVisionAnalysis | null {
       ? parsed.lineItems
           .map((entry) => {
             if (!entry || typeof entry !== 'object') return null;
-            const candidate = entry as { item?: unknown; quantity?: unknown; unit?: unknown };
+            const candidate = entry as {
+              item?: unknown;
+              quantity?: unknown;
+              unit?: unknown;
+              basis?: unknown;
+            };
             const item = typeof candidate.item === 'string' ? candidate.item.trim() : '';
             const quantity = Number(candidate.quantity);
             const unit = typeof candidate.unit === 'string' ? candidate.unit.trim() : '';
             if (!item || !unit || !Number.isFinite(quantity) || quantity <= 0) return null;
-            return { item, quantity, unit };
+
+            const rawBasis = typeof candidate.basis === 'string' ? candidate.basis.trim() : '';
+            const basis: PlanVisionBasis | undefined =
+              rawBasis === 'labeled_dimension' || rawBasis === 'scale_inference' || rawBasis === 'visual_estimate'
+                ? rawBasis
+                : undefined;
+
+            const line: PlanVisionLineItem = { item, quantity, unit };
+            if (basis) line.basis = basis;
+            return line;
           })
           .filter((entry): entry is PlanVisionLineItem => entry !== null)
           .slice(0, 12)
