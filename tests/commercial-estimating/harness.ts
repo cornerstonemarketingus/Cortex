@@ -28,7 +28,22 @@ export function it(name: string, fn: TestFn): void {
   activeSuite.tests.push({ name, fn });
 }
 
-export type RunReport = { passed: number; failed: number; durationMs: number };
+/**
+ * Register a suite that only runs when a precondition holds (for example, a
+ * live database). Skipped suites are reported explicitly rather than silently
+ * omitted — a test that did not run is not a test that passed.
+ */
+export function describeIf(condition: boolean, reason: string, name: string, register: () => void): void {
+  if (condition) {
+    describe(name, register);
+    return;
+  }
+  skipped.push({ name, reason });
+}
+
+const skipped: Array<{ name: string; reason: string }> = [];
+
+export type RunReport = { passed: number; failed: number; skipped: number; durationMs: number };
 
 export async function runAll(): Promise<RunReport> {
   const startedAt = Date.now();
@@ -54,9 +69,15 @@ export async function runAll(): Promise<RunReport> {
     }
   }
 
+  for (const entry of skipped) {
+    console.log(`\n${entry.name}`);
+    console.log(`  - SKIPPED: ${entry.reason}`);
+  }
+
   const durationMs = Date.now() - startedAt;
-  console.log(`\n${passed} passed, ${failed} failed (${durationMs}ms)`);
-  return { passed, failed, durationMs };
+  const skippedNote = skipped.length > 0 ? `, ${skipped.length} suite(s) skipped` : '';
+  console.log(`\n${passed} passed, ${failed} failed${skippedNote} (${durationMs}ms)`);
+  return { passed, failed, skipped: skipped.length, durationMs };
 }
 
 /** Restore an environment variable to whatever it was before a test changed it. */

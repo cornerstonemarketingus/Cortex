@@ -1,0 +1,71 @@
+name: Commercial Estimating Tests
+
+# The commercial estimating suite includes integration tests that need a real
+# PostgreSQL: tenant isolation cannot be proven against a fake that returns
+# whatever the repository asks for. Without this workflow those suites skip
+# themselves in CI and the coverage is theatre, so the job provides a database
+# and asserts that nothing was skipped.
+
+on:
+  pull_request:
+    paths:
+      - 'src/commercial-estimating/**'
+      - 'app/api/commercial/**'
+      - 'app/api/estimating/**'
+      - 'prisma/commercial/**'
+      - 'tests/commercial-estimating/**'
+      - 'package.json'
+      - '.github/workflows/commercial-estimating.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  commercial-estimating:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cortex_commercial
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cortex_commercial"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      COMMERCIAL_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cortex_commercial
+      # Turns a skipped suite into a failed build.
+      REQUIRE_ALL_SUITES: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create commercial estimating schema
+        run: npm run db:commercial:push
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Lint commercial estimating code
+        run: npx eslint src/commercial-estimating app/api/commercial tests/commercial-estimating
+
+      - name: Run commercial estimating suite
+        run: npm run test:commercial

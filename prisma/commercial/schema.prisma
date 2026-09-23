@@ -1,0 +1,266 @@
+// Cortex commercial estimating data model (Milestone M1).
+//
+// This is a THIRD Prisma schema, deliberately separate from `prisma/schema.prisma`
+// (app scaffolding) and `prisma/crm/schema.prisma` (the 40+ model CRM domain).
+// The separation is the whole point: the CRM holds live customer sales data, and
+// construction estimating has no business sharing a client or a migration history
+// with it. Both can live in the same Postgres instance — this schema just gets its
+// own namespace via `?schema=` on COMMERCIAL_DATABASE_URL.
+//
+// Every tenant-scoped table carries `organizationId` and is indexed on it, so
+// isolation is enforceable at the query layer rather than by convention.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/commercial-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  ESTIMATOR
+  VIEWER
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  PROCESSED
+  PARTIAL
+  FAILED
+  REJECTED
+}
+
+enum ProcessingJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+/// How much of a project another organization may see. Supports the shared
+/// project-intelligence model (one GC package, many bidding subcontractors)
+/// without ever exposing a competitor's private estimate.
+enum AccessLevel {
+  READ_DOCUMENTS
+  READ_TAKEOFF
+  FULL
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       OrganizationMember[]
+  projects      Project[]
+  documents     Document[]
+  drawingSheets DrawingSheet[]
+  accessGrants  ProjectAccessGrant[]
+  jobs          ProcessingJob[]
+  auditEvents   AuditEvent[]
+}
+
+/// `userRef` is the subject identifier from whichever auth path created the
+/// membership (CRM JWT subject, or the subscriber email the estimator bills
+/// against). There is no unified User table yet; this keeps M1 additive.
+model OrganizationMember {
+  id             String     @id @default(cuid())
+  organizationId String
+  userRef        String
+  role           MemberRole @default(ESTIMATOR)
+  createdAt      DateTime   @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userRef])
+  @@index([userRef])
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  organizationId String
+  name           String
+  projectNumber  String?
+  clientName     String?
+  addressLine    String?
+  city           String?
+  state          String?
+  postalCode     String?
+  status         ProjectStatus @default(ACTIVE)
+  createdBy      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documents    Document[]
+  sheets       DrawingSheet[]
+  accessGrants ProjectAccessGrant[]
+  jobs         ProcessingJob[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+}
+
+model ProjectAccessGrant {
+  id             String      @id @default(cuid())
+  projectId      String
+  organizationId String
+  accessLevel    AccessLevel @default(READ_DOCUMENTS)
+  grantedBy      String?
+  grantedAt      DateTime    @default(now())
+  expiresAt      DateTime?
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, organizationId])
+  @@index([organizationId])
+}
+
+model Document {
+  id             String         @id @default(cuid())
+  organizationId String
+  projectId      String
+  fileName       String
+  mimeType       String
+  byteSize       Int
+  /// Content hash of the original upload. Also the processing idempotency key.
+  sha256         String
+  /// Opaque key into the DocumentStore. Never a user-supplied path.
+  storageKey     String
+  status         DocumentStatus @default(UPLOADED)
+  pageCount      Int?
+  uploadedBy     String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions    DocumentRevision[]
+  jobs         ProcessingJob[]
+
+  @@index([organizationId, projectId])
+  @@index([organizationId, sha256])
+}
+
+/// Immutable revisions. A re-upload never overwrites: it adds a revision that
+/// supersedes the previous one, so an estimate always traces to the exact
+/// drawing it was measured from.
+model DocumentRevision {
+  id            String   @id @default(cuid())
+  documentId    String
+  revisionLabel String?
+  sha256        String
+  storageKey    String
+  byteSize      Int
+  pageCount     Int?
+  supersedesId  String?  @unique
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  document   Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  supersedes DocumentRevision? @relation("RevisionChain", fields: [supersedesId], references: [id])
+  supersededBy DocumentRevision? @relation("RevisionChain")
+  sheets     DrawingSheet[]
+
+  @@index([documentId, createdAt])
+}
+
+/// One row per extracted drawing page. Mirrors the sheet register produced by
+/// the PDF Intelligence extractor. Raw geometry is deliberately NOT persisted
+/// here — it is large and nothing downstream reads it yet.
+model DrawingSheet {
+  id                 String  @id @default(cuid())
+  organizationId     String
+  projectId          String
+  documentRevisionId String
+  pageNumber         Int
+  sheetNumber        String?
+  sheetTitle         String?
+  discipline         String?
+  role               String
+  classification     String
+  measurementSuitability String
+  scaleRaw           String?
+  scaleKind          String?
+  feetPerPoint       Float?
+  scaleVerification  String
+  revisionLabels     String[]
+  matchlineTargets   String[]
+  widthPt            Float
+  heightPt           Float
+  rotationDeg        Int      @default(0)
+  textSpanCount      Int      @default(0)
+  vectorPathCount    Int      @default(0)
+  warnings           String[]
+  createdAt          DateTime @default(now())
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  documentRevision DocumentRevision @relation(fields: [documentRevisionId], references: [id], onDelete: Cascade)
+
+  @@unique([documentRevisionId, pageNumber])
+  @@index([organizationId, projectId])
+  @@index([organizationId, sheetNumber])
+}
+
+model ProcessingJob {
+  id             String              @id @default(cuid())
+  organizationId String
+  projectId      String?
+  documentId     String?
+  kind           String              @default("document_extraction")
+  status         ProcessingJobStatus @default(QUEUED)
+  attempts       Int                 @default(0)
+  maxAttempts    Int                 @default(2)
+  /// Content-derived key. A resubmitted upload reuses the completed job rather
+  /// than reprocessing and re-billing it.
+  idempotencyKey String
+  pagesExtracted Int                 @default(0)
+  billablePages  Int                 @default(0)
+  reusedFromCache Boolean            @default(false)
+  progress       Int                 @default(0)
+  error          String?
+  warnings       String[]
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  document     Document?    @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, status])
+}
+
+model AuditEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+  actor          String?
+  action         String
+  subjectType    String
+  subjectId      String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, subjectType, subjectId])
+}
