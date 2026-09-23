@@ -46,6 +46,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Commercial Estimating
 
 - PDF Intelligence V1 (document processing architecture, API contract, limits, limitations): `docs/commercial-estimating/pdf-intelligence-v1.md`
+- M1 — Organizations, Projects and durable document storage: `docs/commercial-estimating/m1-projects-and-storage.md`
 - Commercial estimating test suite: `npm run test:commercial`
 
 Quick start:

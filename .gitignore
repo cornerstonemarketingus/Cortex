@@ -42,3 +42,8 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Generated Prisma client for the commercial estimating schema.
+# Unlike generated/crm-client (committed historically), this one is built by
+# `postinstall`/`build` so ~10MB of wasm does not churn in git.
+/generated/commercial-client
