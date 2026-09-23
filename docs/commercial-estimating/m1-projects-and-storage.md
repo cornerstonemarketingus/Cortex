@@ -215,6 +215,12 @@ Without `COMMERCIAL_DATABASE_URL` the persistence suites report as **SKIPPED**
 (74 assertions still run). A skipped suite is printed explicitly — a test that
 did not run is not a test that passed.
 
+In CI that distinction is enforced rather than trusted: the
+`Commercial Estimating Tests` workflow provides a PostgreSQL 16 service
+container and sets `REQUIRE_ALL_SUITES=1`, which makes a skipped suite fail the
+build. Without that guard a misconfigured service container would quietly turn
+19 integration assertions into a green tick.
+
 These are integration tests against a real database, not fakes, on purpose: the
 thing M1 must get right is isolation at the query layer, and a fake that returns
 whatever the repository asks for cannot prove isolation. Only real rows
