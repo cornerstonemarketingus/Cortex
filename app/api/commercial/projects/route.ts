@@ -4,10 +4,7 @@ import { ApiError, readJson } from '@/src/crm/core/api';
 import { jsonResponse, parseOptionalString, withApiHandler } from '@/src/crm/core/http';
 import { resolveRequestScope } from '@/src/commercial-estimating/api/auth';
 import { createProject, listProjects } from '@/src/commercial-estimating/data/projects';
-import {
-  documentStorageIsDurable,
-  getDocumentStore,
-} from '@/src/commercial-estimating/storage/document-store';
+import { documentStorageDiagnostics } from '@/src/commercial-estimating/storage/document-store';
 
 export const runtime = 'nodejs';
 
@@ -30,16 +27,12 @@ export async function GET(request: NextRequest) {
     return jsonResponse({
       organizationId: scope.organizationId,
       projects,
-      storage: {
-        kind: getDocumentStore().kind,
-        durable: documentStorageIsDurable(),
-        // Surfaced rather than hidden: on an ephemeral filesystem, uploaded
-        // drawings do not survive, and a customer should not find that out by
-        // losing a package.
-        warning: documentStorageIsDurable()
-          ? null
-          : 'Document storage is not durable on this deployment. Configure a persistent volume or blob-backed store before uploading production drawings.',
-      },
+      // Surfaced rather than hidden: on an ephemeral filesystem, uploaded
+      // drawings do not survive, and a customer should not find that out by
+      // losing a package. Uploads are refused outright in that state unless the
+      // operator has opted in, so this flag describes a configuration problem
+      // rather than a silent risk.
+      storage: documentStorageDiagnostics(),
     });
   });
 }
