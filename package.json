@@ -22,6 +22,7 @@
     "lint": "eslint",
     "test:e2e:platform": "tsx tests/platform-flows.e2e.ts",
     "test:commercial": "tsx tests/commercial-estimating/run.ts",
+    "verify:blob-store": "tsx scripts/verify_commercial_blob_store.ts",
     "backtest:estimator": "tsx scripts/run_estimator_backtest.ts",
     "backtest:estimator:ps": "pwsh -ExecutionPolicy Bypass -File .\\scripts\\run_estimator_backtest.ps1",
     "audit:builders": "tsx scripts/run_builder_audit.ts",
@@ -51,6 +52,9 @@
     "stripe": "^20.4.1"
   },
   "devDependencies": {
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@smithy/protocol-http": "^5.6.2",
+    "@smithy/signature-v4": "^5.7.5",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^20",
     "@types/pdfkit": "^0.17.5",

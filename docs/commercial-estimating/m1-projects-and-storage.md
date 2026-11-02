@@ -18,14 +18,14 @@ depends on the package still being there, so this had to come first.
 | Organization / membership / role model | Done |
 | Projects scoped to an organization | Done |
 | Immutable documents with a revision chain | Done |
-| Content-addressed document storage | Done (filesystem; see **Deployment**) |
+| Content-addressed document storage | Done (filesystem **and** S3-compatible blob store) |
 | Persisted drawing register (`DrawingSheet`) | Done |
 | Query-layer tenant isolation | Done |
 | Cross-org sharing via explicit access grants | Done |
 | Durable processing jobs with idempotency | Done |
 | Audit trail | Done |
 | Background (queued) extraction | **Not in M1 — next task** |
-| Blob-backed document store | **Not in M1 — required for Vercel** |
+| Blob-backed document store | Done — see `blob-document-storage.md` |
 
 ---
 
@@ -182,23 +182,20 @@ npm run build                # generates both Prisma clients, then builds
 | --- | --- |
 | `COMMERCIAL_DATABASE_URL` | Commercial estimating database. Unset ⇒ endpoints return `503`, rest of the app unaffected. |
 | `COMMERCIAL_DOCUMENT_ROOT` | Filesystem document root (default `./.cortex-documents`) |
+| `COMMERCIAL_S3_*` | S3-compatible blob store. Required for any host with an ephemeral filesystem — see [`blob-document-storage.md`](./blob-document-storage.md) |
 
-### The blocker for the current production deployment
+### Durability is now enforced, not just reported
 
-**Document storage is filesystem-backed, and Vercel's serverless filesystem is
-ephemeral.** On the current Vercel deployment, uploaded drawings will not
-survive the request. This is not a subtle failure mode — it is total data loss
-for the thing the product exists to keep.
+Document storage was filesystem-backed when M1 shipped, which is total data loss
+on Vercel's ephemeral serverless filesystem. That is closed:
+`S3DocumentStore` backs any S3-compatible store (R2, AWS S3, MinIO, B2), and a
+deployment whose storage cannot survive the request now **refuses** the upload
+with `503 STORAGE_NOT_DURABLE` before anything is written or metered, rather
+than accepting bytes it is about to lose.
 
-It is surfaced, not buried: `documentStorageIsDurable()` returns `false` when
-`VERCEL=1`, and both the project list and the upload response carry the flag and
-a warning.
-
-The `DocumentStore` interface exists so a blob-backed implementation is a config
-change touching no caller. **Wiring one is the first task after M1 and is
-required before this feature is usable in production.** It was not done here
-because there are no blob credentials in this environment, and an untested
-storage backend is exactly where data loss comes from.
+Configuration, the signing cross-check against AWS's own signer, and the
+`npm run verify:blob-store` live round trip are documented in
+[`blob-document-storage.md`](./blob-document-storage.md).
 
 ---
 
@@ -208,18 +205,18 @@ storage backend is exactly where data loss comes from.
 # Integration tests need a real PostgreSQL.
 export COMMERCIAL_DATABASE_URL="postgresql://postgres@127.0.0.1:5432/cortex_commercial"
 npm run db:commercial:push
-npm run test:commercial     # 93 assertions
+npm run test:commercial     # 124 assertions
 ```
 
 Without `COMMERCIAL_DATABASE_URL` the persistence suites report as **SKIPPED**
-(74 assertions still run). A skipped suite is printed explicitly — a test that
+(the rest still run). A skipped suite is printed explicitly — a test that
 did not run is not a test that passed.
 
 In CI that distinction is enforced rather than trusted: the
 `Commercial Estimating Tests` workflow provides a PostgreSQL 16 service
 container and sets `REQUIRE_ALL_SUITES=1`, which makes a skipped suite fail the
 build. Without that guard a misconfigured service container would quietly turn
-19 integration assertions into a green tick.
+20 integration assertions into a green tick.
 
 These are integration tests against a real database, not fakes, on purpose: the
 thing M1 must get right is isolation at the query layer, and a fake that returns
@@ -239,7 +236,8 @@ and recovery from a thrown extractor.
 ## What M1 does not do
 
 1. **No queued execution** — extraction is inline (above).
-2. **No durable storage on Vercel** — filesystem only (above).
+2. **Storage is durable when configured** — and refuses uploads when it is not
+   (above). An unconfigured deployment serves reads and refuses writes.
 3. **No measurement.** Still no quantities; that is M2.
 4. **No unified User model.** `OrganizationMember.userRef` holds whatever
    subject the authenticating token carried. Keeping M1 additive mattered more
@@ -254,10 +252,9 @@ and recovery from a thrown extractor.
 
 ## Next tasks, in order
 
-1. **Blob-backed `DocumentStore`** — required before production use.
-2. **Move extraction onto the bullmq worker**, with progress reporting against
+1. **Move extraction onto the bullmq worker**, with progress reporting against
    the existing `ProcessingJob` row.
-3. **Organization onboarding** — signup, invitations, reconciling `userRef` with
+2. **Organization onboarding** — signup, invitations, reconciling `userRef` with
    a real User model.
-4. **M2: first real measurements** — room detection, floor area and perimeter as
+3. **M2: first real measurements** — room detection, floor area and perimeter as
    `MeasurementRecord`s, closing the scale-verification loop.

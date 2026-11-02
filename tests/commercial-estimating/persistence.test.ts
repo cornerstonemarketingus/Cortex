@@ -324,6 +324,46 @@ describeIf(dbConfigured, 'COMMERCIAL_DATABASE_URL is not set', 'persistence: doc
     assert.throws(() => buildDocumentKey({ organizationId: '../etc', sha256: 'a'.repeat(64) }));
     assert.throws(() => buildDocumentKey({ organizationId: 'orgA', sha256: 'not-a-digest' }));
   });
+
+  it('refuses an upload outright when storage would not survive the request', async () => {
+    const db = commercialDb();
+    await resetDatabase(db);
+
+    const root = await mkdtemp(join(tmpdir(), 'cortex-docstore-'));
+    // An ephemeral filesystem, exactly as on a serverless host.
+    setDocumentStore(new FilesystemDocumentStore(root, { durable: false }));
+
+    try {
+      const acme = await seedOrg(db, 'acme', 'anna@acme.test');
+      const project = await createProject(db, acme, { name: 'Medical Center' });
+      const bytes = await buildVectorFloorPlanPdf();
+
+      await assert.rejects(
+        () =>
+          ingestDocument(db, acme, {
+            projectId: project.id,
+            fileName: 'level-2.pdf',
+            mimeType: 'application/pdf',
+            bytes,
+          }),
+        (error: unknown) => {
+          const api = error as { status?: number; code?: string };
+          assert.equal(api.status, 503);
+          assert.equal(api.code, 'STORAGE_NOT_DURABLE');
+          return true;
+        }
+      );
+
+      // Nothing was written and nothing was metered: the refusal happens before
+      // the first row, so the customer is not billed for a vanishing document.
+      assert.equal(await db.document.count(), 0);
+      assert.equal(await db.documentRevision.count(), 0);
+      assert.equal(await db.processingJob.count(), 0);
+    } finally {
+      setDocumentStore(null);
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describeIf(dbConfigured, 'COMMERCIAL_DATABASE_URL is not set', 'persistence: drawing register survives the request', () => {

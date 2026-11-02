@@ -1,129 +1,41 @@
 /**
- * Document storage for commercial drawing packages.
+ * Document storage composition root.
  *
  * Originals are immutable and content-addressed by SHA-256, so a revision can
  * never quietly overwrite the drawing an estimate was measured from.
  *
- * IMPORTANT DEPLOYMENT NOTE: the only implementation shipped in M1 is
- * filesystem-backed. That is correct for local development and any host with a
- * persistent volume, and WRONG for Vercel's serverless filesystem, which is
- * ephemeral — documents written there will not survive the request. The
- * `DocumentStore` interface exists precisely so a blob-backed store can be
- * dropped in as a config change; wiring one is the first task after M1 and is
- * required before this feature is usable in the current production deployment.
+ * Two implementations:
+ *   - `S3DocumentStore` — any S3-compatible blob store (AWS S3, Cloudflare R2,
+ *     MinIO, Backblaze). Durable. Use this in production.
+ *   - `FilesystemDocumentStore` — local development and hosts with a persistent
+ *     volume. On a serverless filesystem it loses every uploaded drawing, which
+ *     is why `assertDurableDocumentStorage()` exists.
+ *
+ * Selection is by environment variable; no caller knows which store it has.
  */
 
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 
-export type StoredDocument = {
-  key: string;
-  byteSize: number;
-  sha256: string;
-};
+import { FilesystemDocumentStore } from './filesystem-document-store';
+import { S3DocumentStore, s3ConfigFromEnv, s3StoreFromEnv } from './s3-document-store';
+import type { DocumentStore } from './types';
 
-export interface DocumentStore {
-  readonly kind: string;
-  /** True when this store survives process restarts on the current host. */
-  readonly durable: boolean;
-  put(key: string, bytes: Uint8Array): Promise<StoredDocument>;
-  get(key: string): Promise<Uint8Array>;
-  exists(key: string): Promise<boolean>;
-  delete(key: string): Promise<void>;
-}
-
-export class DocumentNotFoundError extends Error {
-  constructor(key: string) {
-    super(`No stored document for key ${key}`);
-    this.name = 'DocumentNotFoundError';
-  }
-}
-
-const HEX64 = /^[0-9a-f]{64}$/;
-const SAFE_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
-
-/**
- * Build the storage key for a document. Both inputs are validated rather than
- * escaped: a key is never derived from a user-supplied filename, so there is
- * nothing to sanitize and no traversal to defend against.
- */
-export function buildDocumentKey(params: { organizationId: string; sha256: string }): string {
-  const { organizationId, sha256 } = params;
-
-  if (!SAFE_SEGMENT.test(organizationId)) {
-    throw new Error(`Unsafe organizationId for storage key: ${organizationId}`);
-  }
-  if (!HEX64.test(sha256)) {
-    throw new Error('Storage key requires a lowercase hex SHA-256 digest.');
-  }
-
-  // Fan out on the first two hex characters so no directory grows unbounded.
-  return `org/${organizationId}/${sha256.slice(0, 2)}/${sha256}`;
-}
-
-function sha256Of(bytes: Uint8Array): string {
-  return createHash('sha256').update(bytes).digest('hex');
-}
-
-export class FilesystemDocumentStore implements DocumentStore {
-  readonly kind = 'filesystem';
-  readonly durable: boolean;
-  private readonly root: string;
-
-  constructor(root: string, options?: { durable?: boolean }) {
-    this.root = resolve(root);
-    // Only the operator knows whether the mount survives a restart.
-    this.durable = options?.durable ?? true;
-  }
-
-  private resolveKey(key: string): string {
-    const target = resolve(join(this.root, key));
-    // Defence in depth: keys are machine-generated, but a future caller might
-    // not be, and escaping the root must never be possible.
-    if (target !== this.root && !target.startsWith(this.root + sep)) {
-      throw new Error(`Storage key escapes the document root: ${key}`);
-    }
-    return target;
-  }
-
-  async put(key: string, bytes: Uint8Array): Promise<StoredDocument> {
-    const target = this.resolveKey(key);
-    await mkdir(dirname(target), { recursive: true });
-
-    const digest = sha256Of(bytes);
-
-    // Content-addressed: if the bytes are already here, storing again is a
-    // no-op rather than a rewrite.
-    if (!(await this.exists(key))) {
-      await writeFile(target, bytes);
-    }
-
-    return { key, byteSize: bytes.length, sha256: digest };
-  }
-
-  async get(key: string): Promise<Uint8Array> {
-    const target = this.resolveKey(key);
-    try {
-      return new Uint8Array(await readFile(target));
-    } catch {
-      throw new DocumentNotFoundError(key);
-    }
-  }
-
-  async exists(key: string): Promise<boolean> {
-    try {
-      const info = await stat(this.resolveKey(key));
-      return info.isFile();
-    } catch {
-      return false;
-    }
-  }
-
-  async delete(key: string): Promise<void> {
-    await rm(this.resolveKey(key), { force: true });
-  }
-}
+export {
+  buildDocumentKey,
+  expectedSha256For,
+  assertSafeStorageKey,
+  DocumentNotFoundError,
+  DocumentIntegrityError,
+  type DocumentStore,
+  type StoredDocument,
+} from './types';
+export { FilesystemDocumentStore } from './filesystem-document-store';
+export {
+  S3DocumentStore,
+  S3StorageError,
+  s3ConfigFromEnv,
+  type S3DocumentStoreConfig,
+} from './s3-document-store';
 
 let cachedStore: DocumentStore | null = null;
 
@@ -132,18 +44,50 @@ export function documentStoreRoot(): string {
 }
 
 /**
- * Resolve the configured store. Today this is always the filesystem store; the
- * indirection is what lets a blob-backed store replace it without touching a
- * single caller.
+ * Resolve the configured store.
+ *
+ * `COMMERCIAL_DOCUMENT_STORE` forces a choice (`s3` or `filesystem`);
+ * otherwise the S3 store is used whenever S3 credentials are present. A
+ * half-configured S3 environment throws rather than falling back, because a
+ * silent fallback to an ephemeral filesystem is the data-loss path this module
+ * is here to close.
  */
 export function getDocumentStore(): DocumentStore {
-  if (!cachedStore) {
+  if (cachedStore) return cachedStore;
+
+  const requested = process.env.COMMERCIAL_DOCUMENT_STORE?.trim().toLowerCase();
+
+  if (requested === 'filesystem') {
     cachedStore = new FilesystemDocumentStore(documentStoreRoot());
+    return cachedStore;
   }
+
+  const s3Config = s3ConfigFromEnv();
+
+  if (requested === 's3') {
+    if (!s3Config) {
+      throw new Error(
+        'COMMERCIAL_DOCUMENT_STORE=s3 but no S3 configuration was found. Set ' +
+          'COMMERCIAL_S3_BUCKET, COMMERCIAL_S3_ACCESS_KEY_ID and COMMERCIAL_S3_SECRET_ACCESS_KEY.'
+      );
+    }
+    cachedStore = s3StoreFromEnv(s3Config);
+    return cachedStore;
+  }
+
+  if (requested && requested !== 's3' && requested !== 'filesystem') {
+    throw new Error(
+      `Unknown COMMERCIAL_DOCUMENT_STORE=${requested}. Valid values are "s3" and "filesystem".`
+    );
+  }
+
+  cachedStore = s3Config
+    ? s3StoreFromEnv(s3Config)
+    : new FilesystemDocumentStore(documentStoreRoot());
   return cachedStore;
 }
 
-/** Test hook. */
+/** Test hook; also clears the cache so an env change takes effect. */
 export function setDocumentStore(store: DocumentStore | null): void {
   cachedStore = store;
 }
@@ -155,7 +99,55 @@ export function setDocumentStore(store: DocumentStore | null): void {
  */
 export function documentStorageIsDurable(): boolean {
   const store = getDocumentStore();
-  if (store.kind !== 'filesystem') return store.durable;
+  if (!store.durable) return false;
+  if (store.kind !== 'filesystem') return true;
   // Vercel's serverless filesystem is ephemeral; only /tmp is writable at all.
+  // The host overrides the store's own optimism, not the other way round.
   return process.env.VERCEL !== '1';
+}
+
+/** Why storage is not durable, for an operator reading an error or a payload. */
+export function documentStorageWarning(): string | null {
+  if (documentStorageIsDurable()) return null;
+  return (
+    'Document storage is not durable on this deployment: uploaded drawings are written to an ' +
+    'ephemeral serverless filesystem and will not survive the request. Configure an ' +
+    'S3-compatible blob store (COMMERCIAL_S3_BUCKET, COMMERCIAL_S3_ACCESS_KEY_ID, ' +
+    'COMMERCIAL_S3_SECRET_ACCESS_KEY, and COMMERCIAL_S3_ENDPOINT for R2/MinIO), or a ' +
+    'persistent volume with COMMERCIAL_DOCUMENT_ROOT.'
+  );
+}
+
+/**
+ * The reason an upload must be refused, or null when storage can be trusted.
+ *
+ * Accepting a 200MB drawing package onto an ephemeral filesystem — and metering
+ * it — produces a customer who believes their project is saved and a vanished
+ * document. Failing the upload is the honest outcome. Set
+ * `COMMERCIAL_ALLOW_EPHEMERAL_STORAGE=1` to accept that trade knowingly, which
+ * is reasonable for a demo and never for production.
+ *
+ * Returning the message rather than throwing keeps the HTTP status code in the
+ * API layer, where the other refusals live.
+ */
+export function durableStorageRefusal(): string | null {
+  if (documentStorageIsDurable()) return null;
+  if (process.env.COMMERCIAL_ALLOW_EPHEMERAL_STORAGE === '1') return null;
+  return documentStorageWarning();
+}
+
+/** Storage facts for the API payloads, with no credentials in them. */
+export function documentStorageDiagnostics(): {
+  kind: string;
+  durable: boolean;
+  bucket: string | null;
+  warning: string | null;
+} {
+  const store = getDocumentStore();
+  return {
+    kind: store.kind,
+    durable: documentStorageIsDurable(),
+    bucket: store instanceof S3DocumentStore ? store.bucket : null,
+    warning: documentStorageWarning(),
+  };
 }

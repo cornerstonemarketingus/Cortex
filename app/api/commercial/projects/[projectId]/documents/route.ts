@@ -6,7 +6,7 @@ import { resolveRequestScope } from '@/src/commercial-estimating/api/auth';
 import { ingestDocument } from '@/src/commercial-estimating/data/documents';
 import { processDocument } from '@/src/commercial-estimating/data/processing';
 import { documentLimits } from '@/src/commercial-estimating/document-processing/validation';
-import { documentStorageIsDurable } from '@/src/commercial-estimating/storage/document-store';
+import { documentStorageDiagnostics } from '@/src/commercial-estimating/storage/document-store';
 
 export const runtime = 'nodejs';
 
@@ -97,7 +97,7 @@ export async function POST(
       {
         projectId,
         documents: results,
-        storageDurable: documentStorageIsDurable(),
+        storage: documentStorageDiagnostics(),
       },
       201
     );

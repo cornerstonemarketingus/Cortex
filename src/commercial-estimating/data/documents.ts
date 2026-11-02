@@ -10,7 +10,11 @@
 import { ApiError } from '@/src/crm/core/api';
 import { sha256Hex } from '../document-processing/validation';
 import type { DocumentExtraction } from '../document-processing/types';
-import { buildDocumentKey, getDocumentStore } from '../storage/document-store';
+import {
+  buildDocumentKey,
+  durableStorageRefusal,
+  getDocumentStore,
+} from '../storage/document-store';
 import type { CommercialDb } from './client';
 import { recordAuditEvent } from './audit';
 import { requireProjectAccess, requireWriteRole, scopedWhere, type OrgScope } from './tenancy';
@@ -57,6 +61,14 @@ export async function ingestDocument(
       'Documents can only be uploaded to a project your organization owns.',
       'PROJECT_NOT_OWNED'
     );
+  }
+
+  // Refuse before a single byte is stored, a row is written or a page is
+  // metered: accepting a package this deployment cannot keep would hand the
+  // customer a receipt for a document that is about to disappear.
+  const storageRefusal = durableStorageRefusal();
+  if (storageRefusal) {
+    throw new ApiError(503, storageRefusal, 'STORAGE_NOT_DURABLE');
   }
 
   const fileName = input.fileName.trim();
